@@ -1,0 +1,25 @@
+{
+  "name": "@ije/mono-jsx",
+  "version": "0.0.0-alpha.5",
+  "exports": {
+    ".": "./jsx.ts",
+    "./jsx-runtime": "./jsx-runtime.ts"
+  },
+  "imports": {
+    "mono-jsx": "./jsx.ts",
+    "mono-jsx/jsx-runtime": "./jsx-runtime.ts"
+  },
+  "tasks": {
+    "build": "deno run -A --no-lock build.ts",
+    "test":"deno test -A --no-lock test/"
+  },
+  "fmt": {
+    "lineWidth": 140
+  },
+  "lint": {
+    "exclude": ["**/*.mjs"],
+    "rules": {
+      "exclude": ["ban-types", "no-empty-interface", "no-explicit-any", "ban-ts-comment"]
+    }
+  }
+}

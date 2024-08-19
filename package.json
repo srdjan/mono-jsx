@@ -1,0 +1,27 @@
+{
+  "name": "mono-jsx",
+  "version": "0.0.0-alpha.5",
+  "description": "A _WIP_ Project",
+  "type": "module",
+  "main": "./jsx.mjs",
+  "module": "./jsx.mjs",
+  "types": "./types/jsx.d.ts",
+  "exports": {
+    ".": {
+      "import": "./jsx.mjs",
+      "types": "./types/jsx.d.ts"
+    },
+    "./jsx-runtime": {
+      "import": "./jsx-runtime.mjs",
+      "types": "./types/jsx-runtime.d.ts"
+    },
+    "./jsx-dev-runtime": {
+      "import": "./jsx-runtime.mjs",
+      "types": "./types/jsx-runtime.d.ts"
+    }
+  },
+  "files": [
+    "*.mjs",
+    "./types/"
+  ]
+}
