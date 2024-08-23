@@ -24,10 +24,11 @@
     "rules": {
       "exclude": [
         "ban-types",
+        "ban-ts-comment",
         "no-empty-interface",
         "no-explicit-any",
-        "ban-ts-comment",
         "no-this-alias",
+        "prefer-const",
         "verbatim-module-syntax"
       ]
     }
