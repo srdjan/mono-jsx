@@ -1,13 +1,15 @@
+// deno-lint-ignore-file
 import type * as CSS from "./css.d.ts";
 
 type Num1_9 = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type Num0_100 = 0 | Num1_9 | `${Num1_9}${0 | Num1_9}` | 100;
 type TransitionProps = { delay?: number; ease?: CSS.DataType.EasingFunction };
 
-export interface BaseCSSProperties extends CSS.Properties<string | number>, Partial<JSX.CustomCSSRules> {}
+export interface BaseCSSProperties extends CSS.Properties<string | number> {}
 
 export interface AtRuleCSSProperties {
   [key: `@media${" " | "("}${string}`]: BaseCSSProperties;
+  [key: `@container${" " | "("}${string}`]: BaseCSSProperties;
   [key: `@supports${" " | "("}${string}`]: BaseCSSProperties;
   [key: `@keyframes ${string}`]: {
     [key in "from" | "to" | `${Num0_100}%`]?: BaseCSSProperties;
@@ -16,60 +18,82 @@ export interface AtRuleCSSProperties {
 
 export interface PseudoCSSProperties {
   ":active"?: BaseCSSProperties;
-  ":focus"?: BaseCSSProperties;
-  ":focus-visible"?: BaseCSSProperties;
-  ":focus-within"?: BaseCSSProperties;
-  ":hover"?: BaseCSSProperties;
   ":link"?: BaseCSSProperties;
   ":visited"?: BaseCSSProperties;
   ":checked"?: BaseCSSProperties;
   ":disabled"?: BaseCSSProperties;
-  ":invalid"?: BaseCSSProperties;
-  ":first-letter"?: BaseCSSProperties;
-  ":first-line"?: BaseCSSProperties;
+  ":enable"?: BaseCSSProperties;
+  ":empty"?: BaseCSSProperties;
+  ":first"?: BaseCSSProperties;
   ":first-child"?: BaseCSSProperties;
   ":first-of-type"?: BaseCSSProperties;
+  ":focus"?: BaseCSSProperties;
+  ":focus-visible"?: BaseCSSProperties;
+  ":focus-within"?: BaseCSSProperties;
+  ":fullscreen"?: BaseCSSProperties;
+  ":hover"?: BaseCSSProperties;
+  ":in-range"?: BaseCSSProperties;
+  ":out-of-range"?: BaseCSSProperties;
+  ":indeterminate"?: BaseCSSProperties;
+  ":invalid"?: BaseCSSProperties;
   ":last-child"?: BaseCSSProperties;
   ":last-of-type"?: BaseCSSProperties;
+  ":only-child"?: BaseCSSProperties;
+  ":only-of-type"?: BaseCSSProperties;
+  ":optional"?: BaseCSSProperties;
   "::after"?: BaseCSSProperties;
   "::backdrop"?: BaseCSSProperties;
   "::before"?: BaseCSSProperties;
   "::first-letter"?: BaseCSSProperties;
+  "::first-line"?: BaseCSSProperties;
   "::placeholder"?: BaseCSSProperties;
   "::selection"?: BaseCSSProperties;
-  [key: `:nth-child(${string})`]: BaseCSSProperties;
-  [key: `:is(${string})`]: BaseCSSProperties;
-  [key: `:not(${string})`]: BaseCSSProperties;
+  "::view-transition"?: BaseCSSProperties;
   [key: `:has(${string})`]: BaseCSSProperties;
+  [key: `:is(${string})`]: BaseCSSProperties;
+  [key: `:lang(${string})`]: BaseCSSProperties;
+  [key: `:not(${string})`]: BaseCSSProperties;
+  [key: `:nth-child(${string})`]: BaseCSSProperties;
+  [key: `:nth-last-child(${string})`]: BaseCSSProperties;
+  [key: `:nth-of-type(${string})`]: BaseCSSProperties;
+  [key: `::view-transition-group(${string})`]: BaseCSSProperties;
+  [key: `::view-transition-image-pair(${string})`]: BaseCSSProperties;
+  [key: `::view-transition-new(${string})`]: BaseCSSProperties;
+  [key: `::view-transition-old(${string})`]: BaseCSSProperties;
 }
 
 export interface CSSProperties extends BaseCSSProperties, AtRuleCSSProperties, PseudoCSSProperties {
-  [key: `& ${string}`]: CSSProperties;
-  /** alias to `:nth-child(even)`. */
-  ":even"?: BaseCSSProperties;
-  /** alias to `:nth-child(odd)`. */
-  ":odd"?: BaseCSSProperties;
-  /** Mono page in.  */
-  ":in"?: BaseCSSProperties & TransitionProps;
-  /** Mono page out.  */
-  ":out"?: BaseCSSProperties & TransitionProps;
+  [key: `&${" " | ":"}${string}`]: CSSProperties;
 }
 
-export interface Attributes {
+export interface BaseAttributes {
+  default?: boolean;
   key?: string | number;
   slot?: string;
-  route?: `/${string}`;
 }
 
 export interface AsyncComponentAttributes {
-  eager?: boolean;
-  pending?: JSX.Element;
+  rendering?: "eager";
+  placeholder?: JSX.Element | string;
   catch?: (err: any) => JSX.Element;
 }
 
+export type IntrinsicUseStateProps<K, V> = {
+  name: K;
+  value?: V;
+  defaultValue?: V;
+  toggle?: boolean;
+  switch?: boolean;
+};
+
+export type UseStateProps = keyof State extends infer K ? K extends keyof State ? IntrinsicUseStateProps<K, State[K]>
+  : never
+  : never;
+
 export interface Elements {
+  "use-state": UseStateProps;
   cache:
-    & Attributes
+    & BaseAttributes
     & AsyncComponentAttributes
     & {
       /** The cache key is used to identify the cache. */
@@ -84,7 +108,8 @@ export interface Elements {
 }
 
 declare global {
-  namespace JSX {
-    interface CustomCSSRules {}
-  }
+  interface State {}
 }
+
+// deno-lint-ignore no-var
+declare var state: State;

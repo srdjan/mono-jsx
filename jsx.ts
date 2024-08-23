@@ -1,58 +1,43 @@
-import type { Child, FC, PropsWithChildren, VNode } from "./types/jsx.d.ts";
+import type { ChildType, FC, VNode } from "./types/jsx.d.ts";
+import { $fragment, $vnode } from "./jsx-fragment.ts";
+import { render } from "./render.ts";
 
-const symFragment = Symbol.for("jsx.Fragment");
-const isFC = (v: unknown): v is FC => typeof v === "function";
-const stripProps = (props: Record<string, unknown>, ...keys: string[]) => {
-  const result: Record<string, unknown> = {};
-  for (const key of keys) {
-    if (Object.hasOwn(props, key)) {
-      result[key] = props[key];
-      delete props[key];
-    }
-  }
-  return result;
-};
-
-const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children: Child[]) => {
-  const vnode: VNode = { tag, props };
-  if (children.length > 0) {
-    vnode.children = children;
-  }
+const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children: ChildType[]): VNode => {
+  const vnode: VNode = new Array(4).fill(null) as VNode;
+  vnode[0] = tag;
+  vnode[3] = $vnode;
   if (props) {
-    Object.assign(
-      vnode,
-      stripProps(props, "catch", "eager", "innerHTML", "key", "pending", "route", "slot"),
-    );
+    vnode[1] = props;
+  }
+  if (children.length > 0) {
+    vnode[2] = children;
+  }
+  if (tag === "html") {
+    const renderOptions: Record<string, any> = Object.create(null);
+    if (props) {
+      for (const key of ["request", "headers"]) {
+        if (Object.hasOwn(props, key)) {
+          renderOptions[key] = props[key];
+          delete props[key];
+        }
+      }
+    }
+    const res = render(vnode, renderOptions);
+    (res as any)[Symbol.iterator] = function*() {
+      for (let i = 0; i < 3; i++) {
+        yield vnode[i];
+      }
+    };
+    return res as unknown as VNode;
   }
   return vnode;
 };
 
-const Fragment = ({ key, children }: PropsWithChildren<{ key?: string | number }>) => ({
-  tag: symFragment,
-  props: null,
-  children,
-  key,
-});
-
-const customElements: Record<string, any> = {
-  define: (tagName: string | object, component?: CallableFunction) => {
-    if (typeof tagName === "object" && tagName !== null) {
-      for (const [key, value] of Object.entries(tagName)) {
-        if (isFC(value)) {
-          customElements[key] = value;
-        }
-      }
-    } else if (typeof tagName === "string" && isFC(component)) {
-      customElements[tagName] = component;
-    }
-    return customElements;
-  },
-};
-
-const html = (raw: string, ...values: any[]) => ({ tag: symFragment, props: null, innerHTML: String.raw({ raw }, ...values) });
+const html = (raw: string, ...values: any[]): VNode => [$fragment, { innerHTML: String.raw({ raw }, ...values) }, null, $vnode];
 const css = html;
 const js = html;
-Object.assign(globalThis, { JSX: { customElements }, html, css, js });
 
-export type * from "./types/jsx.d.ts";
-export { css, customElements, Fragment, h, html, js };
+export * from "./jsx-fragment.ts";
+export * from "./render.ts";
+export { css, h, html, js };
+Object.assign(globalThis, { html, css, js });

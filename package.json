@@ -1,7 +1,7 @@
 {
   "name": "mono-jsx",
   "version": "0.0.0-alpha.5",
-  "description": "A _WIP_ Project",
+  "description": "`<html>` as a `Response`.",
   "type": "module",
   "main": "./jsx.mjs",
   "module": "./jsx.mjs",
@@ -23,5 +23,10 @@
   "files": [
     "*.mjs",
     "./types/"
-  ]
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ije/mono-jsx"
+  }
 }

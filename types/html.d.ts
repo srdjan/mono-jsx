@@ -2,6 +2,7 @@
 
 import type * as Aria from "./aria.d.ts";
 import type * as Mono from "./mono.d.ts";
+import type { RenderOptions } from "./render.d.ts";
 
 export namespace HTML {
   type HTMLClass = string | boolean | undefined | null | Record<string, any>;
@@ -41,7 +42,7 @@ export namespace HTML {
     | "week";
 
   /** Global HTML attributes from https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes */
-  interface GlobalAttributes<T extends EventTarget> extends EventAttributes<T>, Aria.Attributes, Mono.Attributes {
+  interface GlobalAttributes<T extends EventTarget> extends EventAttributes<T>, Aria.Attributes, Mono.BaseAttributes {
     /** Defines a unique identifier (ID) which must be unique in the whole document. Its purpose is to identify the element when linking (using a fragment identifier), scripting, or styling (with CSS). */
     id?: string;
     /** A space-separated list of the classes of the element. Classes allow CSS and JavaScript to select and access specific elements via the [class selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/Class_selectors) or functions like the method [`Document.getElementsByClassName()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName). */
@@ -103,14 +104,11 @@ export namespace HTML {
     inert?: boolean;
   }
 
+  interface HtmlAttributes<T extends EventTarget> extends GlobalAttributes<T>, RenderOptions {}
+
   interface AnchorAttributes<T extends EventTarget> extends GlobalAttributes<T> {
     /** Contains [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) styling declarations to be applied to the element. Note that it is recommended for styles to be defined in a separate file or files. This attribute and the [`<style>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style) element have mainly the purpose of allowing for quick styling, for example for testing purposes. */
-    style?:
-      | string
-      | Mono.CSSProperties & {
-        /** when nav link activated. (Mono specific) */
-        ":nav-active"?: Mono.BaseCSSProperties;
-      };
+    style?: string | Mono.CSSProperties;
     download?: string | true;
     href?: string;
     hrefLang?: string;
@@ -1039,6 +1037,8 @@ export namespace HTML {
   }
 
   export interface Elements {
+    // custom elements
+    [key: `${string}-${string}`]: GlobalAttributes<HTMLElement>;
     a: AnchorAttributes<HTMLAnchorElement>;
     abbr: GlobalAttributes<HTMLElement>;
     address: GlobalAttributes<HTMLElement>;
@@ -1089,7 +1089,7 @@ export namespace HTML {
     header: GlobalAttributes<HTMLElement>;
     hgroup: GlobalAttributes<HTMLElement>;
     hr: GlobalAttributes<HTMLHRElement>;
-    html: GlobalAttributes<HTMLHtmlElement>;
+    html: HtmlAttributes<HTMLHtmlElement>;
     i: GlobalAttributes<HTMLElement>;
     iframe: IframeAttributes<HTMLIFrameElement>;
     img: ImgAttributes<HTMLImageElement>;

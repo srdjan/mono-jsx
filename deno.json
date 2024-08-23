@@ -3,7 +3,8 @@
   "version": "0.0.0-alpha.5",
   "exports": {
     ".": "./jsx.ts",
-    "./jsx-runtime": "./jsx-runtime.ts"
+    "./jsx-runtime": "./jsx-runtime.ts",
+    "./jsx-dev-runtime": "./jsx-runtime.ts"
   },
   "imports": {
     "mono-jsx": "./jsx.ts",
@@ -11,15 +12,24 @@
   },
   "tasks": {
     "build": "deno run -A --no-lock build.ts",
-    "test":"deno test -A --no-lock test/"
+    "test": "deno test -A --no-lock test/"
   },
   "fmt": {
     "lineWidth": 140
   },
   "lint": {
-    "exclude": ["**/*.mjs"],
+    "exclude": [
+      "**/*.mjs"
+    ],
     "rules": {
-      "exclude": ["ban-types", "no-empty-interface", "no-explicit-any", "ban-ts-comment"]
+      "exclude": [
+        "ban-types",
+        "no-empty-interface",
+        "no-explicit-any",
+        "ban-ts-comment",
+        "no-this-alias",
+        "verbatim-module-syntax"
+      ]
     }
   }
 }
