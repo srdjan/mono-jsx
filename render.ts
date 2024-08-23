@@ -58,13 +58,13 @@ const cssBareUnitProps = new Set([
   "zoom",
 ]);
 
-const htmlIdentRegexp = /^[\w\-$]+$/i;
+const htmlTagRegexp = /^[a-z][\w\-$]*$/;
 const matchHtmlRegExp = /["'&<>]/;
 const stringify = JSON.stringify;
 const iconSvgs = new Map<string, string>();
 const isObject = (v: unknown): v is object => typeof v === "object" && v !== null;
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 4 && v[3] === $vnode;
-const toSafeString = (str: string) => stringify(escapeHTML(str));
+const toAttrStringLit = (str: string) => stringify(escapeHTML(str));
 
 type RenderContext = {
   write(chunk: string): void;
@@ -73,7 +73,7 @@ type RenderContext = {
   eager?: boolean;
   slots?: Children | null;
   request?: Request;
-  styleIds?: Set<string>;
+  styleMark?: Set<string>;
 };
 
 async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ignoreSlotProp?: boolean): Promise<void> {
@@ -124,17 +124,17 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
 
         // `<use-state>` element
         if (tag === "use-state") {
-          const { name, defaultValue, toggle, switch: switchMode } = props ?? {};
+          const { name, defaultValue, toggle: toggleProp, switch: switchProp } = props ?? Object.create(null);
           const propValue = props?.value ?? null;
           const value = propValue ?? (name ? store.get(name) : null) ?? defaultValue;
           if (name) {
             write(
-              "<state-slot name=" + toSafeString(name)
-                + (toggle ? " toggle" : switchMode ? " switch" : "")
+              "<state-slot name=" + toAttrStringLit(name)
+                + (toggleProp ? " toggle" : switchProp ? " switch" : "")
                 + " hidden></state-slot>",
             );
           }
-          if (toggle) {
+          if (toggleProp) {
             if (children) {
               if (name) {
                 if (!value) {
@@ -154,7 +154,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 }
               }
             }
-          } else if (switchMode) {
+          } else if (switchProp) {
             if (children) {
               const nodes = children.filter(isVNode);
               for (let idx = 0; idx < nodes.length; idx++) {
@@ -163,7 +163,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 const key = childNodeProps?.key ?? (childNodeProps?.default ? -1 : idx);
                 const matched = key === value;
                 if (name) {
-                  write("<template key=" + toSafeString(String(key)) + (matched ? " matched></template>" : ">"));
+                  write("<template key=" + toAttrStringLit(String(key)) + (matched ? " matched></template>" : ">"));
                   await renderNode(ctx, childNode);
                   if (matched) {
                     write("<!--/-->");
@@ -189,7 +189,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
 
         // fc element
         if (typeof tag === "function") {
-          const { rendering, placeholder, catch: catchFC, ...restProps } = props ?? {};
+          const { rendering, placeholder, catch: catchFC, ...restProps } = props ?? Object.create(null);
           let eager = ctx.eager;
           if ((rendering ?? tag.rendering) === "eager") {
             eager = true;
@@ -241,7 +241,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
         }
 
         // regular html element
-        if (typeof tag === "string" && htmlIdentRegexp.test(tag)) {
+        if (typeof tag === "string" && htmlTagRegexp.test(tag)) {
           if (tag.startsWith("icon-")) {
             const iconName = tag.slice(5);
             const svg = iconSvgs.get(iconName);
@@ -253,7 +253,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           let openTag = "<" + tag;
           let onMountHandler: (() => void) | undefined;
           if (props) {
-            const attrs: Record<string, string> = {};
+            const attrs: Record<string, string> = Object.create(null);
             for (const [key, value] of Object.entries(props)) {
               if (key === "class") {
                 attrs.class = cx(value);
@@ -262,20 +262,20 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                   if (typeof value === "string") {
                     attrs.style = value;
                   } else if (isObject(value) && !Array.isArray(value)) {
-                    const style: [string, unknown][] = [];
+                    const style: [string, string | number][] = [];
                     const pseudoStyles: [string, string][] = [];
                     const atRuleStyles: [string, string][] = [];
                     const nestingStyles: [string, string][] = [];
                     for (const [k, v] of Object.entries(value)) {
                       switch (k.charCodeAt(0)) {
                         case /* : */ 58:
-                          pseudoStyles.push([k, styleToCSS(v as Record<string, unknown>)]);
+                          pseudoStyles.push([k, styleToCSS(v)]);
                           break;
                         case /* @ */ 64:
-                          atRuleStyles.push([k, styleToCSS(v as Record<string, unknown>)]);
+                          atRuleStyles.push([k, styleToCSS(v)]);
                           break;
                         case /* & */ 38:
-                          nestingStyles.push([k, styleToCSS(v as Record<string, unknown>)]);
+                          nestingStyles.push([k, styleToCSS(v)]);
                           break;
                         default:
                           style.push([k, v]);
@@ -284,53 +284,61 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                     if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
                       let raw = "";
                       let css = "";
+                      let item: [string, string];
+                      let styleMark: Set<string>;
+                      let id: string;
+                      let className: string;
                       if (style.length > 0) {
-                        css = styleToCSS(Object.fromEntries(style));
+                        css = styleToCSS(style);
                         raw += css + "|";
                       }
                       raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
-                      const id = hashCode(raw).toString(36);
-                      const styleIds = ctx.styleIds ?? (ctx.styleIds = new Set());
-                      const className = "css-" + id;
+                      styleMark = ctx.styleMark ?? (ctx.styleMark = new Set());
+                      id = hashCode(raw).toString(36);
+                      className = "css-" + id;
                       attrs.class = (attrs.class ? attrs.class + " " : "") + className;
-                      if (!styleIds.has(id)) {
-                        styleIds.add(id);
+                      if (!styleMark.has(id)) {
+                        styleMark.add(id);
                         if (css) {
                           css = "." + className + "{" + css + "}";
                         }
-                        for (const [sel, cssText] of pseudoStyles) {
-                          css += "." + className + sel + "{" + cssText + "}";
+                        for (item of pseudoStyles) {
+                          css += "." + className + item[0] + "{" + item[1] + "}";
                         }
-                        for (const [sel, cssText] of atRuleStyles) {
-                          css += sel + "{." + className + "{" + cssText + "}}";
+                        for (item of atRuleStyles) {
+                          css += item[0] + "{." + className + "{" + item[1] + "}}";
                         }
-                        for (const [sel, cssText] of nestingStyles) {
-                          css += "." + className + sel.slice(1) + "{" + cssText + "}";
+                        for (item of nestingStyles) {
+                          css += "." + className + item[0].slice(1) + "{" + item[1] + "}";
                         }
                         write('<style id="' + className + '">' + css + "</style>");
                       }
                     } else if (style.length > 0) {
-                      attrs.style = styleToCSS(Object.fromEntries(style));
+                      attrs.style = styleToCSS(style);
                     }
                   }
                 }
               } else if (key === "key" || key === "default" || (key === "slot" && ignoreSlotProp)) {
                 // ignore
-              } else if (htmlIdentRegexp.test(key) && value !== undefined) {
-                const isEvt = key.startsWith("on") && typeof value === "function";
+              } else if (htmlTagRegexp.test(key) && value !== undefined) {
+                let isEvt = key.startsWith("on");
+                if (isEvt && typeof value !== "function") {
+                  // ignore invalid event handler
+                  break;
+                }
                 if (isEvt && key === "onMount") {
                   onMountHandler = value;
                 } else {
                   let valueStr = "";
                   if (value !== true && value !== "") {
-                    valueStr = isEvt ? "(" + value.toString() + ").call(this, event)" : String(value);
+                    valueStr = isEvt ? "(" + value.toString() + ").call(this,event)" : String(value);
                   }
                   attrs[isEvt ? key.toLowerCase() : key] = valueStr;
                 }
               }
             }
             for (const [key, value] of Object.entries(attrs)) {
-              openTag += " " + key + "=" + toSafeString(value);
+              openTag += " " + key + "=" + (key.startsWith("on") ? stringify(value) : toAttrStringLit(value));
             }
           }
           write(openTag + ">");
@@ -436,10 +444,12 @@ function cx(className: unknown): string {
 }
 
 /** converts style object to css string. */
-function styleToCSS(style: Record<string, unknown>): string {
-  return Object.entries(style)
+function styleToCSS(style: unknown): string {
+  if (typeof style === "string") return style;
+  if (!isObject(style)) return "";
+  return (Array.isArray(style) ? style : Object.entries(style))
     .map(([k, v]) => {
-      if (v === null || v === undefined || v === false) return "";
+      if (v === null || v === undefined || v === false || Number.isNaN(v) || typeof k !== "string") return "";
       const cssKey = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
       const cssValue = typeof v === "number" ? cssBareUnitProps.has(cssKey) ? v.toString() : v + "px" : String(v);
       return cssKey + ":" + cssValue;

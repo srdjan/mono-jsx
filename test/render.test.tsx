@@ -146,6 +146,30 @@ Deno.test("[render] style", async () => {
   }
 });
 
+Deno.test("[render] event handler", async () => {
+  assertEquals(
+    await renderToString(<button onClick={() => console.log("🔥" as string)}>Click me</button>),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<button onclick="(()=>console.log(\\"🔥\\")).call(this,event)">Click me</button>`,
+      `</body></html>`,
+    ].join(""),
+  );
+  assertEquals(
+    await renderToString(<div onMount={(e) => console.log(e.target)}>Using HTML</div>),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<div>Using HTML</div>`,
+      `<script>setTimeout(()=>{const e=new Event('mount');e.target=currentScript.previousElementSibling;(`,
+      `(e)=>console.log(e.target))(e)`,
+      `},0)</script>`,
+      `</body></html>`,
+    ].join(""),
+  );
+});
+
 Deno.test("[render] <slot>", async () => {
   const Container = () => (
     <div id="container">
@@ -328,9 +352,9 @@ Deno.test("[render] catch error", async () => {
 
 declare global {
   interface State {
-    foo?: string;
-    show?: boolean;
-    n?: number;
+    foo: "bar";
+    show: boolean;
+    n: number;
   }
 }
 
