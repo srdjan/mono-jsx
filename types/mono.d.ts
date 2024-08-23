@@ -78,7 +78,7 @@ export interface AsyncComponentAttributes {
   catch?: (err: any) => JSX.Element;
 }
 
-export type IntrinsicUseStateProps<K, V> = {
+export type GenericUseStateProps<K = string, V = any> = {
   name: K;
   value?: V;
   defaultValue?: V;
@@ -86,25 +86,22 @@ export type IntrinsicUseStateProps<K, V> = {
   switch?: boolean;
 };
 
-export type UseStateProps = keyof State extends infer K ? K extends keyof State ? IntrinsicUseStateProps<K, State[K]>
+export type UseStateProps = keyof State extends infer K ? K extends keyof State ? GenericUseStateProps<K, State[K]>
   : never
   : never;
 
 export interface Elements {
-  "use-state": UseStateProps;
-  cache:
-    & BaseAttributes
-    & AsyncComponentAttributes
-    & {
-      /** The cache key is used to identify the cache. */
-      key: string;
-      /** The `etag` (or **entity tag**) is an identifier for a specific version of a rendering cache. */
-      etag?: string;
-      /** The `max-age=N` prop indicates that the cache remains fresh until N seconds after the cache is generated. */
-      maxAge?: number;
-      /** The `stale-while-revalidate` prop indicates that the cache could reuse a stale rendering while it revalidates it to a cache. */
-      swr?: number;
-    };
+  "use-state": UseStateProps extends never ? GenericUseStateProps : UseStateProps;
+  cache: {
+    /** The cache key is used to identify the cache. */
+    key: string;
+    /** The `etag` (or **entity tag**) is an identifier for a specific version of a rendering cache. */
+    etag?: string;
+    /** The `max-age=N` prop indicates that the cache remains fresh until N seconds after the cache is generated. */
+    maxAge?: number;
+    /** The `stale-while-revalidate` prop indicates that the cache could reuse a stale rendering while it revalidates it to a cache. */
+    swr?: number;
+  };
 }
 
 declare global {

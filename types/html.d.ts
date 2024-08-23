@@ -107,8 +107,6 @@ export namespace HTML {
   interface HtmlAttributes<T extends EventTarget> extends GlobalAttributes<T>, RenderOptions {}
 
   interface AnchorAttributes<T extends EventTarget> extends GlobalAttributes<T> {
-    /** Contains [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) styling declarations to be applied to the element. Note that it is recommended for styles to be defined in a separate file or files. This attribute and the [`<style>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style) element have mainly the purpose of allowing for quick styling, for example for testing purposes. */
-    style?: string | Mono.CSSProperties;
     download?: string | true;
     href?: string;
     hrefLang?: string;
@@ -145,11 +143,8 @@ export namespace HTML {
     noValidate?: boolean;
     target?: Target;
     onSubmit?: EventHandler<Event, T>;
-    onSubmitCapture?: EventHandler<Event, T>;
     onReset?: EventHandler<Event, T>;
-    onResetCapture?: EventHandler<Event, T>;
     onFormData?: EventHandler<Event, T>;
-    onFormDataCapture?: EventHandler<Event, T>;
   }
 
   interface InputAttributes<T extends EventTarget> extends GlobalAttributes<T>, InputElementAttributes<T> {
@@ -194,9 +189,8 @@ export namespace HTML {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API
      */
     popovertargetaction?: "hide" | "show" | "toggle";
-    // if the `type` equals "search"
+    // for type="search"
     onSearch?: EventHandler<Event, T>;
-    onSearchCapture?: EventHandler<Event, T>;
   }
 
   interface OptionAttributes<T extends EventTarget> extends GlobalAttributes<T> {
@@ -233,7 +227,6 @@ export namespace HTML {
     value?: string;
     wrap?: string;
     onChange?: EventHandler<Event, T>;
-    onChangeCapture?: EventHandler<Event, T>;
   }
 
   interface ButtonAttributes<T extends EventTarget> extends GlobalAttributes<T> {
@@ -399,49 +392,27 @@ export namespace HTML {
     preload?: string;
     src?: string;
     onAbort?: EventHandler<Event, T>;
-    onAbortCapture?: EventHandler<Event, T>;
     onCanPlay?: EventHandler<Event, T>;
-    onCanPlayCapture?: EventHandler<Event, T>;
     onCanPlayThrough?: EventHandler<Event, T>;
-    onCanPlayThroughCapture?: EventHandler<Event, T>;
     onDurationChange?: EventHandler<Event, T>;
-    onDurationChangeCapture?: EventHandler<Event, T>;
     onEmptied?: EventHandler<Event, T>;
-    onEmptiedCapture?: EventHandler<Event, T>;
     onEncrypted?: EventHandler<Event, T>;
-    onEncryptedCapture?: EventHandler<Event, T>;
     onEnded?: EventHandler<Event, T>;
-    onEndedCapture?: EventHandler<Event, T>;
     onLoadedData?: EventHandler<Event, T>;
-    onLoadedDataCapture?: EventHandler<Event, T>;
     onLoadedMetadata?: EventHandler<Event, T>;
-    onLoadedMetadataCapture?: EventHandler<Event, T>;
     onLoadStart?: EventHandler<Event, T>;
-    onLoadStartCapture?: EventHandler<Event, T>;
     onPause?: EventHandler<Event, T>;
-    onPauseCapture?: EventHandler<Event, T>;
     onPlay?: EventHandler<Event, T>;
-    onPlayCapture?: EventHandler<Event, T>;
     onPlaying?: EventHandler<Event, T>;
-    onPlayingCapture?: EventHandler<Event, T>;
     onProgress?: EventHandler<Event, T>;
-    onProgressCapture?: EventHandler<Event, T>;
     onRateChange?: EventHandler<Event, T>;
-    onRateChangeCapture?: EventHandler<Event, T>;
     onSeeked?: EventHandler<Event, T>;
-    onSeekedCapture?: EventHandler<Event, T>;
     onSeeking?: EventHandler<Event, T>;
-    onSeekingCapture?: EventHandler<Event, T>;
     onStalled?: EventHandler<Event, T>;
-    onStalledCapture?: EventHandler<Event, T>;
     onSuspend?: EventHandler<Event, T>;
-    onSuspendCapture?: EventHandler<Event, T>;
     onTimeUpdate?: EventHandler<Event, T>;
-    onTimeUpdateCapture?: EventHandler<Event, T>;
     onVolumeChange?: EventHandler<Event, T>;
-    onVolumeChangeCapture?: EventHandler<Event, T>;
     onWaiting?: EventHandler<Event, T>;
-    onWaitingCapture?: EventHandler<Event, T>;
   }
 
   interface MetaAttributes<T extends EventTarget> extends GlobalAttributes<T> {
@@ -840,16 +811,12 @@ export namespace HTML {
 
   interface InputElementAttributes<T extends EventTarget> {
     onChange?: EventHandler<Event, T>;
-    onChangeCapture?: EventHandler<Event, T>;
     onInvalid?: EventHandler<Event, T>;
-    onInvalidCapture?: EventHandler<Event, T>;
   }
 
   interface LoaderElementAttributes<T extends EventTarget> {
     onLoad?: EventHandler<Event, T>;
-    onLoadCapture?: EventHandler<Event, T>;
     onError?: EventHandler<Event, T>;
-    onErrorCapture?: EventHandler<Event, T>;
   }
 
   type a_z =
@@ -884,156 +851,98 @@ export namespace HTML {
     // events with inline JavaScript
     [key: `on${a_z}${string}`]: string;
 
+    // Mono specific
+    onMount?: EventHandler<Event, T>;
+
     // Input Events
     onBeforeInput?: EventHandler<Event, T>;
-    onBeforeInputCapture?: EventHandler<Event, T>;
     onInput?: EventHandler<Event, T>;
-    onInputCapture?: EventHandler<Event, T>;
 
     // Composition Events
     onCompositionEnd?: EventHandler<CompositionEvent, T>;
-    onCompositionEndCapture?: EventHandler<CompositionEvent, T>;
     onCompositionStart?: EventHandler<CompositionEvent, T>;
-    onCompositionStartCapture?: EventHandler<CompositionEvent, T>;
     onCompositionUpdate?: EventHandler<CompositionEvent, T>;
-    onCompositionUpdateCapture?: EventHandler<CompositionEvent, T>;
 
     // Clipboard Events
     onCopy?: EventHandler<ClipboardEvent, T>;
-    onCopyCapture?: EventHandler<ClipboardEvent, T>;
     onCut?: EventHandler<ClipboardEvent, T>;
-    onCutCapture?: EventHandler<ClipboardEvent, T>;
     onPaste?: EventHandler<ClipboardEvent, T>;
-    onPasteCapture?: EventHandler<ClipboardEvent, T>;
 
     // Details & Popover Events
     onToggle?: EventHandler<Event, T>;
 
     // Focus Events
     onFocus?: EventHandler<FocusEvent, T>;
-    onFocusCapture?: EventHandler<FocusEvent, T>;
     onFocusIn?: EventHandler<FocusEvent, T>;
-    onFocusInCapture?: EventHandler<FocusEvent, T>;
     onFocusOut?: EventHandler<FocusEvent, T>;
-    onFocusOutCapture?: EventHandler<FocusEvent, T>;
     onBlur?: EventHandler<FocusEvent, T>;
-    onBlurCapture?: EventHandler<FocusEvent, T>;
 
     // Keyboard Events
     onKeyDown?: EventHandler<KeyboardEvent, T>;
-    onKeyDownCapture?: EventHandler<KeyboardEvent, T>;
     onKeyUp?: EventHandler<KeyboardEvent, T>;
-    onKeyUpCapture?: EventHandler<KeyboardEvent, T>;
 
     // Mouse Events
     onClick?: EventHandler<MouseEvent, T>;
-    onClickCapture?: EventHandler<MouseEvent, T>;
     onContextMenu?: EventHandler<MouseEvent, T>;
-    onContextMenuCapture?: EventHandler<MouseEvent, T>;
     onDblClick?: EventHandler<MouseEvent, T>;
-    onDblClickCapture?: EventHandler<MouseEvent, T>;
     onMouseDown?: EventHandler<MouseEvent, T>;
-    onMouseDownCapture?: EventHandler<MouseEvent, T>;
     onMouseEnter?: EventHandler<MouseEvent, T>;
-    onMouseEnterCapture?: EventHandler<MouseEvent, T>;
     onMouseLeave?: EventHandler<MouseEvent, T>;
-    onMouseLeaveCapture?: EventHandler<MouseEvent, T>;
     onMouseMove?: EventHandler<MouseEvent, T>;
-    onMouseMoveCapture?: EventHandler<MouseEvent, T>;
     onMouseOut?: EventHandler<MouseEvent, T>;
-    onMouseOutCapture?: EventHandler<MouseEvent, T>;
     onMouseOver?: EventHandler<MouseEvent, T>;
-    onMouseOverCapture?: EventHandler<MouseEvent, T>;
     onMouseUp?: EventHandler<MouseEvent, T>;
-    onMouseUpCapture?: EventHandler<MouseEvent, T>;
 
     // Drag Events
     onDrag?: EventHandler<DragEvent, T>;
-    onDragCapture?: EventHandler<DragEvent, T>;
     onDragEnd?: EventHandler<DragEvent, T>;
-    onDragEndCapture?: EventHandler<DragEvent, T>;
     onDragEnter?: EventHandler<DragEvent, T>;
-    onDragEnterCapture?: EventHandler<DragEvent, T>;
     onDragExit?: EventHandler<DragEvent, T>;
-    onDragExitCapture?: EventHandler<DragEvent, T>;
     onDragLeave?: EventHandler<DragEvent, T>;
-    onDragLeaveCapture?: EventHandler<DragEvent, T>;
     onDragOver?: EventHandler<DragEvent, T>;
-    onDragOverCapture?: EventHandler<DragEvent, T>;
     onDragStart?: EventHandler<DragEvent, T>;
-    onDragStartCapture?: EventHandler<DragEvent, T>;
     onDrop?: EventHandler<DragEvent, T>;
-    onDropCapture?: EventHandler<DragEvent, T>;
 
     // Selection Events
     onSelect?: EventHandler<Event, T>;
-    onSelectCapture?: EventHandler<Event, T>;
 
     // Touch Events
     onTouchCancel?: EventHandler<TouchEvent, T>;
-    onTouchCancelCapture?: EventHandler<TouchEvent, T>;
     onTouchEnd?: EventHandler<TouchEvent, T>;
-    onTouchEndCapture?: EventHandler<TouchEvent, T>;
     onTouchMove?: EventHandler<TouchEvent, T>;
-    onTouchMoveCapture?: EventHandler<TouchEvent, T>;
     onTouchStart?: EventHandler<TouchEvent, T>;
-    onTouchStartCapture?: EventHandler<TouchEvent, T>;
 
     // Pointer Events
     onPointerOver?: EventHandler<PointerEvent, T>;
-    onPointerOverCapture?: EventHandler<PointerEvent, T>;
     onPointerEnter?: EventHandler<PointerEvent, T>;
-    onPointerEnterCapture?: EventHandler<PointerEvent, T>;
     onPointerDown?: EventHandler<PointerEvent, T>;
-    onPointerDownCapture?: EventHandler<PointerEvent, T>;
     onPointerMove?: EventHandler<PointerEvent, T>;
-    onPointerMoveCapture?: EventHandler<PointerEvent, T>;
     onPointerUp?: EventHandler<PointerEvent, T>;
-    onPointerUpCapture?: EventHandler<PointerEvent, T>;
     onPointerCancel?: EventHandler<PointerEvent, T>;
-    onPointerCancelCapture?: EventHandler<PointerEvent, T>;
     onPointerOut?: EventHandler<PointerEvent, T>;
-    onPointerOutCapture?: EventHandler<PointerEvent, T>;
     onPointerLeave?: EventHandler<PointerEvent, T>;
-    onPointerLeaveCapture?: EventHandler<PointerEvent, T>;
-    onGotPointerCapture?: EventHandler<PointerEvent, T>;
-    onGotPointerCaptureCapture?: EventHandler<PointerEvent, T>;
-    onLostPointerCapture?: EventHandler<PointerEvent, T>;
-    onLostPointerCaptureCapture?: EventHandler<PointerEvent, T>;
 
     // UI Events
     onScroll?: EventHandler<UIEvent, T>;
-    onScrollCapture?: EventHandler<UIEvent, T>;
 
     // Wheel Events
     onWheel?: EventHandler<WheelEvent, T>;
-    onWheelCapture?: EventHandler<WheelEvent, T>;
 
     // Animation Events
     onAnimationStart?: EventHandler<AnimationEvent, T>;
-    onAnimationStartCapture?: EventHandler<AnimationEvent, T>;
     onAnimationEnd?: EventHandler<AnimationEvent, T>;
-    onAnimationEndCapture?: EventHandler<AnimationEvent, T>;
     onAnimationIteration?: EventHandler<AnimationEvent, T>;
-    onAnimationIterationCapture?: EventHandler<AnimationEvent, T>;
 
     // Transition Events
     onTransitionCancel?: EventHandler<TransitionEvent, T>;
-    onTransitionCancelCapture?: EventHandler<TransitionEvent, T>;
     onTransitionEnd?: EventHandler<TransitionEvent, T>;
-    onTransitionEndCapture?: EventHandler<TransitionEvent, T>;
     onTransitionRun?: EventHandler<TransitionEvent, T>;
-    onTransitionRunCapture?: EventHandler<TransitionEvent, T>;
     onTransitionStart?: EventHandler<TransitionEvent, T>;
-    onTransitionStartCapture?: EventHandler<TransitionEvent, T>;
 
     // PictureInPicture Events
     onEnterPictureInPicture?: EventHandler<PictureInPictureEvent, T>;
-    onEnterPictureInPictureCapture?: EventHandler<PictureInPictureEvent, T>;
     onLeavePictureInPicture?: EventHandler<PictureInPictureEvent, T>;
-    onLeavePictureInPictureCapture?: EventHandler<PictureInPictureEvent, T>;
     onResize?: EventHandler<PictureInPictureEvent, T>;
-    onResizeCapture?: EventHandler<PictureInPictureEvent, T>;
   }
 
   export interface Elements {
