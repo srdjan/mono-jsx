@@ -3,7 +3,7 @@ import { $fragment, $vnode } from "./jsx-fragment.ts";
 import { render } from "./render.ts";
 
 const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children: ChildType[]): VNode => {
-  const vnode: VNode = new Array(4).fill(null) as VNode;
+  const vnode = new Array(4).fill(null) as VNode;
   vnode[0] = tag;
   vnode[3] = $vnode;
   if (props) {
@@ -13,7 +13,7 @@ const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children
     vnode[2] = children;
   }
   if (tag === "html") {
-    const renderOptions: Record<string, any> = Object.create(null);
+    const renderOptions = Object.create(null);
     if (props) {
       for (const key of ["request", "headers"]) {
         if (Object.hasOwn(props, key)) {
@@ -24,7 +24,7 @@ const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children
     }
     const res = render(vnode, renderOptions);
     (res as any)[Symbol.iterator] = function*() {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         yield vnode[i];
       }
     };
@@ -36,8 +36,9 @@ const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children
 const html = (raw: string, ...values: any[]): VNode => [$fragment, { innerHTML: String.raw({ raw }, ...values) }, null, $vnode];
 const css = html;
 const js = html;
+const state = Object.create(null);
+Object.assign(globalThis, { html, css, js, state });
 
 export * from "./jsx-fragment.ts";
 export * from "./render.ts";
 export { css, h, html, js };
-Object.assign(globalThis, { html, css, js });

@@ -4,7 +4,7 @@ import { assert, assertEquals } from "jsr:@std/assert";
 import { $vnode, Fragment, h } from "mono-jsx";
 import type { VNode } from "../types/jsx.d.ts";
 
-Deno.test("JSX", () => {
+Deno.test("[jsx] jsx to vnode", () => {
   assertEquals(
     <h1>Hello world</h1> as VNode,
     ["h1", null, ["Hello world"], $vnode],
@@ -35,8 +35,11 @@ Deno.test("JSX", () => {
     <App foo="bar" /> as VNode,
     [App, { foo: "bar" }, null, $vnode],
   );
+});
+
+Deno.test("[jsx] <html> as a `Response` object", () => {
   const res = (
-    <html lang="en" headers={{ "cache-control": "public" }}>
+    <html lang="en" headers={{ cacheControl: "public" }}>
       <head></head>
       <body></body>
     </html>
@@ -50,5 +53,6 @@ Deno.test("JSX", () => {
       ["head", null, null, $vnode],
       ["body", null, null, $vnode],
     ],
+    $vnode,
   ]);
 });

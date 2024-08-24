@@ -1,5 +1,5 @@
 /**
- * csstyp without Hyphen and	Fallback properties.
+ * csstyp without Hyphen properties.
  * Based on https://github.com/frenic/csstype/tree/v3.1.2
  *
  * Copyright (c) 2017-2018 Fredrik Nicol
@@ -5862,7 +5862,8 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
 }
 
 export interface StandardProperties<TLength = (string & {}) | 0, TTime = string & {}>
-  extends StandardLonghandProperties<TLength, TTime>, StandardShorthandProperties<TLength, TTime> {}
+  extends StandardLonghandProperties<TLength, TTime>, StandardShorthandProperties<TLength, TTime>
+{}
 
 export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = string & {}> {
   /**
@@ -7813,7 +7814,8 @@ export interface VendorShorthandProperties<TLength = (string & {}) | 0, TTime = 
 }
 
 export interface VendorProperties<TLength = (string & {}) | 0, TTime = string & {}>
-  extends VendorLonghandProperties<TLength, TTime>, VendorShorthandProperties<TLength, TTime> {}
+  extends VendorLonghandProperties<TLength, TTime>, VendorShorthandProperties<TLength, TTime>
+{}
 
 export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string & {}> {
   /**
@@ -8898,7 +8900,8 @@ export interface Properties<TLength = (string & {}) | 0, TTime = string & {}>
     StandardProperties<TLength, TTime>,
     VendorProperties<TLength, TTime>,
     ObsoleteProperties<TLength, TTime>,
-    SvgProperties<TLength, TTime> {}
+    SvgProperties<TLength, TTime>
+{}
 
 export type AtRules =
   | "@charset"
@@ -11597,19 +11600,6 @@ export namespace AtRule {
     system?: System | undefined;
   }
 
-  export interface CounterStyleHyphen<TLength = (string & {}) | 0, TTime = string & {}> {
-    "additive-symbols"?: string | undefined;
-    fallback?: string | undefined;
-    negative?: string | undefined;
-    pad?: string | undefined;
-    prefix?: string | undefined;
-    range?: Range | undefined;
-    "speak-as"?: SpeakAs | undefined;
-    suffix?: string | undefined;
-    symbols?: string | undefined;
-    system?: System | undefined;
-  }
-
   export interface FontFace<TLength = (string & {}) | 0, TTime = string & {}> {
     MozFontFeatureSettings?: FontFeatureSettings | undefined;
     ascentOverride?: AscentOverride | undefined;
@@ -11628,34 +11618,10 @@ export namespace AtRule {
     unicodeRange?: string | undefined;
   }
 
-  export interface FontFaceHyphen<TLength = (string & {}) | 0, TTime = string & {}> {
-    "-moz-font-feature-settings"?: FontFeatureSettings | undefined;
-    "ascent-override"?: AscentOverride | undefined;
-    "descent-override"?: DescentOverride | undefined;
-    "font-display"?: FontDisplay | undefined;
-    "font-family"?: string | undefined;
-    "font-feature-settings"?: FontFeatureSettings | undefined;
-    "font-stretch"?: FontStretch | undefined;
-    "font-style"?: FontStyle | undefined;
-    "font-variant"?: FontVariant | undefined;
-    "font-variation-settings"?: FontVariationSettings | undefined;
-    "font-weight"?: FontWeight | undefined;
-    "line-gap-override"?: LineGapOverride | undefined;
-    "size-adjust"?: string | undefined;
-    src?: string | undefined;
-    "unicode-range"?: string | undefined;
-  }
-
   export interface FontPaletteValues<TLength = (string & {}) | 0, TTime = string & {}> {
     basePalette?: BasePalette | undefined;
     fontFamily?: string | undefined;
     overrideColors?: string | undefined;
-  }
-
-  export interface FontPaletteValuesHyphen<TLength = (string & {}) | 0, TTime = string & {}> {
-    "base-palette"?: BasePalette | undefined;
-    "font-family"?: string | undefined;
-    "override-colors"?: string | undefined;
   }
 
   export interface Page<TLength = (string & {}) | 0, TTime = string & {}> {
@@ -11665,22 +11631,9 @@ export namespace AtRule {
     size?: Size<TLength> | undefined;
   }
 
-  export interface PageHyphen<TLength = (string & {}) | 0, TTime = string & {}> {
-    bleed?: Bleed<TLength> | undefined;
-    marks?: Marks | undefined;
-    "page-orientation"?: PageOrientation | undefined;
-    size?: Size<TLength> | undefined;
-  }
-
   export interface Property<TLength = (string & {}) | 0, TTime = string & {}> {
     inherits?: Inherits | undefined;
     initialValue?: string | undefined;
-    syntax?: string | undefined;
-  }
-
-  export interface PropertyHyphen<TLength = (string & {}) | 0, TTime = string & {}> {
-    inherits?: Inherits | undefined;
-    "initial-value"?: string | undefined;
     syntax?: string | undefined;
   }
 
@@ -11695,21 +11648,6 @@ export namespace AtRule {
     orientation?: Orientation | undefined;
     userZoom?: UserZoom | undefined;
     viewportFit?: ViewportFit | undefined;
-    width?: Width<TLength> | undefined;
-    zoom?: Zoom | undefined;
-  }
-
-  export interface ViewportHyphen<TLength = (string & {}) | 0, TTime = string & {}> {
-    height?: Height<TLength> | undefined;
-    "max-height"?: MaxHeight<TLength> | undefined;
-    "max-width"?: MaxWidth<TLength> | undefined;
-    "max-zoom"?: MaxZoom | undefined;
-    "min-height"?: MinHeight<TLength> | undefined;
-    "min-width"?: MinWidth<TLength> | undefined;
-    "min-zoom"?: MinZoom | undefined;
-    orientation?: Orientation | undefined;
-    "user-zoom"?: UserZoom | undefined;
-    "viewport-fit"?: ViewportFit | undefined;
     width?: Width<TLength> | undefined;
     zoom?: Zoom | undefined;
   }

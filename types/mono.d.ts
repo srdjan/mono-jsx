@@ -3,7 +3,6 @@ import type * as CSS from "./css.d.ts";
 
 type Num1_9 = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type Num0_100 = 0 | Num1_9 | `${Num1_9}${0 | Num1_9}` | 100;
-type TransitionProps = { delay?: number; ease?: CSS.DataType.EasingFunction };
 
 export interface BaseCSSProperties extends CSS.Properties<string | number> {}
 
@@ -63,7 +62,7 @@ export interface PseudoCSSProperties {
 }
 
 export interface CSSProperties extends BaseCSSProperties, AtRuleCSSProperties, PseudoCSSProperties {
-  [key: `&${" " | ":"}${string}`]: CSSProperties;
+  [key: `&${" " | "." | "["}${string}`]: CSSProperties;
 }
 
 export interface BaseAttributes {
@@ -81,9 +80,6 @@ export interface AsyncComponentAttributes {
 export type GenericUseStateProps<K = string, V = any> = {
   name: K;
   value?: V;
-  defaultValue?: V;
-  toggle?: boolean;
-  switch?: boolean;
 };
 
 export type UseStateProps = keyof State extends infer K ? K extends keyof State ? GenericUseStateProps<K, State[K]>
@@ -91,7 +87,9 @@ export type UseStateProps = keyof State extends infer K ? K extends keyof State 
   : never;
 
 export interface Elements {
-  "use-state": UseStateProps extends never ? GenericUseStateProps : UseStateProps;
+  state: UseStateProps extends never ? GenericUseStateProps : UseStateProps;
+  toggle: UseStateProps extends never ? GenericUseStateProps : UseStateProps;
+  switch: UseStateProps extends never ? GenericUseStateProps : UseStateProps;
   cache: {
     /** The cache key is used to identify the cache. */
     key: string;

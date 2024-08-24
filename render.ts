@@ -122,19 +122,16 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           break;
         }
 
-        // `<use-state>` element
-        if (tag === "use-state") {
-          const { name, defaultValue, toggle: toggleProp, switch: switchProp } = props ?? Object.create(null);
-          const propValue = props?.value ?? null;
-          const value = propValue ?? (name ? store.get(name) : null) ?? defaultValue;
+        // state elements
+        if (tag === "state" || tag === "toggle" || tag === "switch") {
+          const mode = tag === "switch" ? 2 : tag === "toggle" ? 1 : 0;
+          const name = props?.name;
+          const valueProp = props?.value;
+          const value = valueProp ?? (name ? store.get(name) : undefined);
           if (name) {
-            write(
-              "<state-slot name=" + toAttrStringLit(name)
-                + (toggleProp ? " toggle" : switchProp ? " switch" : "")
-                + " hidden></state-slot>",
-            );
+            write('<state-slot mode="' + mode + '" name=' + toAttrStringLit(name) + " hidden></state-slot>");
           }
-          if (toggleProp) {
+          if (mode === 1) {
             if (children) {
               if (name) {
                 if (!value) {
@@ -154,16 +151,29 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 }
               }
             }
-          } else if (switchProp) {
+          } else if (mode === 2) {
             if (children) {
               const nodes = children.filter(isVNode);
+              let matchedIndex = -1;
+              let defaultNode: VNode | undefined;
               for (let idx = 0; idx < nodes.length; idx++) {
                 const childNode = nodes[idx];
                 const childNodeProps = childNode[1];
-                const key = childNodeProps?.key ?? (childNodeProps?.default ? -1 : idx);
-                const matched = key === value;
+                if (childNodeProps?.default) {
+                  defaultNode = childNode;
+                  continue;
+                }
+                const key = childNodeProps?.key;
+                const matched = (key ?? idx) === value;
+                if (matched) {
+                  matchedIndex = idx;
+                }
                 if (name) {
-                  write("<template key=" + toAttrStringLit(String(key)) + (matched ? " matched></template>" : ">"));
+                  write(
+                    "<template"
+                      + (key !== undefined ? " key=" + toAttrStringLit(String(key)) : "")
+                      + (matched ? " matched></template>" : ">"),
+                  );
                   await renderNode(ctx, childNode);
                   if (matched) {
                     write("<!--/-->");
@@ -174,6 +184,15 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                   await renderNode(ctx, childNode);
                 }
               }
+              if (name && defaultNode) {
+                write("<template default" + (matchedIndex === -1 ? " matched></template>" : ">"));
+                await renderNode(ctx, defaultNode);
+                if (matchedIndex === -1) {
+                  write("<!--/-->");
+                } else {
+                  write("</template>");
+                }
+              }
             }
           } else {
             write(escapeHTML(String(value)));
@@ -181,8 +200,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
               write("<!--/-->");
             }
           }
-          if (name) {
-            store.set(name, propValue);
+          if (name && valueProp !== undefined) {
+            store.set(name, valueProp);
           }
           break;
         }
@@ -212,10 +231,10 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 write('<suspense-slot chunk-id="' + chunkId + '"' + (placeholder ? " with-placeholder" : "") + " hidden></suspense-slot>");
                 if (placeholder) {
                   await renderNode({ ...ctx, eager: true }, placeholder);
-                  write("<!--/placeholder-->");
+                  write("<!--/-->");
                 }
               }
-            } else if (isObject(v) && !Array.isArray(v) && Symbol.iterator in v) {
+            } else if (isObject(v) && Symbol.iterator in v && !isVNode(v)) {
               for (const c of v) {
                 await renderNode({ ...ctx, eager, slots: children }, c);
               }
@@ -227,7 +246,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
               } else {
                 // todo: implement suspense for async generator
               }
-            } else if (isVNode(v)) {
+            } else {
               await renderNode({ ...ctx, eager, slots: children }, v);
             }
           } catch (err) {
@@ -255,11 +274,12 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           if (props) {
             const attrs: Record<string, string> = Object.create(null);
             for (const [key, value] of Object.entries(props)) {
-              if (key === "class") {
-                attrs.class = cx(value);
-              } else if (key === "style") {
-                if (value) {
-                  if (typeof value === "string") {
+              switch (key) {
+                case "class":
+                  attrs.class = (attrs.class ? attrs.class + " " : "") + cx(value);
+                  break;
+                case "style":
+                  if (typeof value === "string" && value !== "") {
                     attrs.style = value;
                   } else if (isObject(value) && !Array.isArray(value)) {
                     const style: [string, string | number][] = [];
@@ -268,13 +288,13 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                     const nestingStyles: [string, string][] = [];
                     for (const [k, v] of Object.entries(value)) {
                       switch (k.charCodeAt(0)) {
-                        case /* : */ 58:
+                        case /* ':' */ 58:
                           pseudoStyles.push([k, styleToCSS(v)]);
                           break;
-                        case /* @ */ 64:
+                        case /* '@' */ 64:
                           atRuleStyles.push([k, styleToCSS(v)]);
                           break;
-                        case /* & */ 38:
+                        case /* '&' */ 38:
                           nestingStyles.push([k, styleToCSS(v)]);
                           break;
                         default:
@@ -317,24 +337,31 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                       attrs.style = styleToCSS(style);
                     }
                   }
-                }
-              } else if (key === "key" || key === "default" || (key === "slot" && ignoreSlotProp)) {
-                // ignore
-              } else if (htmlTagRegexp.test(key) && value !== undefined) {
-                let isEvt = key.startsWith("on");
-                if (isEvt && typeof value !== "function") {
-                  // ignore invalid event handler
                   break;
-                }
-                if (isEvt && key === "onMount") {
-                  onMountHandler = value;
-                } else {
-                  let valueStr = "";
-                  if (value !== true && value !== "") {
-                    valueStr = isEvt ? "(" + value.toString() + ").call(this,event)" : String(value);
+                case "onMount":
+                  if (typeof value === "function") {
+                    onMountHandler = value;
                   }
-                  attrs[isEvt ? key.toLowerCase() : key] = valueStr;
-                }
+                  break;
+                case "slot":
+                  if (!ignoreSlotProp && typeof value === "string") {
+                    attrs.slot = value;
+                  }
+                  break;
+                case "key":
+                case "default":
+                  // ignore
+                  break;
+                default:
+                  if (htmlTagRegexp.test(key) && value !== undefined) {
+                    if (key.startsWith("on")) {
+                      if (typeof value === "function") {
+                        attrs[key.toLowerCase()] = "(" + value.toString() + ").call(this,event)";
+                      }
+                    } else {
+                      attrs[key] = String(value);
+                    }
+                  }
               }
             }
             for (const [key, value] of Object.entries(attrs)) {
@@ -353,12 +380,14 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
             write("</" + (tag as string) + ">");
           }
           if (onMountHandler) {
-            write("<script>setTimeout(()=>{const e=new Event('mount');e.target=currentScript.previousElementSibling;(");
+            write(
+              "<script>(()=>{var currentScript=document.currentScript;class MountEvent extends Event{constructor(){super('mount')}get target(){return currentScript.previousElementSibling}}setTimeout(()=>{(",
+            );
             write(onMountHandler.toString());
-            write(")(e)},0)</script>");
+            write(")(new MountEvent())},0)})()</script>");
           }
         }
-      } else if (Array.isArray(node) || (isObject(node) && Symbol.iterator in node)) {
+      } else if (node && Symbol.iterator in node) {
         for (const child of node) {
           await renderNode(ctx, child);
         }
@@ -452,7 +481,7 @@ function styleToCSS(style: unknown): string {
       if (v === null || v === undefined || v === false || Number.isNaN(v) || typeof k !== "string") return "";
       const cssKey = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
       const cssValue = typeof v === "number" ? cssBareUnitProps.has(cssKey) ? v.toString() : v + "px" : String(v);
-      return cssKey + ":" + cssValue;
+      return cssKey + ":" + (cssKey === "content" ? toAttrStringLit(cssValue) : cssValue);
     })
     .join(";");
 }
@@ -491,9 +520,14 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
       }
     },
   });
-  const headers = new Headers(renderOptions?.headers);
-  headers.set("transfer-encoding", "chunked");
-  headers.set("content-type", "text/html; charset=utf-8");
+  const headers: Record<string, string> = {};
+  if (renderOptions?.headers) {
+    for (const [key, value] of Object.entries(renderOptions.headers)) {
+      headers[key.replace(/([a-z])([A-Z])/g, (_, az, AZ) => az + "-" + AZ.toLowerCase())] = value!;
+    }
+  }
+  headers["transfer-encoding"] = "chunked";
+  headers["content-type"] = "text/html; charset=utf-8";
   return new Response(readable, { headers });
 }
 

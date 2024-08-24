@@ -12,7 +12,7 @@ const renderToString = (node: JSX.Element, request?: Request) => {
   return res.text();
 };
 
-Deno.test("[render] condition&loop", async () => {
+Deno.test("[ssr] condition&loop", async () => {
   const If = ({ value }: { value: boolean }) => {
     if (value) {
       return <slot />;
@@ -46,7 +46,7 @@ Deno.test("[render] condition&loop", async () => {
   );
 });
 
-Deno.test("[render] merge class names", async () => {
+Deno.test("[ssr] merge class names", async () => {
   assertEquals(
     await renderToString(<div class={["box", "large", { border: false, rounded: true }]} />),
     [
@@ -69,7 +69,7 @@ Deno.test("[render] merge class names", async () => {
   );
 });
 
-Deno.test("[render] style", async () => {
+Deno.test("[ssr] style", async () => {
   assertEquals(
     await renderToString(<div style="display:block" />),
     [
@@ -107,6 +107,23 @@ Deno.test("[render] style", async () => {
     );
   }
 
+  "pseudo element";
+  {
+    const id = hashCode('color:blue|::after>content:"↩"').toString(36);
+    assertEquals(
+      await renderToString(
+        <a class="link" style={{ color: "blue", "::after": { content: "↩" } }}>Link</a>,
+      ),
+      [
+        `<!DOCTYPE html>`,
+        `<html lang="en"><body>`,
+        `<style id="css-${id}">.css-${id}{color:blue}.css-${id}::after{content:"↩"}</style>`,
+        `<a class="link css-${id}">Link</a>`,
+        `</body></html>`,
+      ].join(""),
+    );
+  }
+
   "@media query";
   {
     const id = hashCode("color:black|@media (prefers-color-scheme: dark)>color:white").toString(36);
@@ -128,17 +145,17 @@ Deno.test("[render] style", async () => {
 
   "nesting style";
   {
-    const id = hashCode("color:black|& strong>color:grey").toString(36);
+    const id = hashCode("color:black|&.title>font-size:20px|& strong>color:grey").toString(36);
     assertEquals(
       await renderToString(
-        <h1 class="title" style={{ color: "black", "& strong": { color: "grey" } }}>
+        <h1 class="title" style={{ color: "black", "&.title": { fontSize: 20 }, "& strong": { color: "grey" } }}>
           <strong>Hello</strong> World!
         </h1>,
       ),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<style id="css-${id}">.css-${id}{color:black}.css-${id} strong{color:grey}</style>`,
+        `<style id="css-${id}">.css-${id}{color:black}.css-${id}.title{font-size:20px}.css-${id} strong{color:grey}</style>`,
         `<h1 class="title css-${id}"><strong>Hello</strong> World!</h1>`,
         `</body></html>`,
       ].join(""),
@@ -146,7 +163,7 @@ Deno.test("[render] style", async () => {
   }
 });
 
-Deno.test("[render] event handler", async () => {
+Deno.test("[ssr] event handler", async () => {
   assertEquals(
     await renderToString(<button onClick={() => console.log("🔥" as string)}>Click me</button>),
     [
@@ -170,7 +187,7 @@ Deno.test("[render] event handler", async () => {
   );
 });
 
-Deno.test("[render] <slot>", async () => {
+Deno.test("[ssr] <slot>", async () => {
   const Container = () => (
     <div id="container">
       <header>
@@ -211,7 +228,7 @@ Deno.test("[render] <slot>", async () => {
   );
 });
 
-Deno.test("[render] XSS", async () => {
+Deno.test("[ssr] XSS", async () => {
   const App = () => (
     <>
       {html`<h1>Welcome to Mono!</h1><script>console.log("Welcomee to Mono!")</script>`}
@@ -232,7 +249,7 @@ Deno.test("[render] XSS", async () => {
   );
 });
 
-Deno.test("[render] Async component", async (t) => {
+Deno.test("[ssr] Async component", async (t) => {
   const dir = new URL("..", import.meta.url).pathname;
   const entries = [...Deno.readDirSync(dir)];
 
@@ -244,7 +261,8 @@ Deno.test("[render] Async component", async (t) => {
     return <ul>{entryNames.map((name) => <li key={name}>{name}</li>)}</ul>;
   }
 
-  await t.step("eager rendering", async () => {
+  "eager rendering";
+  {
     const App = () => <ReadDir path={dir} rendering="eager" />;
     assertEquals(
       await renderToString(<App />),
@@ -257,9 +275,10 @@ Deno.test("[render] Async component", async (t) => {
         `</body></html>`,
       ].join(""),
     );
-  });
+  }
 
-  await t.step("without placeholder", async () => {
+  "without placeholder";
+  {
     const App = () => <ReadDir path={dir} />;
     assertEquals(
       await renderToString(<App />),
@@ -278,9 +297,10 @@ Deno.test("[render] Async component", async (t) => {
         `</suspense-chunk>`,
       ].join(""),
     );
-  });
+  }
 
-  await t.step("with placeholder", async () => {
+  "with placeholder";
+  {
     const App = () => <ReadDir path={dir} placeholder={<p>loading...</p>} />;
     assertEquals(
       await renderToString(<App />),
@@ -289,7 +309,7 @@ Deno.test("[render] Async component", async (t) => {
         `<html lang="en"><body>`,
         `<suspense-slot chunk-id="1" with-placeholder hidden></suspense-slot>`,
         `<p>loading...</p>`,
-        `<!--/placeholder-->`,
+        `<!--/-->`,
         `</body></html>`,
         `<script>(()=>{`,
         RUNTIME_SUSPENSE,
@@ -301,10 +321,10 @@ Deno.test("[render] Async component", async (t) => {
         `</suspense-chunk>`,
       ].join(""),
     );
-  });
+  }
 });
 
-Deno.test("[render] Async generator component", async (t) => {
+Deno.test("[ssr] Async generator component", async (t) => {
   const dir = new URL("..", import.meta.url).pathname;
   const entries = [...Deno.readDirSync(dir)];
 
@@ -315,7 +335,8 @@ Deno.test("[render] Async generator component", async (t) => {
     }
   }
 
-  await t.step("eager rendering", async () => {
+  "eager rendering";
+  {
     const App = () => (
       <ul>
         <ReadDir path={dir} rendering="eager" />
@@ -332,10 +353,10 @@ Deno.test("[render] Async generator component", async (t) => {
         `</body></html>`,
       ].join(""),
     );
-  });
+  }
 });
 
-Deno.test("[render] catch error", async () => {
+Deno.test("[ssr] catch error", async () => {
   const Boom = () => {
     throw new Error("Boom!");
   };
@@ -354,17 +375,18 @@ declare global {
   interface State {
     foo: "bar";
     show: boolean;
-    n: number;
+    num: number;
+    select: string;
   }
 }
 
-Deno.test("[render] <use-state>", async () => {
+Deno.test("[ssr] using state", async () => {
   assertEquals(
-    await renderToString(<use-state name="foo" value={"bar"} />),
+    await renderToString(<state name="foo" value={"bar"} />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot name="foo" hidden></state-slot>`,
+      `<state-slot mode="0" name="foo" hidden></state-slot>`,
       `bar`,
       `<!--/-->`,
       `</body></html>`,
@@ -378,14 +400,14 @@ Deno.test("[render] <use-state>", async () => {
 
   assertEquals(
     await renderToString(
-      <use-state toggle name="show" value={true}>
+      <toggle name="show" value={true}>
         <h1>👋</h1>
-      </use-state>,
+      </toggle>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot name="show" toggle hidden></state-slot>`,
+      `<state-slot mode="1" name="show" hidden></state-slot>`,
       `<h1>👋</h1><!--/-->`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -398,14 +420,14 @@ Deno.test("[render] <use-state>", async () => {
 
   assertEquals(
     await renderToString(
-      <use-state toggle name="show" value={false}>
+      <toggle name="show" value={false}>
         <h1>👋</h1>
-      </use-state>,
+      </toggle>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot name="show" toggle hidden></state-slot>`,
+      `<state-slot mode="1" name="show" hidden></state-slot>`,
       `<template><h1>👋</h1></template>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -418,76 +440,142 @@ Deno.test("[render] <use-state>", async () => {
 
   assertEquals(
     await renderToString(
-      <use-state switch name="n" value={0}>
+      <switch name="num" value={0}>
         <span>0</span>
         <span>1</span>
-        <span>2</span>
-      </use-state>,
+      </switch>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot name="n" switch hidden></state-slot>`,
-      `<template key="0" matched></template><span>0</span><!--/-->`,
-      `<template key="1"><span>1</span></template>`,
-      `<template key="2"><span>2</span></template>`,
+      `<state-slot mode="2" name="num" hidden></state-slot>`,
+      `<template matched></template><span>0</span><!--/-->`,
+      `<template><span>1</span></template>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
       `for(const[n,v]of`,
-      `[["n",0]]`,
+      `[["num",0]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
 
   assertEquals(
     await renderToString(
-      <use-state switch name="n" value={1}>
+      <switch name="num" value={1}>
         <span>0</span>
         <span>1</span>
-        <span>2</span>
-      </use-state>,
+      </switch>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot name="n" switch hidden></state-slot>`,
-      `<template key="0"><span>0</span></template>`,
-      `<template key="1" matched></template><span>1</span><!--/-->`,
-      `<template key="2"><span>2</span></template>`,
+      `<state-slot mode="2" name="num" hidden></state-slot>`,
+      `<template><span>0</span></template>`,
+      `<template matched></template><span>1</span><!--/-->`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
       `for(const[n,v]of`,
-      `[["n",1]]`,
+      `[["num",1]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
 
   assertEquals(
     await renderToString(
-      <use-state switch name="n" value={2}>
+      <switch name="num" value={3}>
         <span>0</span>
         <span>1</span>
-        <span>2</span>
-      </use-state>,
+      </switch>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot name="n" switch hidden></state-slot>`,
-      `<template key="0"><span>0</span></template>`,
-      `<template key="1"><span>1</span></template>`,
-      `<template key="2" matched></template><span>2</span><!--/-->`,
+      `<state-slot mode="2" name="num" hidden></state-slot>`,
+      `<template><span>0</span></template>`,
+      `<template><span>1</span></template>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
       `for(const[n,v]of`,
-      `[["n",2]]`,
+      `[["num",3]]`,
+      `)createState(n,v);})()</script>`,
+    ].join(""),
+  );
+
+  assertEquals(
+    await renderToString(
+      <switch name="select" value={"a"}>
+        <span key="a">A</span>
+        <span key="b">B</span>
+        <span default>NULL</span>
+      </switch>,
+    ),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<state-slot mode="2" name="select" hidden></state-slot>`,
+      `<template key="a" matched></template><span>A</span><!--/-->`,
+      `<template key="b"><span>B</span></template>`,
+      `<template default><span>NULL</span></template>`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE,
+      `for(const[n,v]of`,
+      `[["select","a"]]`,
+      `)createState(n,v);})()</script>`,
+    ].join(""),
+  );
+
+  assertEquals(
+    await renderToString(
+      <switch name="select" value={"b"}>
+        <span key="a">A</span>
+        <span key="b">B</span>
+        <span default>NULL</span>
+      </switch>,
+    ),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<state-slot mode="2" name="select" hidden></state-slot>`,
+      `<template key="a"><span>A</span></template>`,
+      `<template key="b" matched></template><span>B</span><!--/-->`,
+      `<template default><span>NULL</span></template>`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE,
+      `for(const[n,v]of`,
+      `[["select","b"]]`,
+      `)createState(n,v);})()</script>`,
+    ].join(""),
+  );
+
+  assertEquals(
+    await renderToString(
+      <switch name="select" value={"c"}>
+        <span key="a">A</span>
+        <span key="b">B</span>
+        <span default>NULL</span>
+      </switch>,
+    ),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<state-slot mode="2" name="select" hidden></state-slot>`,
+      `<template key="a"><span>A</span></template>`,
+      `<template key="b"><span>B</span></template>`,
+      `<template default matched></template><span>NULL</span><!--/-->`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE,
+      `for(const[n,v]of`,
+      `[["select","c"]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
 });
 
-Deno.test("[render] <cache>", async () => {
+Deno.test("[ssr] <cache>", async () => {
 });
