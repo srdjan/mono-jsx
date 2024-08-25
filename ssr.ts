@@ -65,11 +65,13 @@ const iconSvgs = new Map<string, string>();
 const isObject = (v: unknown): v is object => typeof v === "object" && v !== null;
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 4 && v[3] === $vnode;
 const toAttrStringLit = (str: string) => stringify(escapeHTML(str));
+const toHyphenCase = (k: string) => k.replace(/[a-z][A-Z]/g, (m) => m.charAt(0) + "-" + m.charAt(1).toLowerCase());
 
 type RenderContext = {
   write(chunk: string): void;
   store: Map<string, any>;
   suspenses: Promise<void>[];
+  ehIndex: number;
   eager?: boolean;
   slots?: Children | null;
   request?: Request;
@@ -356,7 +358,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                   if (htmlTagRegexp.test(key) && value !== undefined) {
                     if (key.startsWith("on")) {
                       if (typeof value === "function") {
-                        attrs[key.toLowerCase()] = "(" + value.toString() + ").call(this,event)";
+                        const i = ctx.ehIndex++;
+                        write("<script>var _EH$" + i + "=" + value.toString() + "</script>");
+                        attrs[key.toLowerCase()] = "_EH$" + i + ".call(this,event)";
                       }
                     } else {
                       attrs[key] = String(value);
@@ -365,7 +369,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
               }
             }
             for (const [key, value] of Object.entries(attrs)) {
-              openTag += " " + key + "=" + (key.startsWith("on") ? stringify(value) : toAttrStringLit(value));
+              openTag += " " + key + "=" + (key.startsWith("on") ? '"' + value.replaceAll('"', "'") + '"' : toAttrStringLit(value));
             }
           }
           write(openTag + ">");
@@ -381,10 +385,10 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           }
           if (onMountHandler) {
             write(
-              "<script>(()=>{var currentScript=document.currentScript;class MountEvent extends Event{constructor(){super('mount')}get target(){return currentScript.previousElementSibling}}setTimeout(()=>{(",
+              "<script>(()=>{var cs=document.currentScript;setTimeout(()=>{(",
             );
             write(onMountHandler.toString());
-            write(")(new MountEvent())},0)})()</script>");
+            write(')({type:"mount",target:cs.previousElementSibling})},0)})()</script>');
           }
         }
       } else if (node && Symbol.iterator in node) {
@@ -479,7 +483,7 @@ function styleToCSS(style: unknown): string {
   return (Array.isArray(style) ? style : Object.entries(style))
     .map(([k, v]) => {
       if (v === null || v === undefined || v === false || Number.isNaN(v) || typeof k !== "string") return "";
-      const cssKey = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+      const cssKey = toHyphenCase(k);
       const cssValue = typeof v === "number" ? cssBareUnitProps.has(cssKey) ? v.toString() : v + "px" : String(v);
       return cssKey + ":" + (cssKey === "content" ? toAttrStringLit(cssValue) : cssValue);
     })
@@ -498,7 +502,7 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
       const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
       const store = new Map<string, any>();
       const suspenses: Promise<void>[] = [];
-      const ctx: RenderContext = { ...renderOptions, store, suspenses, write };
+      const ctx: RenderContext = { ...renderOptions, store, suspenses, ehIndex: 0, write };
       try {
         write("<!DOCTYPE html>");
         await renderNode(ctx, node);
@@ -520,10 +524,21 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
       }
     },
   });
-  const headers: Record<string, string> = {};
-  if (renderOptions?.headers) {
-    for (const [key, value] of Object.entries(renderOptions.headers)) {
-      headers[key.replace(/([a-z])([A-Z])/g, (_, az, AZ) => az + "-" + AZ.toLowerCase())] = value!;
+  const headers: Record<string, string> = Object.create(null);
+  const request = renderOptions?.request;
+  const headersOptions = renderOptions?.headers;
+  if (headersOptions) {
+    const { etag, lastModified } = headersOptions;
+    if (etag && request?.headers.get("if-none-match") === etag) {
+      return new Response(null, { status: 304 });
+    }
+    if (lastModified && request?.headers.get("if-modified-since") === lastModified) {
+      return new Response(null, { status: 304 });
+    }
+    for (const [key, value] of Object.entries(headersOptions)) {
+      if (value) {
+        headers[toHyphenCase(key)] = value;
+      }
     }
   }
   headers["transfer-encoding"] = "chunked";

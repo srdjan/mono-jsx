@@ -169,7 +169,8 @@ Deno.test("[ssr] event handler", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<button onclick="(()=>console.log(\\"🔥\\")).call(this,event)">Click me</button>`,
+      `<script>var _EH$0=()=>console.log("🔥")</script>`,
+      `<button onclick="_EH$0.call(this,event)">Click me</button>`,
       `</body></html>`,
     ].join(""),
   );
@@ -179,9 +180,9 @@ Deno.test("[ssr] event handler", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<div>Using HTML</div>`,
-      `<script>setTimeout(()=>{const e=new Event('mount');e.target=currentScript.previousElementSibling;(`,
-      `(e)=>console.log(e.target))(e)`,
-      `},0)</script>`,
+      `<script>(()=>{var cs=document.currentScript;setTimeout(()=>{(`,
+      `(e)=>console.log(e.target)`,
+      `)({type:"mount",target:cs.previousElementSibling})},0)})()</script>`,
       `</body></html>`,
     ].join(""),
   );
@@ -249,7 +250,7 @@ Deno.test("[ssr] XSS", async () => {
   );
 });
 
-Deno.test("[ssr] Async component", async (t) => {
+Deno.test("[ssr] async component", async () => {
   const dir = new URL("..", import.meta.url).pathname;
   const entries = [...Deno.readDirSync(dir)];
 
@@ -324,7 +325,7 @@ Deno.test("[ssr] Async component", async (t) => {
   }
 });
 
-Deno.test("[ssr] Async generator component", async (t) => {
+Deno.test("[ssr] async generator component", async () => {
   const dir = new URL("..", import.meta.url).pathname;
   const entries = [...Deno.readDirSync(dir)];
 

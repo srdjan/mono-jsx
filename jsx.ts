@@ -1,6 +1,6 @@
 import type { ChildType, FC, VNode } from "./types/jsx.d.ts";
 import { $fragment, $vnode } from "./jsx-fragment.ts";
-import { render } from "./render.ts";
+import { render } from "./ssr.ts";
 
 const h = (tag: string | FC<any>, props: Record<string, any> | null, ...children: ChildType[]): VNode => {
   const vnode = new Array(4).fill(null) as VNode;
@@ -40,5 +40,5 @@ const state = Object.create(null);
 Object.assign(globalThis, { html, css, js, state });
 
 export * from "./jsx-fragment.ts";
-export * from "./render.ts";
+export * from "./ssr.ts";
 export { css, h, html, js };

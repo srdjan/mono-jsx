@@ -6,7 +6,7 @@ export interface RenderOptions {
     [key: string]: string | undefined;
     contentSecurityPolicy?: string;
     cacheControl?: "public, max-age=31536000, immutable" | "private, max-age=0, must-revalidate" | (string & {});
-    eTag?: string;
+    etag?: string;
     lastModified?: string;
     setCookie?: string;
   };
