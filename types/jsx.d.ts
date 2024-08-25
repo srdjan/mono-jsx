@@ -26,9 +26,7 @@ export type VNode = [
   nodeType: symbol,
 ];
 
-export type PropsWithChildren<P extends Record<string, any> = {}> = P & { children: Children };
-
-export interface FC<P = PropsWithChildren<{}>> {
+export interface FC<P = {}> {
   (props: P): ChildType | Promise<ChildType> | Generator<ChildType> | AsyncGenerator<ChildType>;
   displayName?: string;
   rendering?: string;
@@ -36,7 +34,7 @@ export interface FC<P = PropsWithChildren<{}>> {
 export type TC = (strings: TemplateStringsArray, ...values: any[]) => VNode;
 
 export const h: (tag: string | FC<any>, props: Record<string, any> | null, ...children: Children) => VNode;
-export const Fragment: FC<PropsWithChildren<{ key?: string | number }>>;
+export const Fragment: FC<{ key?: string | number; children?: Children }>;
 export const html: TC, css: TC, js: TC;
 
 export type * from "./render.d.ts";
