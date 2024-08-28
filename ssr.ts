@@ -126,19 +126,16 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
 
         // state elements
         if (tag === "state" || tag === "toggle" || tag === "switch") {
-          const mode = tag === "switch" ? 2 : tag === "toggle" ? 1 : 0;
           const name = props?.name;
           const valueProp = props?.value;
           const value = valueProp ?? (name ? store.get(name) : undefined);
           if (name) {
-            write('<state-slot mode="' + mode + '" name=' + toAttrStringLit(name) + " hidden></state-slot>");
+            write("<mono-" + tag + " name=" + toAttrStringLit(name) + " hidden></mono-" + tag + ">");
           }
-          if (mode === 1) {
+          if (tag === "toggle") {
             if (children) {
               if (name) {
-                if (!value) {
-                  write("<template>");
-                }
+                write("<template" + (value ? " leading></template>" : ">"));
                 for (const child of children) {
                   await renderNode(ctx, child);
                 }
@@ -153,7 +150,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 }
               }
             }
-          } else if (mode === 2) {
+          } else if (tag === "switch") {
             if (children) {
               const nodes = children.filter(isVNode);
               let matchedIndex = -1;
@@ -174,7 +171,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                   write(
                     "<template"
                       + (key !== undefined ? " key=" + toAttrStringLit(String(key)) : "")
-                      + (matched ? " matched></template>" : ">"),
+                      + (matched ? " leading></template>" : ">"),
                   );
                   await renderNode(ctx, childNode);
                   if (matched) {
@@ -187,7 +184,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 }
               }
               if (name && defaultNode) {
-                write("<template default" + (matchedIndex === -1 ? " matched></template>" : ">"));
+                write("<template default" + (matchedIndex === -1 ? " leading></template>" : ">"));
                 await renderNode(ctx, defaultNode);
                 if (matchedIndex === -1) {
                   write("<!--/-->");
@@ -197,13 +194,15 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
               }
             }
           } else {
-            write(escapeHTML(String(value)));
+            if (value !== undefined) {
+              write(escapeHTML(String(value)));
+            }
             if (name) {
               write("<!--/-->");
             }
           }
-          if (name && valueProp !== undefined) {
-            store.set(name, valueProp);
+          if (name) {
+            store.set(name, value);
           }
           break;
         }
@@ -384,11 +383,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
             write("</" + (tag as string) + ">");
           }
           if (onMountHandler) {
-            write(
-              "<script>(()=>{var cs=document.currentScript;setTimeout(()=>{(",
-            );
+            write("<script>(");
             write(onMountHandler.toString());
-            write(')({type:"mount",target:cs.previousElementSibling})},0)})()</script>');
+            write(')({type:"mount",target:document.currentScript.previousElementSibling})</script>');
           }
         }
       } else if (node && Symbol.iterator in node) {
@@ -510,7 +507,7 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
           write("<script>(()=>{");
           write(RUNTIME_STATE);
           write("for(const[n,v]of");
-          write(stringify([...store.entries()]));
+          write(stringify(Array.from(store.entries()).map((e) => e[1] === undefined ? [e[0]] : e)));
           write(")createState(n,v);})()</script>");
         }
         if (suspenses.length > 0) {

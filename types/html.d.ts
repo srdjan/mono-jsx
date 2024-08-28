@@ -807,7 +807,7 @@ export namespace HTML {
 
   type EventHandler<E extends Event, T extends EventTarget> = (
     event: Omit<E, "target"> & { target: T },
-  ) => void;
+  ) => void | Promise<void>;
 
   interface InputElementAttributes<T extends EventTarget> {
     onChange?: EventHandler<Event, T>;
@@ -821,7 +821,7 @@ export namespace HTML {
 
   interface EventAttributes<T extends EventTarget> {
     // Mono specific
-    onMount?: EventHandler<Event, T>;
+    onMount?: (e: { type: "mount"; target: T }) => void | Promise<void>;
 
     // Input Events
     onBeforeInput?: EventHandler<Event, T>;

@@ -104,7 +104,6 @@ export interface Elements {
 
 declare global {
   interface State {}
+  // deno-lint-ignore no-var
+  var state: State;
 }
-
-// deno-lint-ignore no-var
-declare var state: State;

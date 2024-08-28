@@ -180,9 +180,9 @@ Deno.test("[ssr] event handler", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<div>Using HTML</div>`,
-      `<script>(()=>{var cs=document.currentScript;setTimeout(()=>{(`,
+      `<script>(`,
       `(e)=>console.log(e.target)`,
-      `)({type:"mount",target:cs.previousElementSibling})},0)})()</script>`,
+      `)({type:"mount",target:document.currentScript.previousElementSibling})</script>`,
       `</body></html>`,
     ].join(""),
   );
@@ -374,7 +374,7 @@ Deno.test("[ssr] catch error", async () => {
 
 declare global {
   interface State {
-    foo: "bar";
+    foo: string;
     show: boolean;
     num: number;
     select: string;
@@ -387,7 +387,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="0" name="foo" hidden></state-slot>`,
+      `<mono-state name="foo" hidden></mono-state>`,
       `bar`,
       `<!--/-->`,
       `</body></html>`,
@@ -395,6 +395,22 @@ Deno.test("[ssr] using state", async () => {
       RUNTIME_STATE,
       `for(const[n,v]of`,
       `[["foo","bar"]]`,
+      `)createState(n,v);})()</script>`,
+    ].join(""),
+  );
+
+  assertEquals(
+    await renderToString(<state name="foo" />),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<mono-state name="foo" hidden></mono-state>`,
+      `<!--/-->`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE,
+      `for(const[n,v]of`,
+      `[["foo"]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
@@ -408,8 +424,8 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="1" name="show" hidden></state-slot>`,
-      `<h1>👋</h1><!--/-->`,
+      `<mono-toggle name="show" hidden></mono-toggle>`,
+      `<template leading></template><h1>👋</h1><!--/-->`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
@@ -428,7 +444,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="1" name="show" hidden></state-slot>`,
+      `<mono-toggle name="show" hidden></mono-toggle>`,
       `<template><h1>👋</h1></template>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -449,8 +465,8 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="2" name="num" hidden></state-slot>`,
-      `<template matched></template><span>0</span><!--/-->`,
+      `<mono-switch name="num" hidden></mono-switch>`,
+      `<template leading></template><span>0</span><!--/-->`,
       `<template><span>1</span></template>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -471,9 +487,9 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="2" name="num" hidden></state-slot>`,
+      `<mono-switch name="num" hidden></mono-switch>`,
       `<template><span>0</span></template>`,
-      `<template matched></template><span>1</span><!--/-->`,
+      `<template leading></template><span>1</span><!--/-->`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
@@ -493,7 +509,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="2" name="num" hidden></state-slot>`,
+      `<mono-switch name="num" hidden></mono-switch>`,
       `<template><span>0</span></template>`,
       `<template><span>1</span></template>`,
       `</body></html>`,
@@ -516,8 +532,8 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="2" name="select" hidden></state-slot>`,
-      `<template key="a" matched></template><span>A</span><!--/-->`,
+      `<mono-switch name="select" hidden></mono-switch>`,
+      `<template key="a" leading></template><span>A</span><!--/-->`,
       `<template key="b"><span>B</span></template>`,
       `<template default><span>NULL</span></template>`,
       `</body></html>`,
@@ -540,9 +556,9 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="2" name="select" hidden></state-slot>`,
+      `<mono-switch name="select" hidden></mono-switch>`,
       `<template key="a"><span>A</span></template>`,
-      `<template key="b" matched></template><span>B</span><!--/-->`,
+      `<template key="b" leading></template><span>B</span><!--/-->`,
       `<template default><span>NULL</span></template>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -564,10 +580,10 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<state-slot mode="2" name="select" hidden></state-slot>`,
+      `<mono-switch name="select" hidden></mono-switch>`,
       `<template key="a"><span>A</span></template>`,
       `<template key="b"><span>B</span></template>`,
-      `<template default matched></template><span>NULL</span><!--/-->`,
+      `<template default leading></template><span>NULL</span><!--/-->`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
