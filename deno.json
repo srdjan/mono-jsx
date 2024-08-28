@@ -12,8 +12,7 @@
   },
   "tasks": {
     "build": "deno run -A --no-lock build.ts",
-    "test": "deno test -A --no-lock test/",
-    "install-puppeteer": "PUPPETEER_PRODUCT=chrome deno run -A --no-lock https://deno.land/x/puppeteer@16.2.0/install.ts"
+    "test": "deno run -A --no-lock build.ts && deno test -A --no-lock test/"
   },
   "fmt": {
     "lineWidth": 140
