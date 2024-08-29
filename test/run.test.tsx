@@ -39,11 +39,42 @@ function addJSX(jsx: JSX.Element) {
 
 declare global {
   interface State {
+    text: string;
     counter: number;
   }
 }
 
 Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const testUrl = addJSX(
+    <div>
+      <h1>
+        <state name="text" />
+      </h1>
+      <button
+        onClick={() => {
+          state.text = "Hello world!";
+        }}
+      />
+    </div>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testUrl);
+
+  const h1 = await page.$("div h1")!;
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "");
+
+  const button = await page.$("div button")!;
+  assert(button);
+  await button.click();
+
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
+
+  await page.close({ runBeforeUnload: true });
+});
+
+Deno.test("[run] using state(counter)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testUrl = addJSX(
     <div>
       <button
@@ -118,7 +149,7 @@ Deno.test("[run] suspense", { sanitizeResources: false, sanitizeOps: false }, as
   const Slogan = () => Promise.resolve(<h2>Building User Interfaces.</h2>);
   const testUrl = addJSX(
     <div>
-      <Sleep ms={1000} placeholder={<p>Loading...</p>}>
+      <Sleep ms={100} placeholder={<p>Loading...</p>}>
         <h1>Hello world!</h1>
         <Slogan />
       </Sleep>
