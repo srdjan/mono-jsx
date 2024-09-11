@@ -86,7 +86,7 @@ app.get("/", (c) => (
 serve(app);
 ```
 
-then you will require to use [tsx](https://www.npmjs.com/package/tsx) to start the app.
+and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app.
 
 ```bash
 npx tsx app.jsx
@@ -140,7 +140,7 @@ mono-jsx allows you to use [pseudo classes](https://developer.mozilla.org/en-US/
 
 ### `<slot>` Component
 
-mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content(Equivalent to React's `children` proptery). You can use the `name` attribute to define multiple slots.
+mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content(Equivalent to React's `children` proptery). You can add the `name` attribute to define a named slot.
 
 ```jsx
 function Container() {
@@ -172,6 +172,9 @@ function App() {
   return <div>{html`<h1>Hello world!</h1>`}</div>;
 }
 ```
+
+> [!NOTE]
+> The `html` tag function is a global function injected by mono-jsx, you can use it in any JSX expression without importing it.
 
 > [!WARNING]
 > the `html` tag function is **unsafe** that can cause [**XSS**](https://en.wikipedia.org/wiki/Cross-site_scripting) vulnerabilities.
