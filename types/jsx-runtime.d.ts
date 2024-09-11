@@ -6,5 +6,6 @@ export function jsx(
   key?: string | number,
 ): VNode;
 
-export { Fragment } from "./jsx.d.ts";
-export { jsx as jsxDEV, jsx as jsxs };
+export function Fragment(props: Record<string, unknown>): VNode;
+
+export { jsx as jsxs };

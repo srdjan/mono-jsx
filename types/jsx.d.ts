@@ -17,12 +17,10 @@ declare global {
 }
 
 export type ChildType = VNode | string | number | bigint | boolean | null;
-export type Children = (ChildType | ChildType[])[];
 
 export type VNode = [
   tag: string | symbol | FC<any>,
-  props: Record<string, any> | null,
-  children: Children | null,
+  props: Record<string, any>,
   nodeType: symbol,
 ];
 
@@ -31,10 +29,7 @@ export interface FC<P = {}> {
   displayName?: string;
   rendering?: string;
 }
-export type TC = (strings: TemplateStringsArray, ...values: any[]) => VNode;
 
-export const h: (tag: string | FC<any>, props: Record<string, any> | null, ...children: Children) => VNode;
-export const Fragment: FC<{ key?: string | number; children?: Children }>;
-export const html: TC, css: TC, js: TC;
-
-export type * from "./render.d.ts";
+export interface TC {
+  (strings: TemplateStringsArray, ...values: any[]): VNode;
+}

@@ -1,4 +1,3 @@
-/* @jsxImportSource mono-jsx */
 import { assert, assertEquals } from "jsr:@std/assert";
 import puppeteer from "npm:puppeteer-core@23.1.1";
 import chrome from "npm:puppeteer-chromium-resolver@23.0.0";

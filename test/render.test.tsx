@@ -1,7 +1,9 @@
-/* @jsxImportSource mono-jsx */
 import { assertEquals } from "jsr:@std/assert";
-import { hashCode } from "mono-jsx";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "../runtime/index.ts";
+
+function hashCode(s: string) {
+  return [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
+}
 
 const renderToString = (node: JSX.Element, request?: Request) => {
   const res = (

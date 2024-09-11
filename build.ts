@@ -23,19 +23,6 @@ async function buildPackageModule(name: string) {
     target: "esnext",
     minify: false,
     bundle: true,
-    plugins: [
-      {
-        name: "rename-ts-extension",
-        setup(build) {
-          build.onResolve({ filter: /\.ts$/ }, (args) => {
-            if (args.path !== entryPointPath && args.path.endsWith("/jsx.ts")) {
-              return { path: args.path.replace(/\.ts$/, ".mjs"), external: true };
-            }
-            return;
-          });
-        },
-      },
-    ],
   });
   return await Deno.lstat(`./${name}.mjs`);
 }
@@ -57,7 +44,7 @@ if (import.meta.main) {
   console.log(`- runtime(state) %c(${runtime_state.length} bytes)`, "color:grey");
   console.log(`- runtime(suspense) %c(${runtime_suspense.length} bytes)`, "color:grey");
 
-  for (const name of ["jsx.ts", "jsx-runtime.ts"]) {
+  for (const name of ["index.ts", "jsx-runtime.ts"]) {
     const moduleName = name.replace(/\.ts$/, "");
     const { size } = await buildPackageModule(moduleName);
     console.log(`- ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");

@@ -70,7 +70,7 @@ deno serve app.jsx
 bun run app.jsx
 ```
 
-Node.js does not support JSX and declarative fetch server, we recommend using mono-jsx with [hono](https://hono.dev).
+**Node.js does not support JSX module and declarative fetch server**, we recommend using mono-jsx with [hono](https://hono.dev).
 
 ```jsx
 import { serve } from "@hono/node-server";
@@ -92,7 +92,7 @@ then you will require to use [tsx](https://www.npmjs.com/package/tsx) to start t
 npx tsx app.jsx
 ```
 
-If you are building a [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev) app in local, you can use the `wrangler dev` command to start the app.
+If you are building an web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), you can use the `wrangler dev` command to start the app in local development.
 
 ```bash
 npx wrangler dev app.jsx
@@ -297,7 +297,7 @@ function App() {
 }
 ```
 
-## Steam Rendering
+## Streaming Rendering
 
 By default, mono-jsx renders your `<html>` app streamingly.
 

@@ -1,5 +1,3 @@
-import type { VNode } from "./jsx.d.ts";
-
 export interface RenderOptions {
   request?: Request;
   headers?: {
@@ -11,6 +9,3 @@ export interface RenderOptions {
     setCookie?: string;
   };
 }
-
-export function iconify(name: string, svg: string): string;
-export function render(node: VNode, renderOptions?: RenderOptions): ReadableStream<Response>;

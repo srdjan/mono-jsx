@@ -2,12 +2,14 @@
   "name": "@ije/mono-jsx",
   "version": "0.0.0-alpha.5",
   "exports": {
-    ".": "./jsx.ts",
-    "./jsx-runtime": "./jsx-runtime.ts",
-    "./jsx-dev-runtime": "./jsx-runtime.ts"
+    ".": "./index.ts",
+    "./jsx-runtime": "./jsx-runtime.ts"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "mono-jsx"
   },
   "imports": {
-    "mono-jsx": "./jsx.ts",
     "mono-jsx/jsx-runtime": "./jsx-runtime.ts"
   },
   "tasks": {

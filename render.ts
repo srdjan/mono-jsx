@@ -1,7 +1,18 @@
-import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
+import type { ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
-import { $fragment, $vnode, Fragment } from "./jsx-fragment.ts";
+import { $fragment, $vnode, Fragment } from "./jsx.ts";
+
+interface RenderContext {
+  write(chunk: string): void;
+  store: Map<string, any>;
+  suspenses: Promise<void>[];
+  eventHandlerIndex: number;
+  eager?: boolean;
+  slots?: ChildType | (ChildType | ChildType[])[];
+  request?: Request;
+  styleIds?: Set<string>;
+}
 
 const selfClosingTags = new Set([
   "area",
@@ -20,7 +31,6 @@ const selfClosingTags = new Set([
   "track",
   "wbr",
 ]);
-
 const cssBareUnitProps = new Set([
   "animation-iteration-count",
   "border-image-outset",
@@ -61,22 +71,20 @@ const cssBareUnitProps = new Set([
 const htmlTagRegexp = /^[a-z][\w\-$]*$/;
 const matchHtmlRegExp = /["'&<>]/;
 const stringify = JSON.stringify;
-const iconSvgs = new Map<string, string>();
 const isObject = (v: unknown): v is object => typeof v === "object" && v !== null;
-const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 4 && v[3] === $vnode;
+const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const toAttrStringLit = (str: string) => stringify(escapeHTML(str));
 const toHyphenCase = (k: string) => k.replace(/[a-z][A-Z]/g, (m) => m.charAt(0) + "-" + m.charAt(1).toLowerCase());
 
-type RenderContext = {
-  write(chunk: string): void;
-  store: Map<string, any>;
-  suspenses: Promise<void>[];
-  ehIndex: number;
-  eager?: boolean;
-  slots?: Children | null;
-  request?: Request;
-  styleMark?: Set<string>;
-};
+async function renderChildren(ctx: RenderContext, children: ChildType | (ChildType | ChildType[])[], ignoreSlotProp?: boolean) {
+  if (Array.isArray(children) && !isVNode(children)) {
+    for (const child of children) {
+      await renderNode(ctx, child, ignoreSlotProp);
+    }
+  } else {
+    await renderNode(ctx, children, ignoreSlotProp);
+  }
+}
 
 async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ignoreSlotProp?: boolean): Promise<void> {
   const { write, store } = ctx;
@@ -90,79 +98,84 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
       break;
     case "object":
       if (isVNode(node)) {
-        let [tag, props, children] = node;
+        let [tag, props] = node;
+        let children: ChildType | (ChildType | ChildType[])[] | undefined = props.children;
 
         // fragment element
         if (tag === $fragment) {
-          if (props?.innerHTML) {
+          if (props.innerHTML) {
             write(props.innerHTML);
-          } else if (children) {
-            for (const child of children) {
-              await renderNode(ctx, child);
-            }
+          } else if (children !== undefined) {
+            await renderChildren(ctx, children);
           }
           break;
         }
 
         // `<slot>` element
         if (tag === "slot") {
-          const slotName = props?.name;
-          if (slotName) {
-            children = ctx.slots?.filter((v) => isVNode(v) && v[1]?.slot === slotName) ?? null;
-          } else {
-            children = ctx.slots?.filter((v) => !isVNode(v) || !v[1]?.slot) ?? null;
-          }
-          if (!children?.length) {
-            // use the children of the slot as fallback if nothing is slotted
-            children = node[2];
-          }
-          if (children) {
-            for (const child of children) {
-              await renderNode(ctx, child, true);
+          const ctxSlots = ctx.slots;
+          let slots: (ChildType | ChildType[])[] | undefined;
+          if (ctxSlots !== undefined) {
+            if (Array.isArray(ctxSlots)) {
+              if (isVNode(ctxSlots)) {
+                slots = [ctxSlots];
+              } else {
+                slots = ctxSlots;
+              }
+            } else {
+              slots = [ctxSlots];
             }
+          }
+          if (props.name) {
+            children = slots?.filter((v) => isVNode(v) && v[1].slot === props.name);
+          } else {
+            children = slots?.filter((v) => !isVNode(v) || !v[1].slot);
+          }
+          // use the children of the slot as fallback if nothing is slotted
+          if (children === undefined || (Array(children) && children.length === 0)) {
+            children = node[1].children;
+          }
+          if (children !== undefined) {
+            await renderChildren(ctx, children, true);
           }
           break;
         }
 
         // state elements
         if (tag === "state" || tag === "toggle" || tag === "switch") {
-          const name = props?.name;
-          const valueProp = props?.value;
+          const name = props.name;
+          const valueProp = props.value;
           const value = valueProp ?? (name ? store.get(name) : undefined);
           if (name) {
             write("<mono-" + tag + " name=" + toAttrStringLit(name) + " hidden></mono-" + tag + ">");
           }
           if (tag === "toggle") {
-            if (children) {
+            if (children !== undefined) {
               if (name) {
                 write("<template" + (value ? " leading></template>" : ">"));
-                for (const child of children) {
-                  await renderNode(ctx, child);
-                }
+                await renderChildren(ctx, children);
                 if (value) {
                   write("<!--/-->");
                 } else {
                   write("</template>");
                 }
               } else if (value) {
-                for (const child of children) {
-                  await renderNode(ctx, child);
-                }
+                await renderChildren(ctx, children);
               }
             }
           } else if (tag === "switch") {
-            if (children) {
-              const nodes = children.filter(isVNode);
+            if (children !== undefined) {
+              const nodes = Array.isArray(children) ? (isVNode(children) ? [children] : children.filter(isVNode)) : [];
               let matchedIndex = -1;
               let defaultNode: VNode | undefined;
               for (let idx = 0; idx < nodes.length; idx++) {
                 const childNode = nodes[idx];
                 const childNodeProps = childNode[1];
-                if (childNodeProps?.default) {
+                if (childNodeProps.default) {
                   defaultNode = childNode;
                   continue;
                 }
-                const key = childNodeProps?.key;
+                const key = childNodeProps.key;
                 const matched = (key ?? idx) === value;
                 if (matched) {
                   matchedIndex = idx;
@@ -214,7 +227,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           if ((rendering ?? tag.rendering) === "eager") {
             eager = true;
           }
-          if (children?.length && tag === Fragment) {
+          if (children && tag === Fragment) {
             restProps.children = children;
           }
           try {
@@ -263,8 +276,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
         // regular html element
         if (typeof tag === "string" && htmlTagRegexp.test(tag)) {
           if (tag.startsWith("icon-")) {
-            const iconName = tag.slice(5);
-            const svg = iconSvgs.get(iconName);
+            const JSX = Reflect.get(globalThis, "JSX");
+            const svg = JSX?.iconsRegistry.get(tag.slice(5));
             if (svg) {
               write(svg);
               break;
@@ -272,113 +285,110 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           }
           let openTag = "<" + tag;
           let onMountHandler: (() => void) | undefined;
-          if (props) {
-            const attrs: Record<string, string> = Object.create(null);
-            for (const [key, value] of Object.entries(props)) {
-              switch (key) {
-                case "class":
-                  attrs.class = (attrs.class ? attrs.class + " " : "") + cx(value);
-                  break;
-                case "style":
-                  if (typeof value === "string" && value !== "") {
-                    attrs.style = value;
-                  } else if (isObject(value) && !Array.isArray(value)) {
-                    const style: [string, string | number][] = [];
-                    const pseudoStyles: [string, string][] = [];
-                    const atRuleStyles: [string, string][] = [];
-                    const nestingStyles: [string, string][] = [];
-                    for (const [k, v] of Object.entries(value)) {
-                      switch (k.charCodeAt(0)) {
-                        case /* ':' */ 58:
-                          pseudoStyles.push([k, styleToCSS(v)]);
-                          break;
-                        case /* '@' */ 64:
-                          atRuleStyles.push([k, styleToCSS(v)]);
-                          break;
-                        case /* '&' */ 38:
-                          nestingStyles.push([k, styleToCSS(v)]);
-                          break;
-                        default:
-                          style.push([k, v]);
-                      }
-                    }
-                    if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
-                      let raw = "";
-                      let css = "";
-                      let item: [string, string];
-                      let styleMark: Set<string>;
-                      let id: string;
-                      let className: string;
-                      if (style.length > 0) {
-                        css = styleToCSS(style);
-                        raw += css + "|";
-                      }
-                      raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
-                      styleMark = ctx.styleMark ?? (ctx.styleMark = new Set());
-                      id = hashCode(raw).toString(36);
-                      className = "css-" + id;
-                      attrs.class = (attrs.class ? attrs.class + " " : "") + className;
-                      if (!styleMark.has(id)) {
-                        styleMark.add(id);
-                        if (css) {
-                          css = "." + className + "{" + css + "}";
-                        }
-                        for (item of pseudoStyles) {
-                          css += "." + className + item[0] + "{" + item[1] + "}";
-                        }
-                        for (item of atRuleStyles) {
-                          css += item[0] + "{." + className + "{" + item[1] + "}}";
-                        }
-                        for (item of nestingStyles) {
-                          css += "." + className + item[0].slice(1) + "{" + item[1] + "}";
-                        }
-                        write('<style id="' + className + '">' + css + "</style>");
-                      }
-                    } else if (style.length > 0) {
-                      attrs.style = styleToCSS(style);
+          const attrs: Record<string, string> = Object.create(null);
+          for (const [key, value] of Object.entries(props)) {
+            switch (key) {
+              case "class":
+                attrs.class = (attrs.class ? attrs.class + " " : "") + cx(value);
+                break;
+              case "style":
+                if (typeof value === "string" && value !== "") {
+                  attrs.style = value;
+                } else if (isObject(value) && !Array.isArray(value)) {
+                  const style: [string, string | number][] = [];
+                  const pseudoStyles: [string, string][] = [];
+                  const atRuleStyles: [string, string][] = [];
+                  const nestingStyles: [string, string][] = [];
+                  for (const [k, v] of Object.entries(value)) {
+                    switch (k.charCodeAt(0)) {
+                      case /* ':' */ 58:
+                        pseudoStyles.push([k, styleToCSS(v)]);
+                        break;
+                      case /* '@' */ 64:
+                        atRuleStyles.push([k, styleToCSS(v)]);
+                        break;
+                      case /* '&' */ 38:
+                        nestingStyles.push([k, styleToCSS(v)]);
+                        break;
+                      default:
+                        style.push([k, v]);
                     }
                   }
-                  break;
-                case "onMount":
-                  if (typeof value === "function") {
-                    onMountHandler = value;
-                  }
-                  break;
-                case "slot":
-                  if (!ignoreSlotProp && typeof value === "string") {
-                    attrs.slot = value;
-                  }
-                  break;
-                case "key":
-                case "default":
-                  // ignore
-                  break;
-                default:
-                  if (htmlTagRegexp.test(key) && value !== undefined) {
-                    if (key.startsWith("on")) {
-                      if (typeof value === "function") {
-                        const i = ctx.ehIndex++;
-                        write("<script>var _EH$" + i + "=" + value.toString() + "</script>");
-                        attrs[key.toLowerCase()] = "_EH$" + i + ".call(this,event)";
-                      }
-                    } else {
-                      attrs[key] = String(value);
+                  if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
+                    let raw = "";
+                    let css = "";
+                    let item: [string, string];
+                    let styleIds: Set<string>;
+                    let id: string;
+                    let className: string;
+                    if (style.length > 0) {
+                      css = styleToCSS(style);
+                      raw += css + "|";
                     }
+                    raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
+                    styleIds = ctx.styleIds ?? (ctx.styleIds = new Set());
+                    id = hashCode(raw).toString(36);
+                    className = "css-" + id;
+                    attrs.class = (attrs.class ? attrs.class + " " : "") + className;
+                    if (!styleIds.has(id)) {
+                      styleIds.add(id);
+                      if (css) {
+                        css = "." + className + "{" + css + "}";
+                      }
+                      for (item of pseudoStyles) {
+                        css += "." + className + item[0] + "{" + item[1] + "}";
+                      }
+                      for (item of atRuleStyles) {
+                        css += item[0] + "{." + className + "{" + item[1] + "}}";
+                      }
+                      for (item of nestingStyles) {
+                        css += "." + className + item[0].slice(1) + "{" + item[1] + "}";
+                      }
+                      write('<style id="' + className + '">' + css + "</style>");
+                    }
+                  } else if (style.length > 0) {
+                    attrs.style = styleToCSS(style);
                   }
-              }
+                }
+                break;
+              case "onMount":
+                if (typeof value === "function") {
+                  onMountHandler = value;
+                }
+                break;
+              case "slot":
+                if (!ignoreSlotProp && typeof value === "string") {
+                  attrs.slot = value;
+                }
+                break;
+              case "key":
+              case "default":
+              case "children":
+                // ignore
+                break;
+              default:
+                if (htmlTagRegexp.test(key) && value !== undefined) {
+                  if (key.startsWith("on")) {
+                    if (typeof value === "function") {
+                      const i = ctx.eventHandlerIndex++;
+                      write("<script>var _EH$" + i + "=" + value.toString() + "</script>");
+                      attrs[key.toLowerCase()] = "_EH$" + i + ".call(this,event)";
+                    }
+                  } else {
+                    attrs[key] = String(value);
+                  }
+                }
             }
-            for (const [key, value] of Object.entries(attrs)) {
-              openTag += " " + key + "=" + (key.startsWith("on") ? '"' + value.replaceAll('"', "'") + '"' : toAttrStringLit(value));
-            }
+          }
+          for (const [key, value] of Object.entries(attrs)) {
+            openTag += " " + key + "=" + (key.startsWith("on") ? '"' + value.replaceAll('"', "'") + '"' : toAttrStringLit(value));
           }
           write(openTag + ">");
           if (!selfClosingTags.has(tag)) {
-            if (props?.innerHTML) {
+            if (props.innerHTML) {
               write(props.innerHTML);
-            } else if (children) {
-              for (const child of children) {
-                await renderNode(ctx, child);
-              }
+            } else if (children !== undefined) {
+              await renderChildren(ctx, children);
             }
             write("</" + (tag as string) + ">");
           }
@@ -388,7 +398,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
             write(')({type:"mount",target:document.currentScript.previousElementSibling})</script>');
           }
         }
-      } else if (node && Symbol.iterator in node) {
+      } else if (Array.isArray(node) || (node && Symbol.iterator in node)) {
         for (const child of node) {
           await renderNode(ctx, child);
         }
@@ -488,7 +498,7 @@ function styleToCSS(style: unknown): string {
 }
 
 /** Hash code for strings */
-export function hashCode(s: string) {
+function hashCode(s: string) {
   return [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
 }
 
@@ -499,7 +509,7 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
       const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
       const store = new Map<string, any>();
       const suspenses: Promise<void>[] = [];
-      const ctx: RenderContext = { ...renderOptions, store, suspenses, ehIndex: 0, write };
+      const ctx: RenderContext = { ...renderOptions, store, suspenses, eventHandlerIndex: 0, write };
       try {
         write("<!DOCTYPE html>");
         await renderNode(ctx, node);
@@ -541,16 +551,4 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
   headers["transfer-encoding"] = "chunked";
   headers["content-type"] = "text/html; charset=utf-8";
   return new Response(readable, { headers });
-}
-
-export function iconify(name: string, svg: string): string {
-  const svgTagStart = svg.indexOf("<svg");
-  const svgTagEnd = svg.indexOf(">", svgTagStart);
-  const viewBox = svg.slice(0, svgTagEnd).match(/viewBox=['"]([^'"]+)['"]/)?.[1] ?? "";
-  const iconSvgSvg = '<svg class="icon" role="img" aria-hidden="true" style="width:auto;height:1em" fill="none"'
-    + " viewBox=" + stringify(viewBox)
-    + ' xmlns="http://www.w3.org/2000/svg">'
-    + svg.slice(svgTagEnd + 1).replace(/\n/g, "").replace(/=['"](black|#000000)['"]/g, '="currentColor"');
-  iconSvgs.set(name, iconSvgSvg);
-  return iconSvgSvg;
 }
