@@ -1,14 +1,14 @@
-import type { FC, VNode } from "./types/jsx.d.ts";
+import type { VNode } from "./types/jsx.d.ts";
 
-const $vnode = Symbol.for("jsx.VNode");
-const $fragment = Symbol.for("jsx.Fragment");
-const Fragment: FC = (props): VNode => [$fragment, props, $vnode];
-const html = (raw: string, ...values: any[]): VNode => [$fragment, { innerHTML: String.raw({ raw }, ...values) }, $vnode];
+const $vnode = Symbol.for("jsx.vnode");
+const $fragment = Symbol.for("jsx.fragment");
+const $html = Symbol.for("jsx.html");
+const html = (raw: string, ...values: any[]): VNode => [$html, { innerHTML: String.raw({ raw }, ...values) }, $vnode];
 const css = html;
 const js = html;
 const state = Object.create(null);
 
-// global functions
+// global variables
 Object.assign(globalThis, { html, css, js, state });
 
-export { $fragment, $vnode, css, Fragment, html, js };
+export { $fragment, $html, $vnode, css, html, js };

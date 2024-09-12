@@ -17,6 +17,7 @@ declare global {
 }
 
 export type ChildType = VNode | string | number | bigint | boolean | null;
+export type Children = ChildType | (ChildType | ChildType[])[];
 
 export type VNode = [
   tag: string | symbol | FC<any>,

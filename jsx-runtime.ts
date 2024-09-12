@@ -1,5 +1,5 @@
 import type { FC, VNode } from "./types/jsx.d.ts";
-import { $vnode, Fragment } from "./jsx.ts";
+import { $fragment, $vnode } from "./jsx.ts";
 import { render } from "./render.ts";
 
 const jsx = (tag: string | FC<any>, props: Record<string, any>, key?: string | number): VNode => {
@@ -32,18 +32,4 @@ const jsx = (tag: string | FC<any>, props: Record<string, any>, key?: string | n
   return vnode;
 };
 
-// deno JSX transform
-// async function jsxTemplate(
-//   strings: string[],
-//   ...values: unknown[]
-// ): Promise<string> {
-//   return "";
-// }
-// function jsxAttr(name: string, value: unknown): string {
-//   return "";
-// }
-// async function jsxEscape(content: ChildType): Promise<string> {
-//   return "";
-// }
-
-export { Fragment, jsx, jsx as jsxs };
+export { $fragment as Fragment, jsx, jsx as jsxs };

@@ -1,7 +1,7 @@
-import type { ChildType, VNode } from "./types/jsx.d.ts";
+import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
-import { $fragment, $vnode, Fragment } from "./jsx.ts";
+import { $fragment, $html, $vnode } from "./jsx.ts";
 
 interface RenderContext {
   write(chunk: string): void;
@@ -9,7 +9,7 @@ interface RenderContext {
   suspenses: Promise<void>[];
   eventHandlerIndex: number;
   eager?: boolean;
-  slots?: ChildType | (ChildType | ChildType[])[];
+  slots?: Children;
   request?: Request;
   styleIds?: Set<string>;
 }
@@ -71,20 +71,11 @@ const cssBareUnitProps = new Set([
 const htmlTagRegexp = /^[a-z][\w\-$]*$/;
 const matchHtmlRegExp = /["'&<>]/;
 const stringify = JSON.stringify;
+const encoder = new TextEncoder();
 const isObject = (v: unknown): v is object => typeof v === "object" && v !== null;
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const toAttrStringLit = (str: string) => stringify(escapeHTML(str));
 const toHyphenCase = (k: string) => k.replace(/[a-z][A-Z]/g, (m) => m.charAt(0) + "-" + m.charAt(1).toLowerCase());
-
-async function renderChildren(ctx: RenderContext, children: ChildType | (ChildType | ChildType[])[], ignoreSlotProp?: boolean) {
-  if (Array.isArray(children) && !isVNode(children)) {
-    for (const child of children) {
-      await renderNode(ctx, child, ignoreSlotProp);
-    }
-  } else {
-    await renderNode(ctx, children, ignoreSlotProp);
-  }
-}
 
 async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ignoreSlotProp?: boolean): Promise<void> {
   const { write, store } = ctx;
@@ -99,14 +90,20 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
     case "object":
       if (isVNode(node)) {
         let [tag, props] = node;
-        let children: ChildType | (ChildType | ChildType[])[] | undefined = props.children;
+        let children: Children | undefined = props.children;
 
         // fragment element
         if (tag === $fragment) {
+          if (children !== undefined) {
+            await renderChildren(ctx, children);
+          }
+          break;
+        }
+
+        // XSS!
+        if (tag === $html) {
           if (props.innerHTML) {
             write(props.innerHTML);
-          } else if (children !== undefined) {
-            await renderChildren(ctx, children);
           }
           break;
         }
@@ -222,16 +219,13 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
 
         // fc element
         if (typeof tag === "function") {
-          const { rendering, placeholder, catch: catchFC, ...restProps } = props ?? Object.create(null);
+          const { rendering, placeholder, catch: catchFC, ...fcProps } = props ?? Object.create(null);
           let eager = ctx.eager;
           if ((rendering ?? tag.rendering) === "eager") {
             eager = true;
           }
-          if (children && tag === Fragment) {
-            restProps.children = children;
-          }
           try {
-            const v = tag(restProps);
+            const v = tag(fcProps);
             if (v instanceof Promise) {
               if (eager) {
                 await renderNode({ ...ctx, eager: true, slots: children }, await v);
@@ -283,17 +277,27 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
               break;
             }
           }
-          let openTag = "<" + tag;
+          let buffer = "<" + tag;
+          let classAttrPosEnd = -1;
           let onMountHandler: (() => void) | undefined;
-          const attrs: Record<string, string> = Object.create(null);
+          let extraClass: string | undefined;
           for (const [key, value] of Object.entries(props)) {
             switch (key) {
+              case "children":
+              case "key":
+              case "default":
+                // skip
+                break;
               case "class":
-                attrs.class = (attrs.class ? attrs.class + " " : "") + cx(value);
+                buffer += " " + jsxAttr(key, cx(value) + (extraClass ? " " + extraClass : ""));
+                classAttrPosEnd = buffer.length - 1;
+                if (extraClass) {
+                  extraClass = undefined;
+                }
                 break;
               case "style":
                 if (typeof value === "string" && value !== "") {
-                  attrs.style = value;
+                  buffer += " " + jsxAttr(key, cx(value));
                 } else if (isObject(value) && !Array.isArray(value)) {
                   const style: [string, string | number][] = [];
                   const pseudoStyles: [string, string][] = [];
@@ -329,7 +333,11 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                     styleIds = ctx.styleIds ?? (ctx.styleIds = new Set());
                     id = hashCode(raw).toString(36);
                     className = "css-" + id;
-                    attrs.class = (attrs.class ? attrs.class + " " : "") + className;
+                    if (classAttrPosEnd > -1) {
+                      buffer = buffer.slice(0, classAttrPosEnd) + " " + className + buffer.slice(classAttrPosEnd);
+                    } else {
+                      extraClass = className;
+                    }
                     if (!styleIds.has(id)) {
                       styleIds.add(id);
                       if (css) {
@@ -347,7 +355,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                       write('<style id="' + className + '">' + css + "</style>");
                     }
                   } else if (style.length > 0) {
-                    attrs.style = styleToCSS(style);
+                    buffer += " " + jsxAttr(key, styleToCSS(style));
                   }
                 }
                 break;
@@ -358,13 +366,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                 break;
               case "slot":
                 if (!ignoreSlotProp && typeof value === "string") {
-                  attrs.slot = value;
+                  buffer += " " + jsxAttr(key, value);
                 }
-                break;
-              case "key":
-              case "default":
-              case "children":
-                // ignore
                 break;
               default:
                 if (htmlTagRegexp.test(key) && value !== undefined) {
@@ -372,18 +375,22 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
                     if (typeof value === "function") {
                       const i = ctx.eventHandlerIndex++;
                       write("<script>var _EH$" + i + "=" + value.toString() + "</script>");
-                      attrs[key.toLowerCase()] = "_EH$" + i + ".call(this,event)";
+                      buffer += " " + jsxAttr(key.toLowerCase(), "_EH$" + i + ".call(this,event)");
+                    }
+                  } else if (typeof value === "boolean") {
+                    if (value) {
+                      buffer += " " + key;
                     }
                   } else {
-                    attrs[key] = String(value);
+                    buffer += " " + jsxAttr(key, value);
                   }
                 }
             }
           }
-          for (const [key, value] of Object.entries(attrs)) {
-            openTag += " " + key + "=" + (key.startsWith("on") ? '"' + value.replaceAll('"', "'") + '"' : toAttrStringLit(value));
+          if (extraClass) {
+            buffer += " " + jsxAttr("class", extraClass);
           }
-          write(openTag + ">");
+          write(buffer + ">");
           if (!selfClosingTags.has(tag)) {
             if (props.innerHTML) {
               write(props.innerHTML);
@@ -407,6 +414,61 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
   }
 }
 
+async function renderChildren(ctx: RenderContext, children: Children, ignoreSlotProp?: boolean) {
+  if (Array.isArray(children) && !isVNode(children)) {
+    for (const child of children) {
+      await renderNode(ctx, child, ignoreSlotProp);
+    }
+  } else {
+    await renderNode(ctx, children, ignoreSlotProp);
+  }
+}
+
+/** merge class names. */
+function cx(className: unknown): string {
+  if (typeof className === "string") {
+    return className;
+  }
+  if (isObject(className)) {
+    if (Array.isArray(className)) {
+      return className.map(cx).filter(Boolean).join(" ");
+    }
+    const classNames = new Set();
+    for (const [key, value] of Object.entries(className)) {
+      if (value) {
+        classNames.add(key);
+      }
+    }
+    return Array.from(classNames).filter(Boolean).join(" ");
+  }
+  return "";
+}
+
+/** converts style object to css string. */
+function styleToCSS(style: unknown): string {
+  if (typeof style === "string") return style;
+  if (!isObject(style)) return "";
+  return (Array.isArray(style) ? style : Object.entries(style))
+    .map(([k, v]) => {
+      if (v === null || v === undefined || v === false || Number.isNaN(v) || typeof k !== "string") return "";
+      const cssKey = toHyphenCase(k);
+      const cssValue = typeof v === "number" ? cssBareUnitProps.has(cssKey) ? v.toString() : v + "px" : String(v);
+      return cssKey + ":" + (cssKey === "content" ? toAttrStringLit(cssValue) : cssValue);
+    })
+    .join(";");
+}
+
+/** Hash code for strings */
+function hashCode(s: string) {
+  return [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
+}
+
+/** Converts a key-value pair to an attribute string. */
+export function jsxAttr(key: string, value: unknown): string {
+  if (value === true) return key;
+  return key + "=" + toAttrStringLit(String(value));
+}
+
 /**
  * Escapes special characters and HTML entities in a given html string.
  * Based on https://github.com/component/escape-html
@@ -417,13 +479,13 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
  * Copyright(c) 2015 Tiancheng "Timothy" Gu
  * MIT License
  */
-function escapeHTML(str: string): string {
+export function escapeHTML(str: string): string {
   const match = matchHtmlRegExp.exec(str);
   if (!match) {
     return str;
   }
 
-  // @ts-ignore if Bun is available, use it
+  // @ts-ignore use bun's built-in `escapeHTML` function if available
   if (typeof Bun === "object" && Bun.escapeHTML) return Bun.escapeHTML(str);
 
   let escape: string;
@@ -463,47 +525,7 @@ function escapeHTML(str: string): string {
   return lastIndex !== index ? html + str.slice(lastIndex, index) : html;
 }
 
-/** concatenates class names. */
-function cx(className: unknown): string {
-  if (typeof className === "string") {
-    return className;
-  }
-  if (isObject(className)) {
-    if (Array.isArray(className)) {
-      return className.map(cx).filter(Boolean).join(" ");
-    }
-    const classNames = new Set();
-    for (const [key, value] of Object.entries(className)) {
-      if (value) {
-        classNames.add(key);
-      }
-    }
-    return Array.from(classNames).filter(Boolean).join(" ");
-  }
-  return "";
-}
-
-/** converts style object to css string. */
-function styleToCSS(style: unknown): string {
-  if (typeof style === "string") return style;
-  if (!isObject(style)) return "";
-  return (Array.isArray(style) ? style : Object.entries(style))
-    .map(([k, v]) => {
-      if (v === null || v === undefined || v === false || Number.isNaN(v) || typeof k !== "string") return "";
-      const cssKey = toHyphenCase(k);
-      const cssValue = typeof v === "number" ? cssBareUnitProps.has(cssKey) ? v.toString() : v + "px" : String(v);
-      return cssKey + ":" + (cssKey === "content" ? toAttrStringLit(cssValue) : cssValue);
-    })
-    .join(";");
-}
-
-/** Hash code for strings */
-function hashCode(s: string) {
-  return [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
-}
-
 export function render(node: VNode, renderOptions?: RenderOptions): Response {
-  const encoder = new TextEncoder();
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
       const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
