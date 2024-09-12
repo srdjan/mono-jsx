@@ -3,14 +3,14 @@
   "version": "0.0.0-alpha.5",
   "exports": {
     ".": "./index.ts",
-    "./jsx-runtime": "./jsx-runtime.ts"
+    "./jsx-runtime": "./deno-jsx-runtime.ts"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "mono-jsx"
   },
   "imports": {
-    "mono-jsx/jsx-runtime": "./jsx-runtime.ts"
+    "mono-jsx/jsx-runtime": "./deno-jsx-runtime.ts"
   },
   "tasks": {
     "build": "deno run -A --no-lock build.ts",
