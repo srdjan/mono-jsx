@@ -1,10 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "../runtime/index.ts";
 
-function hashCode(s: string) {
-  return [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
-}
-
 const renderToString = (node: JSX.Element, request?: Request) => {
   const res = (
     <html lang="en" request={request}>
@@ -72,6 +68,8 @@ Deno.test("[ssr] merge class names", async () => {
 });
 
 Deno.test("[ssr] style", async () => {
+  const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
+
   assertEquals(
     await renderToString(<div style="display:block" />),
     [
