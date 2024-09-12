@@ -3,7 +3,7 @@ import { $fragment, $vnode } from "./jsx.ts";
 import { render } from "./render.ts";
 
 const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | number): VNode => {
-  const vnode = new Array(3).fill(null) as VNode;
+  const vnode = new Array(3).fill(null);
   vnode[0] = tag;
   vnode[1] = props;
   vnode[2] = $vnode;
@@ -20,7 +20,7 @@ const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | nu
         }
       }
     }
-    const res = render(vnode, renderOptions);
+    const res = render(vnode as unknown as VNode, renderOptions);
     (res as unknown as Array<unknown>).length = 3;
     (res as unknown as Array<unknown>)[Symbol.iterator] = function*() {
       for (let i = 0; i < 3; i++) {
@@ -29,7 +29,7 @@ const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | nu
     };
     return res as unknown as VNode;
   }
-  return vnode;
+  return vnode as unknown as VNode;
 };
 
 export { $fragment as Fragment, jsx, jsx as jsxs };

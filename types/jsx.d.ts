@@ -19,7 +19,7 @@ declare global {
 export type ChildType = VNode | string | number | bigint | boolean | null;
 export type Children = ChildType | (ChildType | ChildType[])[];
 
-export type VNode = [
+export type VNode = readonly [
   tag: string | symbol | FC<any>,
   props: Record<string, any>,
   nodeType: symbol,
