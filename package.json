@@ -16,6 +16,9 @@
       "types": "./types/jsx-runtime.d.ts"
     }
   },
+  "scripts": {
+    "prepublishOnly": "deno task build"
+  },
   "files": [
     "*.mjs",
     "./types/"
