@@ -1,6 +1,3 @@
-// deno-lint-ignore-file prefer-const
-/// <reference lib="dom.iterable" />
-
 type StateSlot = [
   slot: HTMLElement,
   toggleSlots: ChildNode[] | undefined,
@@ -79,16 +76,17 @@ function defineStateSlot(name: string, stateSlot: StateSlot) {
   }
 }
 
-function createState(name: string, initialValue: any) {
-  let value: any = initialValue;
+function createState(name: string, initialValue: unknown) {
+  let value: unknown = initialValue;
   Object.defineProperty(stateProxy, name, {
     get: () => value,
-    set: (newValue: any) => {
+    set: (newValue: unknown) => {
       if (newValue !== value) {
         const slots = stateSlots.get(name);
         if (slots) {
           for (const [slot, toggleSlots, switchSlots, switchDefaultSlot] of slots) {
             if (toggleSlots) {
+              // todo
             } else if (switchSlots) {
               const childNodes = switchSlots.get(String(value));
               const newChildNodes = switchSlots.get(String(newValue)) || switchDefaultSlot;

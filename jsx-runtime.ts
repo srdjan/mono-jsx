@@ -2,7 +2,7 @@ import type { FC, VNode } from "./types/jsx.d.ts";
 import { $fragment, $vnode } from "./jsx.ts";
 import { render } from "./render.ts";
 
-const jsx = (tag: string | FC<any>, props: Record<string, any>, key?: string | number): VNode => {
+const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | number): VNode => {
   const vnode = new Array(3).fill(null) as VNode;
   vnode[0] = tag;
   vnode[1] = props;
@@ -21,8 +21,8 @@ const jsx = (tag: string | FC<any>, props: Record<string, any>, key?: string | n
       }
     }
     const res = render(vnode, renderOptions);
-    (res as any).length = 3;
-    (res as any)[Symbol.iterator] = function*() {
+    (res as unknown as Array<unknown>).length = 3;
+    (res as unknown as Array<unknown>)[Symbol.iterator] = function*() {
       for (let i = 0; i < 3; i++) {
         yield vnode[i];
       }

@@ -5,7 +5,7 @@ import { $fragment, $html, $vnode } from "./jsx.ts";
 
 interface RenderContext {
   write(chunk: string): void;
-  store: Map<string, any>;
+  store: Map<string, unknown>;
   suspenses: Promise<void>[];
   eventHandlerIndex: number;
   eager?: boolean;
@@ -529,7 +529,7 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
       const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
-      const store = new Map<string, any>();
+      const store = new Map<string, unknown>();
       const suspenses: Promise<void>[] = [];
       const ctx: RenderContext = { ...renderOptions, store, suspenses, eventHandlerIndex: 0, write };
       try {

@@ -5,7 +5,7 @@ import type * as Mono from "./mono.d.ts";
 import type { RenderOptions } from "./render.d.ts";
 
 export namespace HTML {
-  type HTMLClass = string | boolean | undefined | null | Record<string, any>;
+  type HTMLClass = string | boolean | undefined | null | Record<string, unknown>;
   type CrossOrigin = "anonymous" | "use-credentials";
   type Target = "_blank" | "_self" | "_parent" | "_top";
   type ReferrerPolicy =
@@ -135,7 +135,7 @@ export namespace HTML {
 
   interface FormAttributes<T extends EventTarget> extends GlobalAttributes<T> {
     "accept-charset"?: string;
-    action: string | /* Mono specific */ ((data: FormData) => any);
+    action: string | (/* Mono specific */ (data: FormData) => void | Promise<void>);
     autoComplete?: "on" | "off";
     encType?: "application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain";
     method?: "GET" | "POST" | "dialog";
@@ -261,7 +261,7 @@ export namespace HTML {
   interface AreaAttributes<T extends EventTarget> extends GlobalAttributes<T> {
     alt?: string;
     coords?: string;
-    download?: any;
+    download?: string;
     href?: string;
     hrefLang?: string;
     media?: string;

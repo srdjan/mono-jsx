@@ -1,3 +1,5 @@
+/// <reference lib="dom.iterable" />
+
 const slots = new Map<string, HTMLElement>();
 const getChunkId = (el: HTMLElement) => el.getAttribute("chunk-id");
 

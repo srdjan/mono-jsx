@@ -21,7 +21,7 @@ Deno.test("[ssr] condition&loop", async () => {
     }
     return null;
   };
-  function* For({ value }: { value: any[] }) {
+  function* For({ value }: { value: unknown[] }) {
     for (const i of value) {
       yield <>{i}</>;
     }

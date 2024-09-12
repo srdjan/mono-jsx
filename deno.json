@@ -28,10 +28,9 @@
         "ban-types",
         "ban-ts-comment",
         "no-empty-interface",
-        "no-explicit-any",
         "no-this-alias",
         "prefer-const",
-        "verbatim-module-syntax"
+        "no-slow-types"
       ]
     }
   }

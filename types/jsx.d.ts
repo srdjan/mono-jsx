@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any no-var
 import type * as Mono from "./mono.d.ts";
 import type { HTML } from "./html.d.ts";
 
@@ -12,7 +13,6 @@ declare global {
     interface IntrinsicAttributes extends Mono.BaseAttributes, Mono.AsyncComponentAttributes {}
     interface IntrinsicElements extends HTML.Elements, HTML.SVGElements, Mono.Elements {}
   }
-  // deno-lint-ignore no-var
   var html: TC, css: TC, js: TC;
 }
 
@@ -32,5 +32,5 @@ export interface FC<P = {}> {
 }
 
 export interface TC {
-  (strings: TemplateStringsArray, ...values: any[]): VNode;
+  (strings: TemplateStringsArray, ...values: unknown[]): VNode;
 }

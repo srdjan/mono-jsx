@@ -1,7 +1,7 @@
 import type { FC, VNode } from "./jsx.d.ts";
 
 export function jsx(
-  tag: string | FC<any>,
+  tag: string | FC,
   props: Record<string, unknown>,
   key?: string | number,
 ): VNode;
