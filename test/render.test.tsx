@@ -97,13 +97,25 @@ Deno.test("[ssr] style", async () => {
     const id = hashCode("background-color:#fff|:hover>background-color:#eee").toString(36);
     assertEquals(
       await renderToString(
-        <button class="button" style={{ backgroundColor: "#fff", ":hover": { backgroundColor: "#eee" } }}>Click me</button>,
+        <button role="button" style={{ backgroundColor: "#fff", ":hover": { backgroundColor: "#eee" } }}>Click me</button>,
       ),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
         `<style id="css-${id}">.css-${id}{background-color:#fff}.css-${id}:hover{background-color:#eee}</style>`,
-        `<button class="button css-${id}">Click me</button>`,
+        `<button role="button" class="css-${id}">Click me</button>`,
+        `</body></html>`,
+      ].join(""),
+    );
+    assertEquals(
+      await renderToString(
+        <button class="button" role="button" style={{ backgroundColor: "#fff", ":hover": { backgroundColor: "#eee" } }}>Click me</button>,
+      ),
+      [
+        `<!DOCTYPE html>`,
+        `<html lang="en"><body>`,
+        `<style id="css-${id}">.css-${id}{background-color:#fff}.css-${id}:hover{background-color:#eee}</style>`,
+        `<button class="button css-${id}" role="button">Click me</button>`,
         `</body></html>`,
       ].join(""),
     );
