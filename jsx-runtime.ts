@@ -1,5 +1,5 @@
 import type { FC, VNode } from "./types/jsx.d.ts";
-import { $fragment, $vnode } from "./jsx.ts";
+import { $fragment, $vnode, iconsRegistry } from "./jsx.ts";
 import { render } from "./render.ts";
 
 const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | number): VNode => {
@@ -30,4 +30,15 @@ const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | nu
   return vnode as unknown as VNode;
 };
 
-export { $fragment as Fragment, jsx, jsx as jsxs };
+function jsxIcon(name: string, svg: string): void {
+  const svgTagStart = svg.indexOf("<svg");
+  const svgTagEnd = svg.indexOf(">", svgTagStart);
+  const viewBox = svg.slice(0, svgTagEnd).match(/viewBox=['"]([^'"]+)['"]/)?.[1] ?? "";
+  const iconSvg = '<svg class="icon" role="img" aria-hidden="true" style="width:auto;height:1em" fill="none"'
+    + " viewBox=" + JSON.stringify(viewBox)
+    + ' xmlns="http://www.w3.org/2000/svg">'
+    + svg.slice(svgTagEnd + 1).replace(/\n/g, "").replace(/=['"](black|#000000)['"]/g, '="currentColor"');
+  iconsRegistry.set(name.replace(/^icon-/, ""), iconSvg);
+}
+
+export { $fragment as Fragment, jsx, jsx as jsxs, jsxIcon };

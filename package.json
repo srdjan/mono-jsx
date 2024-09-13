@@ -3,13 +3,10 @@
   "version": "0.0.0-alpha.5",
   "description": "`<html>` as a `Response`.",
   "type": "module",
-  "main": "./index.mjs",
   "module": "./index.mjs",
-  "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.mjs",
-      "types": "./types/index.d.ts"
+      "import": "./index.mjs"
     },
     "./jsx-runtime": {
       "import": "./jsx-runtime.mjs",

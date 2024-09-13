@@ -1,7 +1,7 @@
 import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
-import { $computed, $fragment, $html, $state, $vnode } from "./jsx.ts";
+import { $computed, $fragment, $html, $state, $vnode, iconsRegistry } from "./jsx.ts";
 
 interface RenderContext {
   write(chunk: string): void;
@@ -69,11 +69,10 @@ const cssBareUnitProps = new Set([
 
 const htmlTagRegexp = /^[a-z][\w\-$]*$/;
 const matchHtmlRegExp = /["'&<>]/;
-const stringify = JSON.stringify;
 const encoder = new TextEncoder();
 const isObject = (v: unknown): v is object => typeof v === "object" && v !== null;
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
-const toAttrStringLit = (str: string) => stringify(escapeHTML(str));
+const toAttrStringLit = (str: string) => JSON.stringify(escapeHTML(str));
 const toHyphenCase = (k: string) => k.replace(/[a-z][A-Z]/g, (m) => m.charAt(0) + "-" + m.charAt(1).toLowerCase());
 
 async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ignoreSlotProp?: boolean): Promise<void> {
@@ -326,8 +325,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
         // regular html element
         if (typeof tag === "string" && htmlTagRegexp.test(tag)) {
           if (tag.startsWith("icon-")) {
-            const JSX = Reflect.get(globalThis, "JSX");
-            const svg = JSX?.iconsRegistry.get(tag.slice(5));
+            const svg = iconsRegistry.get(tag.slice(5));
             if (svg) {
               write(svg);
               break;
@@ -595,7 +593,7 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
           write("<script>(()=>{");
           write(RUNTIME_STATE);
           write("for(const[n,v]of");
-          write(stringify(Array.from(store.entries()).map((e) => e[1] === undefined ? [e[0]] : e)));
+          write(JSON.stringify(Array.from(store.entries()).map((e) => e[1] === undefined ? [e[0]] : e)));
           write(")createState(n,v);})()</script>");
         }
         if (suspenses.length > 0) {
