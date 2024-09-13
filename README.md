@@ -233,10 +233,10 @@ function App() {
       {/* use the state */}
       <span>{$state.count}</span>
       {/* computed state */}
-      <em>doubled: {$computed(() => 2 * $state.count)}</em>
+      <span>doubled: {$computed(() => 2 * $state.count)}</span>
       {/* update the state in event handlers */}
-      <button onClick={() => $state.count-- }>-</button>
-      <button onClick={() => $state.count++ }>+</button>
+      <button onClick={() => $state.count--}>-</button>
+      <button onClick={() => $state.count++}>+</button>
     </div>
   );
 }
@@ -270,7 +270,7 @@ function App() {
       <toggle value={$state.show} defaultValue={true}>
         <h1>Hello World!</h1>
       </toggle>
-      <button onClick={() => $state.show = !$state.show }>{$computed(() => $state.show ? 'Hide': 'Show')}</button>
+      <button onClick={() => $state.show = !$state.show}>{$computed(() => $state.show ? "Hide" : "Show")}</button>
     </div>
   );
 }
@@ -289,7 +289,7 @@ function App() {
         <Image2 />
         <Image3 />
       </switch>
-      <button onClick={() => $state.image = ($state.image + 1) % 3 }>Switch Image</button>
+      <button onClick={() => $state.image = ($state.image + 1) % 3}>Switch Image</button>
     </div>
   );
 }
@@ -307,10 +307,10 @@ function App() {
         <Icon3 key="icon-3" />
         <Icon4 default />
       </switch>
-      <button onClick={() => $state.icon = "icon-1" }>Switch Icon(#1)</button>
-      <button onClick={() => $state.icon = "icon-2" }>Switch Icon(#2)</button>
-      <button onClick={() => $state.icon = "icon-3" }>Switch Icon(#3)</button>
-      <button onClick={() => $state.icon = "_" }>Switch Icon(default)</button>
+      <button onClick={() => $state.icon = "icon-1"}>Switch Icon(#1)</button>
+      <button onClick={() => $state.icon = "icon-2"}>Switch Icon(#2)</button>
+      <button onClick={() => $state.icon = "icon-3"}>Switch Icon(#3)</button>
+      <button onClick={() => $state.icon = "_"}>Switch Icon(default)</button>
     </div>
   );
 }
