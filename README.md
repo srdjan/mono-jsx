@@ -1,6 +1,15 @@
 # mono-jsx
 
-`<html>` as a `Response`.
+> `<html>` as a `Response`.
+
+mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object for server-side rendering(SSR) in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
+
+- No build step required
+- Lightweight(6KB gzipped), no dependencies
+- Minimal state runtime
+- Streaming rendering by default
+- Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
+- Fully HTML/CSS types provided
 
 ```jsx
 /* @jsxImportSource mono-jsx */
@@ -92,7 +101,7 @@ and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app.
 npx tsx app.jsx
 ```
 
-If you are building an web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), you can use the `wrangler dev` command to start the app in local development.
+If you are building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), you can use the `wrangler dev` command to start the app in local development.
 
 ```bash
 npx wrangler dev app.jsx
@@ -100,20 +109,19 @@ npx wrangler dev app.jsx
 
 ## Using JSX
 
-mono-jsx uses [**JSX**](https://react.dev/learn/describing-the-ui) to describe the HTML structure, similar to React but with some differences.
+mono-jsx uses [**JSX**](https://react.dev/learn/describing-the-ui) to describe the user interface, similar to React but with some differences.
 
 ### Using Standard HTML Property Names
 
-mono-jsx uses standard HTML property names instead of React's special property:
+mono-jsx uses standard HTML property names instead of React's overthinked property names.
 
 - `className` -> `class`
 - `htmlFor` -> `for`
-- `onInput` -> `onChange`
+- `onChange` -> `onInput`
 
 ### Composition `class`
 
 mono-jsx allows you to compose the `class` property using an array of strings, objects, or expressions.
-The idea is inspired by [Classnames](https://github.com/JedWatson/classnames).
 
 ```jsx
 <div class={["container box", isActive && "active", { hover: isHover }]} />;
@@ -138,9 +146,9 @@ mono-jsx allows you to use [pseudo classes](https://developer.mozilla.org/en-US/
 </a>;
 ```
 
-### `<slot>` Component
+### `<slot>` Element
 
-mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content(Equivalent to React's `children` proptery). You can add the `name` attribute to define a named slot.
+mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content(Equivalent to React's `children` proptery). Plus, you also can add the `name` attribute to define a named slot.
 
 ```jsx
 function Container() {
@@ -189,7 +197,7 @@ function Button() {
 }
 ```
 
-However, the event handler would never be called at SSR time. It will be transformed into a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
+However, the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
 
 ```jsx
 function Button() {
@@ -198,7 +206,7 @@ function Button() {
     <button
       onClick={(evt) => {
         Deno.exit(0); // ❌ Deno is unavailable in the browser
-        alert(message); // ❌ message is not defined
+        alert(message); // ❌ message is a server-side variable
         document.title = "BOOM!"; // ✅ document is a browser API
       }}
     >
@@ -208,7 +216,7 @@ function Button() {
 }
 ```
 
-Plus, mono-jsx supports the `onMount` event handler that will be called when the element is mounted.
+Plus, mono-jsx supports the `mount` event that will be triggered when the element is mounted in the client-side.
 
 ```jsx
 function App() {
@@ -242,6 +250,7 @@ function App() {
 }
 ```
 
+
 To support type checking in TypeScript, declare the `State` interface in the global scope:
 
 ```ts
@@ -252,8 +261,8 @@ declare global {
 }
 ```
 
-> [!IMPORTANT]
-> state in mono-jsx is global and can be accessed from any component event handlers or external JavaScript code. **Ensure to use unique names for each state to avoid conflicts.**
+> [!NOTE]
+> The `$state` and `$computed` are global functions injected by mono-jsx.
 
 ## Built-in elements
 
