@@ -19,12 +19,6 @@ const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | nu
       }
     }
     const res = render(vnode as unknown as VNode, renderOptions);
-    (res as unknown as Array<unknown>).length = 3;
-    (res as unknown as Array<unknown>)[Symbol.iterator] = function*() {
-      for (let i = 0; i < 3; i++) {
-        yield vnode[i];
-      }
-    };
     return res as unknown as VNode;
   }
   return vnode as unknown as VNode;

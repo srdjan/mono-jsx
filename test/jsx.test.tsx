@@ -109,41 +109,10 @@ Deno.test("[jsx] jsx transform", () => {
 Deno.test("[jsx] <html> as a `Response` object", () => {
   const res = (
     <html lang="en" headers={{ cacheControl: "public" }}>
-      <head>
-        <title>Hello world!</title>
-      </head>
-      <body>
-        <h1>Hello world!</h1>
-      </body>
+      <head />
+      <body />
     </html>
   );
   assert(res instanceof Response);
   assertEquals(res.headers.get("cache-control"), "public");
-  assertEquals([...res], [
-    "html",
-    {
-      lang: "en",
-      children: [
-        ["head", {
-          children: [
-            "title",
-            {
-              children: "Hello world!",
-            },
-            $vnode,
-          ],
-        }, $vnode],
-        ["body", {
-          children: [
-            "h1",
-            {
-              children: "Hello world!",
-            },
-            $vnode,
-          ],
-        }, $vnode],
-      ],
-    },
-    $vnode,
-  ]);
 });
