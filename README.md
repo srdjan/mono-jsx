@@ -127,13 +127,13 @@ mono-jsx allows you to use [pseudo classes](https://developer.mozilla.org/en-US/
 <a
   style={{
     color: "black",
-    "::after": { content: '↩️' },
+    "::after": { content: "↩️" },
     ":hover": { textDecoration: "underline" },
     "@media (prefers-color-scheme: dark)": { color: "white" },
     "& .icon": { width: "1em", height: "1em", marginRight: "0.5em" },
   }}
 >
-  <img class="icon" src="link.png" >
+  <img class="icon" src="link.png" />
   Link
 </a>;
 ```
@@ -208,7 +208,7 @@ function Button() {
 }
 ```
 
-Plus, mono-jsx supports the `onMount` event handler that will be called when the component is mounted.
+Plus, mono-jsx supports the `onMount` event handler that will be called when the element is mounted.
 
 ```jsx
 function App() {
@@ -224,81 +224,101 @@ function App() {
 
 mono-jsx provides a minimal state runtime that allows you to update view based on state changes in client-side.
 
-To use state in mono-jsx, add `<state name="STATE_NAME" value={"initial"} />` to the JSX code, then you can access/update the state using `state.STATE_NAME`, the view will be updated automatically when the state changes.
-
 ```jsx
 function App() {
+  // Initialize the state 'count' with `0` value
+  $state.count = 0;
   return (
     <div>
-      <button onClick={() => state.counter--}>-</button>
-      <strong>
-        <state name="counter" value={0} />
-      </strong>
-      <button onClick={() => state.counter++}>+</button>
+      {/* use the state */}
+      <span>{$state.count}</span>
+      {/* computed state */}
+      <em>doubled: {$computed(() => 2 * $state.count)}</em>
+      {/* update the state in event handlers */}
+      <button onClick={() => $state.count-- }>-</button>
+      <button onClick={() => $state.count++ }>+</button>
     </div>
   );
+}
+```
+
+To support type checking in TypeScript, declare the `State` interface in the global scope:
+
+```ts
+declare global {
+  interface State {
+    count: number;
+  }
 }
 ```
 
 > [!IMPORTANT]
 > state in mono-jsx is global and can be accessed from any component event handlers or external JavaScript code. **Ensure to use unique names for each state to avoid conflicts.**
 
-### `<toggle>` component
+## Built-in elements
 
-`<toggle>` component allows you to toggle the visibility of the slotted content.
+mono-jsx provides some built-in elements to help you build your app.
+
+### `<toggle>` element
+
+`<toggle>` element allows you to toggle the visibility of the slotted content.
 
 ```jsx
 function App() {
   return (
     <div>
-      <toggle name="show" value={true}>
+      <toggle value={$state.show} defaultValue={true}>
         <h1>Hello World!</h1>
       </toggle>
-      <button onClick={() => state.show = !state.show}>Toggle</button>
+      <button onClick={() => $state.show = !$state.show }>{$computed(() => $state.show ? 'Hide': 'Show')}</button>
     </div>
   );
 }
 ```
 
-### `<switch>` component
+### `<switch>` element
 
-Use `<switch>` component to render a child element based on the value of the state.
+`<switch>` element allows you to switch the slotted content based on the `value` prop.
 
 ```jsx
 function App() {
   return (
     <div>
-      <switch name="image" value={0}>
+      <switch value={$state.image} defaultValue={0}>
         <Image1 />
         <Image2 />
         <Image3 />
       </switch>
-      <button onClick={() => state.image = (state.image + 1) % 3}>Switch Image</button>
+      <button onClick={() => $state.image = ($state.image + 1) % 3 }>Switch Image</button>
     </div>
   );
 }
 ```
 
-You can add an unique `key` to each child element as the `<switch>` component uses the key to identify the child element to render, or the `default` proptery to set a default child element to render when the value is not matched.
+You can add an unique `key` to each child element as the `<switch>` element uses the key to identify the child element to render, or the `default` proptery to set a default child element to render when the value is not matched.
 
 ```jsx
 function App() {
   return (
     <div>
-      <switch name="image" value="image-1">
-        <Image1 key="image-1" />
-        <Image2 key="image-2" />
-        <Image3 key="image-3" />
-        <Image4 default />
+      <switch value={$state.icon}>
+        <Icon1 key="icon-1" />
+        <Icon2 key="icon-2" />
+        <Icon3 key="icon-3" />
+        <Icon4 default />
       </switch>
-      <button onClick={() => state.image = "image-1"}>Switch Image(#1)</button>
-      <button onClick={() => state.image = "image-2"}>Switch Image(#2)</button>
-      <button onClick={() => state.image = "image-3"}>Switch Image(#3)</button>
-      <button onClick={() => state.image = "whatever"}>Switch Image(default)</button>
+      <button onClick={() => $state.icon = "icon-1" }>Switch Icon(#1)</button>
+      <button onClick={() => $state.icon = "icon-2" }>Switch Icon(#2)</button>
+      <button onClick={() => $state.icon = "icon-3" }>Switch Icon(#3)</button>
+      <button onClick={() => $state.icon = "_" }>Switch Icon(default)</button>
     </div>
   );
 }
 ```
+
+### `<cache>` element
+
+[Todo]
 
 ## Streaming Rendering
 
@@ -321,5 +341,3 @@ export default {
   ),
 };
 ```
-
-## Partial Cache

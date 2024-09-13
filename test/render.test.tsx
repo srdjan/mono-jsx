@@ -374,7 +374,7 @@ Deno.test("[ssr] catch error", async () => {
     throw new Error("Boom!");
   };
   assertEquals(
-    await renderToString(<Boom catch={(err) => <p>error: {err.message}</p>} />),
+    await renderToString(<Boom catch={(err: Error) => <p>error: {err.message}</p>} />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -395,29 +395,14 @@ declare global {
 
 Deno.test("[ssr] using state", async () => {
   assertEquals(
-    await renderToString(<state name="foo" value={"bar"} />),
+    await renderToString(<span>{$state.foo}</span>),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-state name="foo" hidden></mono-state>`,
-      `bar`,
+      `<span>`,
+      `<mono-state key="foo" hidden></mono-state>`,
       `<!--/-->`,
-      `</body></html>`,
-      `<script>(()=>{`,
-      RUNTIME_STATE,
-      `for(const[n,v]of`,
-      `[["foo","bar"]]`,
-      `)createState(n,v);})()</script>`,
-    ].join(""),
-  );
-
-  assertEquals(
-    await renderToString(<state name="foo" />),
-    [
-      `<!DOCTYPE html>`,
-      `<html lang="en"><body>`,
-      `<mono-state name="foo" hidden></mono-state>`,
-      `<!--/-->`,
+      `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
@@ -427,16 +412,38 @@ Deno.test("[ssr] using state", async () => {
     ].join(""),
   );
 
+  $state.foo = "bar";
+  assertEquals(
+    await renderToString(<span>{$state.foo}</span>),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<span>`,
+      `<mono-state key="foo" hidden></mono-state>`,
+      `bar`,
+      `<!--/-->`,
+      `</span>`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE,
+      `for(const[n,v]of`,
+      `[["foo","bar"]]`,
+      `)createState(n,v);})()</script>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] using <toggle>", async () => {
   assertEquals(
     await renderToString(
-      <toggle name="show" value={true}>
+      <toggle value={$state.show} defaultValue={true}>
         <h1>👋</h1>
       </toggle>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-toggle name="show" hidden></mono-toggle>`,
+      `<mono-toggle key="show" hidden></mono-toggle>`,
       `<template leading></template><h1>👋</h1><!--/-->`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -449,27 +456,29 @@ Deno.test("[ssr] using state", async () => {
 
   assertEquals(
     await renderToString(
-      <toggle name="show" value={false}>
+      <toggle value={$state.show}>
         <h1>👋</h1>
       </toggle>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-toggle name="show" hidden></mono-toggle>`,
+      `<mono-toggle key="show" hidden></mono-toggle>`,
       `<template><h1>👋</h1></template>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
       `for(const[n,v]of`,
-      `[["show",false]]`,
+      `[["show"]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
+});
 
+Deno.test("[ssr] using `switch`", async () => {
   assertEquals(
     await renderToString(
-      <switch name="num" value={0}>
+      <switch value={$state.num} defaultValue={0}>
         <span>0</span>
         <span>1</span>
       </switch>,
@@ -477,7 +486,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-switch name="num" hidden></mono-switch>`,
+      `<mono-switch key="num" hidden></mono-switch>`,
       `<template leading></template><span>0</span><!--/-->`,
       `<template><span>1</span></template>`,
       `</body></html>`,
@@ -491,7 +500,7 @@ Deno.test("[ssr] using state", async () => {
 
   assertEquals(
     await renderToString(
-      <switch name="num" value={1}>
+      <switch value={$state.num} defaultValue={1}>
         <span>0</span>
         <span>1</span>
       </switch>,
@@ -499,7 +508,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-switch name="num" hidden></mono-switch>`,
+      `<mono-switch key="num" hidden></mono-switch>`,
       `<template><span>0</span></template>`,
       `<template leading></template><span>1</span><!--/-->`,
       `</body></html>`,
@@ -513,7 +522,7 @@ Deno.test("[ssr] using state", async () => {
 
   assertEquals(
     await renderToString(
-      <switch name="num" value={3}>
+      <switch value={$state.num} defaultValue={2}>
         <span>0</span>
         <span>1</span>
       </switch>,
@@ -521,21 +530,21 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-switch name="num" hidden></mono-switch>`,
+      `<mono-switch key="num" hidden></mono-switch>`,
       `<template><span>0</span></template>`,
       `<template><span>1</span></template>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE,
       `for(const[n,v]of`,
-      `[["num",3]]`,
+      `[["num",2]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
 
   assertEquals(
     await renderToString(
-      <switch name="select" value={"a"}>
+      <switch value={$state.select} defaultValue="a">
         <span key="a">A</span>
         <span key="b">B</span>
         <span default>NULL</span>
@@ -544,7 +553,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-switch name="select" hidden></mono-switch>`,
+      `<mono-switch key="select" hidden></mono-switch>`,
       `<template key="a" leading></template><span>A</span><!--/-->`,
       `<template key="b"><span>B</span></template>`,
       `<template default><span>NULL</span></template>`,
@@ -559,7 +568,7 @@ Deno.test("[ssr] using state", async () => {
 
   assertEquals(
     await renderToString(
-      <switch name="select" value={"b"}>
+      <switch value={$state.select} defaultValue="b">
         <span key="a">A</span>
         <span key="b">B</span>
         <span default>NULL</span>
@@ -568,7 +577,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-switch name="select" hidden></mono-switch>`,
+      `<mono-switch key="select" hidden></mono-switch>`,
       `<template key="a"><span>A</span></template>`,
       `<template key="b" leading></template><span>B</span><!--/-->`,
       `<template default><span>NULL</span></template>`,
@@ -583,7 +592,7 @@ Deno.test("[ssr] using state", async () => {
 
   assertEquals(
     await renderToString(
-      <switch name="select" value={"c"}>
+      <switch value={$state.select}>
         <span key="a">A</span>
         <span key="b">B</span>
         <span default>NULL</span>
@@ -592,7 +601,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<mono-switch name="select" hidden></mono-switch>`,
+      `<mono-switch key="select" hidden></mono-switch>`,
       `<template key="a"><span>A</span></template>`,
       `<template key="b"><span>B</span></template>`,
       `<template default leading></template><span>NULL</span><!--/-->`,
@@ -600,11 +609,8 @@ Deno.test("[ssr] using state", async () => {
       `<script>(()=>{`,
       RUNTIME_STATE,
       `for(const[n,v]of`,
-      `[["select","c"]]`,
+      `[["select"]]`,
       `)createState(n,v);})()</script>`,
     ].join(""),
   );
-});
-
-Deno.test("[ssr] <cache>", async () => {
 });

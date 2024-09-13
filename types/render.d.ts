@@ -3,9 +3,10 @@ export interface RenderOptions {
   headers?: {
     [key: string]: string | undefined;
     contentSecurityPolicy?: string;
-    cacheControl?: "public, max-age=31536000, immutable" | "private, max-age=0, must-revalidate" | (string & {});
+    cacheControl?: "public, max-age=31536000, immutable" | "public, max-age=0, must-revalidate" | (string & {});
     etag?: string;
     lastModified?: string;
     setCookie?: string;
   };
+  rendering?: "eager";
 }

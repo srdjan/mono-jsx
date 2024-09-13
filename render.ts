@@ -1,7 +1,7 @@
 import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
-import { $fragment, $html, $vnode } from "./jsx.ts";
+import { $computed, $fragment, $html, $state, $vnode } from "./jsx.ts";
 
 interface RenderContext {
   write(chunk: string): void;
@@ -10,7 +10,6 @@ interface RenderContext {
   eventHandlerIndex: number;
   eager?: boolean;
   slots?: Children;
-  request?: Request;
   styleIds?: Set<string>;
 }
 
@@ -138,81 +137,138 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], ign
           break;
         }
 
-        // state elements
-        if (tag === "state" || tag === "toggle" || tag === "switch") {
-          const name = props.name;
-          const valueProp = props.value;
-          const value = valueProp ?? (name ? store.get(name) : undefined);
-          if (name) {
-            write("<mono-" + tag + " name=" + toAttrStringLit(name) + " hidden></mono-" + tag + ">");
+        // state
+        if (tag === $state) {
+          const { key, value } = props;
+          write("<mono-state key=" + toAttrStringLit(key) + " hidden></mono-state>");
+          if (value !== undefined) {
+            write(escapeHTML(String(value)));
           }
-          if (tag === "toggle") {
-            if (children !== undefined) {
-              if (name) {
-                write("<template" + (value ? " leading></template>" : ">"));
-                await renderChildren(ctx, children);
-                if (value) {
-                  write("<!--/-->");
-                } else {
-                  write("</template>");
-                }
-              } else if (value) {
-                await renderChildren(ctx, children);
-              }
+          write("<!--/-->");
+          store.set(key, value);
+          break;
+        }
+
+        // computed
+        if (tag === $computed) {
+          const { deps, value, fn } = props;
+          write("<mono-computed deps=" + toAttrStringLit(deps.join(",")) + " hidden><template>" + fn + "</template></mono-computed>");
+          if (value !== undefined) {
+            write(escapeHTML(String(value)));
+          }
+          for (const dep of deps) {
+            if (!store.has(dep)) {
+              store.set(dep, undefined);
             }
-          } else if (tag === "switch") {
-            if (children !== undefined) {
-              const nodes = Array.isArray(children) ? (isVNode(children) ? [children] : children.filter(isVNode)) : [];
-              let matchedIndex = -1;
-              let defaultNode: VNode | undefined;
-              for (let idx = 0; idx < nodes.length; idx++) {
-                const childNode = nodes[idx];
-                const childNodeProps = childNode[1];
-                if (childNodeProps.default) {
-                  defaultNode = childNode;
-                  continue;
-                }
-                const key = childNodeProps.key;
-                const matched = (key ?? idx) === value;
-                if (matched) {
-                  matchedIndex = idx;
-                }
-                if (name) {
-                  write(
-                    "<template"
-                      + (key !== undefined ? " key=" + toAttrStringLit(String(key)) : "")
-                      + (matched ? " leading></template>" : ">"),
-                  );
-                  await renderNode(ctx, childNode);
-                  if (matched) {
-                    write("<!--/-->");
-                  } else {
-                    write("</template>");
+          }
+          write("<!--/-->");
+          break;
+        }
+
+        // toggle element
+        if (tag === "toggle") {
+          if (children !== undefined) {
+            const valueProp = props.value;
+            const defaultValue = props.defaultValue;
+            if (isVNode(valueProp) && valueProp[0] === $state || valueProp[0] === $computed) {
+              const { key, deps, value, fn } = valueProp[1];
+              const valueOrDefault = value ?? defaultValue;
+              write(
+                "<mono-toggle "
+                  + (key ? "key=" + toAttrStringLit(key) : "deps=" + toAttrStringLit(deps.join(",")))
+                  + " hidden>"
+                  + (fn ? "<template>" + fn + "</template>" : "")
+                  + "</mono-toggle><template"
+                  + (valueOrDefault ? " leading></template>" : ">"),
+              );
+              await renderChildren(ctx, children);
+              write(valueOrDefault ? "<!--/-->" : "</template>");
+              if (key) {
+                store.set(key, valueOrDefault);
+              } else {
+                for (const dep of deps) {
+                  if (!store.has(dep)) {
+                    store.set(dep, undefined);
                   }
-                } else if (matched) {
-                  await renderNode(ctx, childNode);
                 }
               }
-              if (name && defaultNode) {
-                write("<template default" + (matchedIndex === -1 ? " leading></template>" : ">"));
-                await renderNode(ctx, defaultNode);
-                if (matchedIndex === -1) {
+            } else if (valueProp ?? defaultValue) {
+              await renderChildren(ctx, children);
+            }
+          }
+          break;
+        }
+
+        // switch element
+        if (tag === "switch") {
+          if (children !== undefined) {
+            const valueProp = props.value;
+            const defaultValue = props.defaultValue;
+            let name: string | undefined;
+            let valueOrDefault: unknown;
+            if (isVNode(valueProp) && valueProp[0] === $state || valueProp[0] === $computed) {
+              const { key, deps, value, fn } = valueProp[1];
+              name = key;
+              valueOrDefault = value ?? defaultValue;
+              write(
+                "<mono-switch "
+                  + (key ? "key=" + toAttrStringLit(key) : "deps=" + toAttrStringLit(deps.join(",")))
+                  + " hidden>"
+                  + (fn ? "<template>" + fn + "</template>" : "")
+                  + "</mono-switch>",
+              );
+              if (key) {
+                store.set(key, valueOrDefault);
+              } else {
+                for (const dep of deps) {
+                  if (!store.has(dep)) {
+                    store.set(dep, undefined);
+                  }
+                }
+              }
+            } else {
+              valueOrDefault = valueProp ?? defaultValue;
+            }
+            const nodes = Array.isArray(children) ? (isVNode(children) ? [children] : children.filter(isVNode)) : [];
+            let matchedIndex = -1;
+            let defaultNode: VNode | undefined;
+            for (let idx = 0; idx < nodes.length; idx++) {
+              const childNode = nodes[idx];
+              const childNodeProps = childNode[1];
+              if (childNodeProps.default) {
+                defaultNode = childNode;
+                continue;
+              }
+              const key = childNodeProps.key;
+              const matched = (key ?? idx) === valueOrDefault;
+              if (matched) {
+                matchedIndex = idx;
+              }
+              if (name) {
+                write(
+                  "<template"
+                    + (key !== undefined ? " key=" + toAttrStringLit(String(key)) : "")
+                    + (matched ? " leading></template>" : ">"),
+                );
+                await renderNode(ctx, childNode);
+                if (matched) {
                   write("<!--/-->");
                 } else {
                   write("</template>");
                 }
+              } else if (matched) {
+                await renderNode(ctx, childNode);
               }
             }
-          } else {
-            if (value !== undefined) {
-              write(escapeHTML(String(value)));
+            if (name && defaultNode) {
+              write("<template default" + (matchedIndex === -1 ? " leading></template>" : ">"));
+              await renderNode(ctx, defaultNode);
+              if (matchedIndex === -1) {
+                write("<!--/-->");
+              } else {
+                write("</template>");
+              }
             }
-            if (name) {
-              write("<!--/-->");
-            }
-          }
-          if (name) {
-            store.set(name, value);
           }
           break;
         }
@@ -531,7 +587,7 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
       const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
       const store = new Map<string, unknown>();
       const suspenses: Promise<void>[] = [];
-      const ctx: RenderContext = { ...renderOptions, store, suspenses, eventHandlerIndex: 0, write };
+      const ctx: RenderContext = { write, store, suspenses, eventHandlerIndex: 0, eager: renderOptions?.rendering === "eager" };
       try {
         write("<!DOCTYPE html>");
         await renderNode(ctx, node);
@@ -555,16 +611,16 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
   });
   const headers: Record<string, string> = Object.create(null);
   const request = renderOptions?.request;
-  const headersOptions = renderOptions?.headers;
-  if (headersOptions) {
-    const { etag, lastModified } = headersOptions;
+  const headersInit = renderOptions?.headers;
+  if (headersInit) {
+    const { etag, lastModified } = headersInit;
     if (etag && request?.headers.get("if-none-match") === etag) {
       return new Response(null, { status: 304 });
     }
     if (lastModified && request?.headers.get("if-modified-since") === lastModified) {
       return new Response(null, { status: 304 });
     }
-    for (const [key, value] of Object.entries(headersOptions)) {
+    for (const [key, value] of Object.entries(headersInit)) {
       if (value) {
         headers[toHyphenCase(key)] = value;
       }

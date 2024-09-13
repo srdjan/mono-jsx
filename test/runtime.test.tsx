@@ -46,12 +46,10 @@ declare global {
 Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testUrl = addJSX(
     <div>
-      <h1>
-        <state name="text" />
-      </h1>
+      <h1>{$state.text}</h1>
       <button
         onClick={() => {
-          state.text = "Hello world!";
+          $state.text = "Hello world!";
         }}
       />
     </div>,
@@ -74,19 +72,19 @@ Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false },
 });
 
 Deno.test("[run] using state(counter)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  $state.counter = 0;
+
   const testUrl = addJSX(
     <div>
       <button
         onClick={() => {
-          state.counter--;
+          $state.counter--;
         }}
       />
-      <strong>
-        <state name="counter" value={0} />
-      </strong>
+      <strong>{$state.counter}</strong>
       <button
         onClick={() => {
-          state.counter++;
+          $state.counter++;
         }}
       />
     </div>,

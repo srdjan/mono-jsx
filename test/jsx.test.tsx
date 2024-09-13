@@ -1,9 +1,8 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { Fragment } from "mono-jsx/jsx-runtime";
-import { $vnode } from "../jsx.ts";
+import { $fragment, $html, $vnode } from "../jsx.ts";
 import type { VNode } from "../types/jsx.d.ts";
 
-Deno.test("[jsx] jsx to vnode", () => {
+Deno.test("[jsx] jsx transform", () => {
   assertEquals(
     <h1>Hello world!</h1> as VNode,
     [
@@ -21,10 +20,7 @@ Deno.test("[jsx] jsx to vnode", () => {
           1,
           "/",
           false,
-          [
-            ["i", { key: 1 }, $vnode],
-            ["i", { key: 2 }, $vnode],
-          ],
+          [["i", { key: 1 }, $vnode], ["i", { key: 2 }, $vnode]],
         ],
       },
       $vnode,
@@ -38,7 +34,7 @@ Deno.test("[jsx] jsx to vnode", () => {
       </>
     ) as VNode,
     [
-      Fragment,
+      $fragment,
       {
         children: [
           ["span", { children: "Hello" }, $vnode],
@@ -52,10 +48,61 @@ Deno.test("[jsx] jsx to vnode", () => {
     <foo-bar /> as VNode,
     ["foo-bar", {}, $vnode],
   );
-  const App = (_: { foo: "bar" }) => null;
+  const App = (_props: { foo: "bar" }) => null;
   assertEquals(
     <App foo="bar" /> as VNode,
     [App, { foo: "bar" }, $vnode],
+  );
+  assertEquals(
+    <div>{html`<h1>Hello world!</h1>`}</div> as VNode,
+    [
+      "div",
+      {
+        children: [
+          $html,
+          { innerHTML: "<h1>Hello world!</h1>" },
+          $vnode,
+        ],
+      },
+      $vnode,
+    ],
+  );
+  $state.foo = "bar";
+  assertEquals(
+    <span>{$state.foo}</span> as VNode,
+    [
+      "span",
+      {
+        children: [
+          Symbol.for("mono.state"),
+          {
+            key: "foo",
+            value: "bar",
+          },
+          $vnode,
+        ],
+      },
+      $vnode,
+    ],
+  );
+  $state.num = 1;
+  assertEquals(
+    <span>{$computed(() => 2 * $state.num)}</span> as VNode,
+    [
+      "span",
+      {
+        children: [
+          Symbol.for("mono.computed"),
+          {
+            deps: ["num"],
+            value: 2,
+            fn: String(() => 2 * $state.num),
+          },
+          $vnode,
+        ],
+      },
+      $vnode,
+    ],
   );
 });
 

@@ -12,12 +12,10 @@ const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | nu
   }
   if (tag === "html") {
     const renderOptions = Object.create(null);
-    if (props) {
-      for (const key of ["request", "headers"]) {
-        if (Object.hasOwn(props, key)) {
-          renderOptions[key] = props[key];
-          delete props[key];
-        }
+    for (const key of ["request", "headers", "rendering"]) {
+      if (Object.hasOwn(props, key)) {
+        renderOptions[key] = props[key];
+        delete props[key];
       }
     }
     const res = render(vnode as unknown as VNode, renderOptions);
