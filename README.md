@@ -1,6 +1,6 @@
 # mono-jsx
 
-> `<html>` as a `Response`.
+![`<html>` as a `Response`](./.github/html-as-a-response.png)
 
 mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object for server-side rendering(SSR) in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
