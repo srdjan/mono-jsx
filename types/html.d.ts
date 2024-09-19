@@ -807,7 +807,7 @@ export namespace HTML {
 
   type EventHandler<E extends Event, T extends EventTarget> = (
     event: Omit<E, "target"> & { target: T },
-  ) => void | Promise<void>;
+  ) => unknown | Promise<unknown>;
 
   interface InputElementAttributes<T extends EventTarget> {
     onChange?: EventHandler<Event, T>;

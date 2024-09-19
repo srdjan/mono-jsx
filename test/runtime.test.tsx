@@ -47,9 +47,7 @@ Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false },
     <div>
       <h1>{$state.text}</h1>
       <button
-        onClick={() => {
-          $state.text = "Hello world!";
-        }}
+        onClick={() => $state.text = "Hello world!"}
       />
     </div>,
   );
@@ -76,15 +74,11 @@ Deno.test("[runtime] using state(counter)", { sanitizeResources: false, sanitize
   const testUrl = addTestRoute(
     <div>
       <button
-        onClick={() => {
-          $state.counter--;
-        }}
+        onClick={() => $state.counter--}
       />
       <strong>{$state.counter}</strong>
       <button
-        onClick={() => {
-          $state.counter++;
-        }}
+        onClick={() => $state.counter++}
       />
     </div>,
   );
@@ -121,9 +115,7 @@ Deno.test("[runtime] <toggle> element", { sanitizeResources: false, sanitizeOps:
         <h1>Hello world!</h1>
       </toggle>
       <button
-        onClick={() => {
-          $state.show = !$state.show;
-        }}
+        onClick={() => $state.show = !$state.show}
       >
         Show
       </button>
@@ -159,25 +151,13 @@ Deno.test("[runtime] <switch> element", { sanitizeResources: false, sanitizeOps:
         <h1 slot="zh">你好，世界！</h1>
         <h1>✋🌎❗️</h1>
       </switch>
-      <button
-        onClick={() => {
-          $state.lang = "en";
-        }}
-      >
+      <button onClick={() => $state.lang = "en"}>
         English
       </button>
-      <button
-        onClick={() => {
-          $state.lang = "zh";
-        }}
-      >
+      <button onClick={() => $state.lang = "zh"}>
         中
       </button>
-      <button
-        onClick={() => {
-          $state.lang = "emoji";
-        }}
-      >
+      <button onClick={() => $state.lang = "emoji"}>
         emoji
       </button>
     </div>,
