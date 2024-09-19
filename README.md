@@ -172,8 +172,7 @@ function App() {
 
 ### `html` Tag Function
 
-mono-jsx doesn't support the `dangerouslySetInnerHTML` property, instead, it provides a
-`html` tag function to render raw HTML in JSX.
+mono-jsx doesn't support the `dangerouslySetInnerHTML` property, instead, it provides a `html` tag function to render raw HTML in JSX.
 
 ```jsx
 function App() {
@@ -181,8 +180,19 @@ function App() {
 }
 ```
 
-> [!NOTE]
-> The `html` tag function is a global function injected by mono-jsx, you can use it in any JSX expression without importing it.
+The `html` tag function is a global function injected by mono-jsx, you can use it in any JSX expression without importing it.
+You also can use the `css` and `js`, that are just aliases of the `html` tag function, to render CSS and JavaScript code.
+
+```jsx
+function App() {
+  return (
+    <head>
+      <style>{css`h1 { font-size: 3rem; }`}</style>
+      <script>{js`console.log("Hello world!")`}</script>
+    </head>
+  );
+}
+```
 
 > [!WARNING]
 > the `html` tag function is **unsafe** that can cause [**XSS**](https://en.wikipedia.org/wiki/Cross-site_scripting) vulnerabilities.
@@ -208,6 +218,7 @@ function Button() {
         Deno.exit(0); // ❌ Deno is unavailable in the browser
         alert(message); // ❌ message is a server-side variable
         document.title = "BOOM!"; // ✅ document is a browser API
+        $state.count++; // ✅ $state is the mono-jsx specific usage
       }}
     >
       Click Me
@@ -261,7 +272,7 @@ declare global {
 ```
 
 > [!NOTE]
-> The `$state` and `$computed` are global functions injected by mono-jsx.
+> The `$state` and `$computed` are global variables injected by mono-jsx.
 
 ## Built-in elements
 
