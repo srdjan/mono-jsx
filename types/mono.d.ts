@@ -67,7 +67,6 @@ export interface CSSProperties extends BaseCSSProperties, AtRuleCSSProperties, P
 }
 
 export interface BaseAttributes {
-  default?: boolean;
   key?: string | number;
   slot?: string;
 }
@@ -84,8 +83,8 @@ export interface Elements {
     defaultValue?: boolean;
   };
   switch: {
-    value: string | number;
-    defaultValue?: string | number;
+    value: string;
+    defaultValue?: string;
   };
   cache: {
     /** The cache key is used to identify the cache. */
