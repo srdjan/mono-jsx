@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { $fragment, $html, $vnode } from "../jsx.ts";
+import { $fragment, $html, $vnode } from "../symbols.ts";
 import type { VNode } from "../types/jsx.d.ts";
 
 Deno.test("[jsx] jsx transform", () => {

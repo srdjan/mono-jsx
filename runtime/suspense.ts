@@ -1,33 +1,19 @@
 /// <reference lib="dom.iterable" />
 
-const slots = new Map<string, HTMLElement>();
+const portals: Record<string, HTMLElement> = {};
 const getChunkId = (el: HTMLElement) => el.getAttribute("chunk-id");
 
-defineCustomElement("suspense-slot", (el) => {
-  const id = getChunkId(el);
-  if (id) {
-    slots.set(id, el);
-  }
+defineCustomElement("m-portal", (el) => {
+  portals[getChunkId(el)!] = el;
 });
 
-defineCustomElement("suspense-chunk", (el) => {
-  let slot = slots.get(getChunkId(el)!);
-  let placeholder: ChildNode[];
-  let cur: ChildNode | null;
-  if (slot) {
-    if (slot.hasAttribute("with-placeholder")) {
-      placeholder = [];
-      cur = slot;
-      while ((cur = cur.nextSibling)) {
-        placeholder.push(cur);
-        if (cur.nodeType === 8 && (cur as Comment).data === "/") {
-          break;
-        }
-      }
-      placeholder.forEach((node) => node.remove());
-    }
+defineCustomElement("m-chunk", (el) => {
+  const id = getChunkId(el)!;
+  const portal = portals[id];
+  if (portal) {
     setTimeout(() => {
-      slot.replaceWith(...el.childNodes);
+      portal.replaceWith(...(el.firstChild as HTMLTemplateElement).content.childNodes);
+      delete portals[id];
       el.remove();
     });
   }

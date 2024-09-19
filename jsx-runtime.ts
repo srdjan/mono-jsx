@@ -1,5 +1,6 @@
 import type { FC, VNode } from "./types/jsx.d.ts";
-import { $fragment, $vnode, iconsRegistry } from "./jsx.ts";
+import { $fragment, $html, $vnode, iconsRegistry } from "./symbols.ts";
+import { computed, state } from "./state.ts";
 import { render } from "./render.ts";
 
 const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | number): VNode => {
@@ -34,5 +35,20 @@ function jsxIcon(name: string, svg: string): void {
     + svg.slice(svgTagEnd + 1).replace(/\n/g, "").replace(/=['"](black|#000000)['"]/g, '="currentColor"');
   iconsRegistry.set(name.replace(/^icon-/, ""), iconSvg);
 }
+
+const html = (raw: string, ...values: unknown[]): VNode => [
+  $html,
+  { innerHTML: String.raw({ raw }, ...values) },
+  $vnode,
+];
+
+// global variables
+Object.assign(globalThis, {
+  html,
+  css: html,
+  js: html,
+  $state: state,
+  $computed: computed,
+});
 
 export { $fragment as Fragment, jsx, jsx as jsxs, jsxIcon };

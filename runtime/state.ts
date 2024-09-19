@@ -1,110 +1,101 @@
-type StateSlot = [
-  slot: HTMLElement,
-  toggleSlots: ChildNode[] | undefined,
-  switchSlots: Map<number | string, ChildNode[]> | undefined,
-  switchDefaultSlot: ChildNode[] | undefined,
-];
-
-const stateSlots = new Map<string, StateSlot[]>();
-const stateProxy = Object.create(null);
+const $state = Object.create(null);
+const effectMap = new Map<string, (() => void)[]>();
 const attr = (el: Element, name: string) => el.getAttribute(name);
 const hasAttr = (el: Element, name: string) => el.hasAttribute(name);
 
-defineCustomElement("mono-state", el => {
-  defineStateSlot(attr(el, "name")!, [el] as unknown as StateSlot);
-});
-
-defineCustomElement("mono-toggle", el => {
-  defineStateSlot(attr(el, "name")!, [el] as unknown as StateSlot);
-});
-
-defineCustomElement("mono-switch", el => {
-  let ss = new Array(4).fill(undefined) as unknown as StateSlot;
-  let cur: ChildNode | null;
-  let childNodes: ChildNode[];
-  let tpl: HTMLTemplateElement;
-  let key: string | number;
-  let index = -1;
-  let switchSlots = new Map<string | number, ChildNode[]>();
-  ss[2] = switchSlots;
-  cur = el;
-  while ((cur = cur.nextSibling)) {
-    if (cur.nodeType === 1 && (cur as Element).tagName === "TEMPLATE") {
-      tpl = cur as HTMLTemplateElement;
-      if (hasAttr(tpl, "leading")) {
-        childNodes = [];
-        while ((cur = cur.nextSibling)) {
-          if (cur.nodeType === 8 && (cur as Comment).data === "/") {
-            (cur as Comment).remove();
-            break;
-          }
-          childNodes.push(cur as ChildNode);
+function createEffect(el: HTMLElement, mode: string, getter: () => unknown, deps: string[]) {
+  let effect: undefined | (() => void);
+  if (mode === "text") {
+    effect = () => el.textContent = "" + getter();
+  } else if (mode === "toggle") {
+    let slots: NodeListOf<ChildNode> | undefined;
+    effect = () => {
+      if (!slots) {
+        const firstChild = el.firstElementChild;
+        if (firstChild && firstChild.tagName === "TEMPLATE" && hasAttr(firstChild, "m-slot")) {
+          slots = (firstChild as HTMLTemplateElement).content.childNodes;
+          el.innerHTML = "";
+        } else {
+          slots = el.childNodes;
         }
-      } else {
-        childNodes = Array.from(tpl.content.childNodes);
       }
-      if (hasAttr(tpl, "default")) {
-        ss[3] = childNodes;
+      if (getter()) {
+        el.append(...slots);
       } else {
-        index++;
-        key = hasAttr(tpl, "key") ? attr(tpl, "key")! : index;
-        switchSlots.set(key, childNodes);
+        el.innerHTML = "";
       }
-      tpl.remove();
+    };
+  } else if (mode === "switch") {
+    let matchedSlotName = attr(el, "match");
+    let slotsMap: Map<string, Array<ChildNode>> | undefined;
+    let unnamedSlots: Array<ChildNode> | undefined;
+    let getNamedSlots = (slotName: string) => slotsMap!.get(slotName) ?? slotsMap!.set(slotName, []).get(slotName)!;
+    effect = () => {
+      if (!slotsMap) {
+        slotsMap = new Map();
+        unnamedSlots = [];
+        for (const slot of el.childNodes) {
+          if (slot.nodeType === 1 && (slot as HTMLElement).tagName === "TEMPLATE" && hasAttr(slot as HTMLElement, "m-slot")) {
+            for (const node of (slot as HTMLTemplateElement).content.childNodes) {
+              if (node.nodeType === 1 && hasAttr(node as HTMLElement, "slot")) {
+                getNamedSlots(attr(node as HTMLElement, "slot")!).push(node);
+              } else {
+                unnamedSlots.push(node);
+              }
+            }
+            slot.remove();
+          } else {
+            if (matchedSlotName) {
+              getNamedSlots(matchedSlotName).push(slot);
+            } else {
+              unnamedSlots.push(slot);
+            }
+          }
+        }
+      }
+      el.innerHTML = "";
+      const value = getter();
+      if (typeof value === "string" && slotsMap.has(value)) {
+        el.append(...slotsMap.get(value)!);
+      } else {
+        el.append(...unnamedSlots!);
+      }
+    };
+  } else if (mode.length > 2 && mode.startsWith("[") && mode.endsWith("]")) {
+    const attrName = mode.slice(1, -1);
+    const parent = el.parentElement!;
+    effect = () => {
+      const value = getter();
+      if (value === false) {
+        hasAttr(parent, attrName) && parent.removeAttribute(attrName);
+      } else if ((attrName === "class" || attrName === "style") && value && typeof value === "object") {
+        // todo: normalize class and style object
+      } else {
+        parent.setAttribute(attrName, value === true ? "" : "" + value);
+      }
+    };
+  }
+  if (effect) {
+    for (const key of deps) {
+      let effects = effectMap.get(key);
+      if (!effects) {
+        effects = [];
+        effectMap.set(key, effects);
+      }
+      effects.push(effect);
     }
   }
-  defineStateSlot(attr(el, "name")!, ss);
-});
-
-function defineCustomElement(tag: string, connectedCallback: (el: HTMLElement) => void) {
-  customElements.define(
-    tag,
-    class extends HTMLElement {
-      connectedCallback() {
-        connectedCallback(this);
-      }
-    },
-  );
 }
 
-function defineStateSlot(name: string, stateSlot: StateSlot) {
-  const slots = stateSlots.get(name);
-  if (slots) {
-    slots.push(stateSlot);
-  } else {
-    stateSlots.set(name, [stateSlot]);
-  }
-}
-
-function createState(name: string, initialValue: unknown) {
+function defineState(name: string, initialValue: unknown) {
   let value: unknown = initialValue;
-  Object.defineProperty(stateProxy, name, {
+  Object.defineProperty($state, name, {
     get: () => value,
     set: (newValue: unknown) => {
       if (newValue !== value) {
-        const slots = stateSlots.get(name);
-        if (slots) {
-          for (const [slot, toggleSlots, switchSlots, switchDefaultSlot] of slots) {
-            if (toggleSlots) {
-              // todo
-            } else if (switchSlots) {
-              const childNodes = switchSlots.get(String(value));
-              const newChildNodes = switchSlots.get(String(newValue)) || switchDefaultSlot;
-              if (childNodes) {
-                childNodes.forEach(node => node.remove());
-              }
-              if (newChildNodes) {
-                slot.after(...newChildNodes);
-              }
-            } else {
-              const nextSibling = slot.nextSibling;
-              if (nextSibling && nextSibling.nodeType === 3) {
-                (nextSibling as Text).replaceWith(String(newValue));
-              } else {
-                slot.after(String(newValue));
-              }
-            }
-          }
+        const effects = effectMap.get(name);
+        if (effects) {
+          queueMicrotask(() => effects.forEach((fn) => fn()));
         }
         value = newValue;
       }
@@ -112,7 +103,33 @@ function createState(name: string, initialValue: unknown) {
   });
 }
 
+customElements.define(
+  "m-state",
+  class extends HTMLElement {
+    connectedCallback() {
+      const el = this;
+      const mode = attr(el, "mode") || "text";
+      const use = attr(el, "use");
+      if (use) {
+        createEffect(el, mode, () => $state[use], [use]);
+      } else {
+        setTimeout(() => {
+          const firstChild = el.firstChild;
+          if (firstChild && firstChild.nodeType === 1 && (firstChild as HTMLScriptElement).type === "computed") {
+            const js = (firstChild as HTMLScriptElement).textContent;
+            if (js) {
+              (new Function("$state", "$memo", js))($state, (memo: () => unknown, deps: string[]) => {
+                createEffect(el, mode, memo, deps);
+              });
+            }
+          }
+        });
+      }
+    }
+  },
+);
+
 Object.assign(globalThis, {
-  createState,
-  state: stateProxy,
+  $state,
+  defineState,
 });

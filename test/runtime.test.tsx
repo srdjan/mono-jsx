@@ -2,10 +2,9 @@ import { assert, assertEquals } from "jsr:@std/assert";
 import puppeteer from "npm:puppeteer-core@23.1.1";
 import chrome from "npm:puppeteer-chromium-resolver@23.0.0";
 
-let jsxIndex = 0;
-let jsxMap: Map<string, JSX.Element> = new Map();
+let routeIndex = 0;
+let testRoutes: Map<string, JSX.Element> = new Map();
 
-const ac = new AbortController();
 const browser = await puppeteer.launch({
   executablePath: (await chrome()).executablePath,
   args: ["--no-sandbox", "--disable-gpu", "--disable-extensions", "--disable-sync", "--disable-background-networking"],
@@ -13,7 +12,6 @@ const browser = await puppeteer.launch({
 
 Deno.serve({
   port: 8687,
-  signal: ac.signal,
   onListen: () => {},
 }, (request) => {
   const url = new URL(request.url);
@@ -25,14 +23,14 @@ Deno.serve({
       <head>
         <title>test</title>
       </head>
-      <body>{jsxMap.get(url.pathname)}</body>
+      <body>{testRoutes.get(url.pathname)}</body>
     </html>
   );
 });
 
-function addJSX(jsx: JSX.Element) {
-  const pathname = `/jsx_${jsxIndex++}`;
-  jsxMap.set(pathname, jsx);
+function addTestRoute(content: JSX.Element) {
+  const pathname = `/jsx_${routeIndex++}`;
+  testRoutes.set(pathname, content);
   return `http://localhost:8687${pathname}`;
 }
 
@@ -40,11 +38,12 @@ declare global {
   interface State {
     text: string;
     counter: number;
+    lang: string;
   }
 }
 
 Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false }, async () => {
-  const testUrl = addJSX(
+  const testUrl = addTestRoute(
     <div>
       <h1>{$state.text}</h1>
       <button
@@ -68,13 +67,13 @@ Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false },
 
   assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
 
-  await page.close({ runBeforeUnload: true });
+  await page.close();
 });
 
-Deno.test("[run] using state(counter)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] using state(counter)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   $state.counter = 0;
 
-  const testUrl = addJSX(
+  const testUrl = addTestRoute(
     <div>
       <button
         onClick={() => {
@@ -112,11 +111,110 @@ Deno.test("[run] using state(counter)", { sanitizeResources: false, sanitizeOps:
   }
   assertEquals(await strong.evaluate((el: HTMLElement) => el.textContent), "0");
 
-  await page.close({ runBeforeUnload: true });
+  await page.close();
 });
 
-Deno.test("[run] on 'mount'", { sanitizeResources: false, sanitizeOps: false }, async () => {
-  const testUrl = addJSX(
+Deno.test("[runtime] <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const testUrl = addTestRoute(
+    <div>
+      <toggle value={$state.show}>
+        <h1>Hello world!</h1>
+      </toggle>
+      <button
+        onClick={() => {
+          $state.show = !$state.show;
+        }}
+      >
+        Show
+      </button>
+    </div>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testUrl);
+
+  const div = await page.$("div h1");
+  assert(!div);
+
+  const button = await page.$("div button")!;
+  assert(button);
+  await button.click();
+
+  let h1 = await page.$("div h1")!;
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
+
+  await button.click();
+  h1 = await page.$("div h1");
+  assert(!h1);
+
+  await page.close();
+});
+
+Deno.test("[runtime] <switch> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const testUrl = addTestRoute(
+    <div>
+      <switch value={$state.lang}>
+        <h1 slot="en">Hello, world!</h1>
+        <h1 slot="zh">你好，世界！</h1>
+        <h1>✋🌎❗️</h1>
+      </switch>
+      <button
+        onClick={() => {
+          $state.lang = "en";
+        }}
+      >
+        English
+      </button>
+      <button
+        onClick={() => {
+          $state.lang = "zh";
+        }}
+      >
+        中
+      </button>
+      <button
+        onClick={() => {
+          $state.lang = "emoji";
+        }}
+      >
+        emoji
+      </button>
+    </div>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testUrl);
+
+  assertEquals((await page.$$("div h1")).length, 1);
+
+  let h1 = await page.$("div h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "✋🌎❗️");
+
+  const buttons = await page.$$("div button");
+  assertEquals(buttons.length, 3);
+
+  await buttons[0].click();
+  h1 = await page.$("div h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello, world!");
+
+  await buttons[1].click();
+  h1 = await page.$("div h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "你好，世界！");
+
+  await buttons[2].click();
+  h1 = await page.$("div h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "✋🌎❗️");
+
+  await page.close();
+});
+
+Deno.test("[runtime] 'mount' handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const testUrl = addTestRoute(
     <div
       onMount={e => {
         e.target.innerHTML = "<h1>Hello world!</h1>";
@@ -135,16 +233,47 @@ Deno.test("[run] on 'mount'", { sanitizeResources: false, sanitizeOps: false }, 
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
 
-  await page.close({ runBeforeUnload: true });
+  await page.close();
 });
 
-Deno.test("[run] suspense", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] 'action' handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const testUrl = addTestRoute(
+    <>
+      <p></p>
+      <form
+        action={data => {
+          const p: HTMLElement = document.querySelector("p")!;
+          p.textContent = data.get("name")! as string;
+        }}
+      >
+        <input type="hidden" name="name" value="Hello world!" />
+        <button type="submit">Submit</button>
+      </form>
+    </>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testUrl);
+
+  const p = await page.$("p")!;
+  assert(p);
+  assertEquals(await p.evaluate((el: HTMLElement) => el.textContent), "");
+
+  const button = await page.$("button")!;
+  assert(button);
+  await button.click();
+  assertEquals(await p.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
+
+  await page.close();
+});
+
+Deno.test("[runtime] suspense", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const Sleep = async ({ ms }: { ms: number }) => {
     await new Promise((resolve) => setTimeout(resolve, ms));
     return <slot />;
   };
   const Slogan = () => Promise.resolve(<h2>Building User Interfaces.</h2>);
-  const testUrl = addJSX(
+  const testUrl = addTestRoute(
     <div>
       <Sleep ms={100} placeholder={<p>Loading...</p>}>
         <h1>Hello world!</h1>
@@ -171,5 +300,5 @@ Deno.test("[run] suspense", { sanitizeResources: false, sanitizeOps: false }, as
   assert(h2);
   assertEquals(await h2.evaluate((el: HTMLElement) => el.textContent), "Building User Interfaces.");
 
-  await page.close({ runBeforeUnload: true });
+  await page.close();
 });
