@@ -315,9 +315,7 @@ function App() {
 }
 ```
 
-### `<cache>` element
-
-[Todo]
+<!-- ### `<cache>` element  -->
 
 ## Streaming Rendering
 
