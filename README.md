@@ -5,7 +5,7 @@
 mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object for server-side rendering(SSR) in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 - No build step needed
-- Lightweight(6KB gzipped), no dependencies
+- Lightweight(7KB gzipped), zero dependencies
 - Minimal state runtime
 - Streaming rendering by default
 - Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
