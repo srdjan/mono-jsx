@@ -4,7 +4,7 @@
 
 mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object for server-side rendering(SSR) in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
-- No build step required
+- No build step needed
 - Lightweight(6KB gzipped), no dependencies
 - Minimal state runtime
 - Streaming rendering by default
@@ -250,7 +250,6 @@ function App() {
 }
 ```
 
-
 To support type checking in TypeScript, declare the `State` interface in the global scope:
 
 ```ts
@@ -287,39 +286,19 @@ function App() {
 
 ### `<switch>` element
 
-`<switch>` element allows you to switch the slotted content based on the `value` prop.
+`<switch>` element allows you to switch the slotted content based on the `value` property. You need to define the `slot` attribute in the slotted content to match the `value`, otherwise, the default slot will be rendered.
 
 ```jsx
 function App() {
   return (
     <div>
-      <switch value={$state.image} defaultValue={0}>
-        <Image1 />
-        <Image2 />
-        <Image3 />
+      <switch value={$state.lang}>
+        <h1 slot="en">Hello, world!</h1>
+        <h1 slot="zh">你好，世界！</h1>
+        <h1>✋🌎❗️</h1>
       </switch>
-      <button onClick={() => $state.image = ($state.image + 1) % 3}>Switch Image</button>
-    </div>
-  );
-}
-```
-
-You can add an unique `key` to each child element as the `<switch>` element uses the key to identify the child element to render, or the `default` proptery to set a default child element to render when the value is not matched.
-
-```jsx
-function App() {
-  return (
-    <div>
-      <switch value={$state.icon}>
-        <Icon1 key="icon-1" />
-        <Icon2 key="icon-2" />
-        <Icon3 key="icon-3" />
-        <Icon4 default />
-      </switch>
-      <button onClick={() => $state.icon = "icon-1"}>Switch Icon(#1)</button>
-      <button onClick={() => $state.icon = "icon-2"}>Switch Icon(#2)</button>
-      <button onClick={() => $state.icon = "icon-3"}>Switch Icon(#3)</button>
-      <button onClick={() => $state.icon = "_"}>Switch Icon(default)</button>
+      <button onClick={() => $state.lang = "en"}>English</button>
+      <button onClick={() => $state.lang = "zh"}>中文</button>
     </div>
   );
 }
