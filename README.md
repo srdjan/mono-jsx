@@ -207,7 +207,7 @@ function Button() {
 }
 ```
 
-However, the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
+Note, the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
 
 ```jsx
 function Button() {
@@ -284,9 +284,10 @@ mono-jsx provides some built-in elements to help you build your app.
 
 ```jsx
 function App() {
+  $state.show = false
   return (
     <div>
-      <toggle value={$state.show} defaultValue={true}>
+      <toggle value={$state.show}>
         <h1>Hello World!</h1>
       </toggle>
       <button onClick={() => $state.show = !$state.show}>{$computed(() => $state.show ? "Hide" : "Show")}</button>
@@ -297,7 +298,7 @@ function App() {
 
 ### `<switch>` element
 
-`<switch>` element allows you to switch the slotted content based on the `value` property. You need to define the `slot` attribute in the slotted content to match the `value`, otherwise, the default slot will be rendered.
+`<switch>` element allows you to switch the slotted content based on the `value` property. You need to define the `slot` attribute in the slotted content to match the `value`, otherwise, the default slots will be rendered.
 
 ```jsx
 function App() {
