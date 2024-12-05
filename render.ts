@@ -661,6 +661,6 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
         }
       },
     }),
-    { headers },
+    { headers, status: renderOptions?.status ?? 200 },
   );
 }
