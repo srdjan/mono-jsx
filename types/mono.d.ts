@@ -102,6 +102,8 @@ declare global {
   interface State {
     [key: string]: any;
   }
+  /** The mono request hook. */
+  var $request: () => Request;
   /** The mono state object. */
   var $state: State;
   /** Create a computed state. */
