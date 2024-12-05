@@ -3,4 +3,5 @@ export const $fragment = Symbol.for("jsx.fragment");
 export const $html = Symbol.for("jsx.html");
 export const $state = Symbol.for("mono.state");
 export const $computed = Symbol.for("mono.computed");
-export const iconsRegistry = new Map<string, string>();
+export const $iconsRegistry = new Map<string, string>();
+export const $context = Object.create(null) as Record<string, unknown>;

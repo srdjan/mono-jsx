@@ -1,14 +1,15 @@
 import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
+import { $computed, $context, $fragment, $html, $iconsRegistry, $state, $vnode } from "./symbols.ts";
 import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
-import { $computed, $fragment, $html, $state, $vnode, iconsRegistry } from "./symbols.ts";
 
 interface RenderContext {
-  write(chunk: string): void;
+  write: (chunk: string) => void;
   store: Map<string, unknown>;
   suspenses: Promise<void>[];
   evtHandlerIndex: number;
   eager?: boolean;
+  request?: Request;
   slots?: Children;
   styleIds?: Set<string>;
 }
@@ -285,6 +286,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           if ((rendering ?? tag.rendering) === "eager") {
             eager = true;
           }
+          $context.req = ctx.request;
           try {
             const v = tag(fcProps);
             if (v instanceof Promise) {
@@ -331,7 +333,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         // regular html element
         if (isString(tag) && htmlTagRegexp.test(tag)) {
           if (tag.startsWith("icon-")) {
-            const svg = iconsRegistry.get(tag.slice(5));
+            const svg = $iconsRegistry.get(tag.slice(5));
             if (svg) {
               write(svg);
               break;
@@ -600,45 +602,18 @@ function escapeHTML(str: string): string {
 }
 
 export function render(node: VNode, renderOptions?: RenderOptions): Response {
-  const readable = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
-      const store = new Map<string, unknown>();
-      const suspenses: Promise<void>[] = [];
-      const ctx: RenderContext = { write, store, suspenses, evtHandlerIndex: 0, eager: renderOptions?.rendering === "eager" };
-      try {
-        write("<!DOCTYPE html>");
-        await renderNode(ctx, node);
-        if (store.size > 0) {
-          write(
-            "<script>(()=>{"
-              + RUNTIME_STATE
-              + "for(let[n,v]of"
-              + JSON.stringify(Array.from(store.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
-              + ")defineState(n,v)})()</script>",
-          );
-        }
-        if (suspenses.length > 0) {
-          write("<script>(()=>{" + RUNTIME_SUSPENSE + "})()</script>");
-          await Promise.all(suspenses);
-        }
-      } finally {
-        controller.close();
-      }
-    },
-  });
-  const headers: Record<string, string> = Object.create(null);
   const request = renderOptions?.request;
-  const headersInit = renderOptions?.headers;
-  if (headersInit) {
-    const { etag, lastModified } = headersInit;
+  const headersRaw = renderOptions?.headers;
+  const headers: Record<string, string> = Object.create(null);
+  if (headersRaw) {
+    const { etag, lastModified } = headersRaw;
     if (etag && request?.headers.get("if-none-match") === etag) {
       return new Response(null, { status: 304 });
     }
     if (lastModified && request?.headers.get("if-modified-since") === lastModified) {
       return new Response(null, { status: 304 });
     }
-    for (const [key, value] of Object.entries(headersInit)) {
+    for (const [key, value] of Object.entries(headersRaw)) {
       if (value) {
         headers[toHyphenCase(key)] = value;
       }
@@ -646,5 +621,41 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
   }
   headers["transfer-encoding"] = "chunked";
   headers["content-type"] = "text/html; charset=utf-8";
-  return new Response(readable, { headers });
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
+        const store = new Map<string, unknown>();
+        const suspenses: Promise<void>[] = [];
+        const ctx: RenderContext = {
+          request,
+          write,
+          store,
+          suspenses,
+          evtHandlerIndex: 0,
+          eager: renderOptions?.rendering === "eager",
+        };
+        try {
+          write("<!DOCTYPE html>");
+          await renderNode(ctx, node);
+          if (store.size > 0) {
+            write(
+              "<script>(()=>{"
+                + RUNTIME_STATE
+                + "for(let[n,v]of"
+                + JSON.stringify(Array.from(store.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
+                + ")defineState(n,v)})()</script>",
+            );
+          }
+          if (suspenses.length > 0) {
+            write("<script>(()=>{" + RUNTIME_SUSPENSE + "})()</script>");
+            await Promise.all(suspenses);
+          }
+        } finally {
+          controller.close();
+        }
+      },
+    }),
+    { headers },
+  );
 }

@@ -1,9 +1,9 @@
 import type { FC, VNode } from "./types/jsx.d.ts";
-import { $fragment, $html, $vnode, iconsRegistry } from "./symbols.ts";
+import { $context, $fragment, $html, $iconsRegistry, $vnode } from "./symbols.ts";
 import { computed, state } from "./state.ts";
 import { render } from "./render.ts";
 
-const jsx = (tag: string | FC, props: Record<string, unknown>, key?: string | number): VNode => {
+const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(null), key?: string | number): VNode => {
   const vnode = new Array(3).fill(null);
   vnode[0] = tag;
   vnode[1] = props;
@@ -33,7 +33,7 @@ function jsxIcon(name: string, svg: string): void {
     + " viewBox=" + JSON.stringify(viewBox)
     + ' xmlns="http://www.w3.org/2000/svg">'
     + svg.slice(svgTagEnd + 1).replace(/\n/g, "").replace(/=['"](black|#000000)['"]/g, '="currentColor"');
-  iconsRegistry.set(name.replace(/^icon-/, ""), iconSvg);
+  $iconsRegistry.set(name.replace(/^icon-/, ""), iconSvg);
 }
 
 const html = (raw: string, ...values: unknown[]): VNode => [
@@ -42,11 +42,20 @@ const html = (raw: string, ...values: unknown[]): VNode => [
   $vnode,
 ];
 
+const request = (): Request => {
+  const request = $context.request;
+  if (request && request instanceof Request) {
+    return request;
+  }
+  throw new Error("Please set `request` in the `html` tag.");
+};
+
 // global variables
 Object.assign(globalThis, {
   html,
   css: html,
   js: html,
+  $request: request,
   $state: state,
   $computed: computed,
 });
