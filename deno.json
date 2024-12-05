@@ -1,10 +1,4 @@
 {
-  "name": "@ije/mono-jsx",
-  "version": "0.0.0-alpha.5",
-  "exports": {
-    ".": "./index.ts",
-    "./jsx-runtime": "./jsx-runtime.ts"
-  },
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "mono-jsx"

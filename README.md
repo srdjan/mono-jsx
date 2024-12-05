@@ -31,7 +31,7 @@ You can install it via `npm i`, `deno add`, or `bun add`.
 # Node.js, Cloudflare Workers, or other node-compatible runtimes
 npm i mono-jsx
 # Deno
-deno add @ije/mono-jsx
+deno add npm:mono-jsx
 # Bun
 bun add mono-jsx
 ```
