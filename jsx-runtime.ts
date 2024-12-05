@@ -43,11 +43,21 @@ const html = (raw: string, ...values: unknown[]): VNode => [
 ];
 
 const request = (): Request => {
-  const request = $context.request;
-  if (request && request instanceof Request) {
-    return request;
+  if (Object.hasOwn($context, "request")) {
+    const request = $context.request as Request;
+    if (request instanceof Request) {
+      return request;
+    }
+    throw new Error("`request` is not set in the context");
   }
-  throw new Error("Please set `request` in the `html` tag.");
+  throw new Error("calling `$request` outside of a component");
+};
+
+const store = <T extends Record<string, unknown> = Record<string, unknown>>(): T => {
+  if (Object.hasOwn($context, "store")) {
+    return $context.store as T;
+  }
+  throw new Error("calling `$store `outside of a component");
 };
 
 // global variables
@@ -56,6 +66,7 @@ Object.assign(globalThis, {
   css: html,
   js: html,
   $request: request,
+  $store: store,
   $state: state,
   $computed: computed,
 });

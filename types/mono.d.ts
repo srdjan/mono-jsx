@@ -104,6 +104,8 @@ declare global {
   }
   /** The mono request hook. */
   var $request: () => Request;
+  /** The mono store hook. */
+  var $store: <T extends Record<string, unknown> = Record<string, unknown>>() => T;
   /** The mono state object. */
   var $state: State;
   /** Create a computed state. */

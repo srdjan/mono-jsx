@@ -1,5 +1,6 @@
 export interface RenderOptions {
   request?: Request;
+  store?: Record<string, unknown>;
   headers?: {
     [key: string]: string | undefined;
     contentSecurityPolicy?: string;

@@ -5,11 +5,12 @@ import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
 
 interface RenderContext {
   write: (chunk: string) => void;
-  store: Map<string, unknown>;
+  stateStore: Map<string, unknown>;
   suspenses: Promise<void>[];
   evtHandlerIndex: number;
   eager?: boolean;
   request?: Request;
+  store?: Record<string, unknown>;
   slots?: Children;
   styleIds?: Set<string>;
 }
@@ -88,7 +89,7 @@ const toAttrStringLit = (str: string) => JSON.stringify(escapeHTML(str));
 const toHyphenCase = (k: string) => k.replace(/[a-z][A-Z]/g, (m) => m.charAt(0) + "-" + m.charAt(1).toLowerCase());
 
 async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], stripSlotProp?: boolean): Promise<void> {
-  const { write, store } = ctx;
+  const { write, stateStore } = ctx;
   switch (typeof node) {
     case "string":
       write(escapeHTML(node));
@@ -156,7 +157,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             write(escapeHTML("" + value));
           }
           write("</m-state>");
-          store.set(key, value);
+          stateStore.set(key, value);
           break;
         }
 
@@ -169,8 +170,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           }
           write("</m-state>");
           for (const dep of deps) {
-            if (!store.has(dep)) {
-              store.set(dep, undefined);
+            if (!stateStore.has(dep)) {
+              stateStore.set(dep, undefined);
             }
           }
           break;
@@ -195,11 +196,11 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               }
               write("</m-state>");
               if (key) {
-                store.set(key, valueOrDefault);
+                stateStore.set(key, valueOrDefault);
               } else {
                 for (const dep of deps) {
-                  if (!store.has(dep)) {
-                    store.set(dep, undefined);
+                  if (!stateStore.has(dep)) {
+                    stateStore.set(dep, undefined);
                   }
                 }
               }
@@ -227,11 +228,11 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               }
               valueOrDefault = value ?? defaultValue;
               if (key) {
-                store.set(key, valueOrDefault);
+                stateStore.set(key, valueOrDefault);
               } else {
                 for (const dep of deps) {
-                  if (!store.has(dep)) {
-                    store.set(dep, undefined);
+                  if (!stateStore.has(dep)) {
+                    stateStore.set(dep, undefined);
                   }
                 }
               }
@@ -286,9 +287,12 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           if ((rendering ?? tag.rendering) === "eager") {
             eager = true;
           }
-          $context.req = ctx.request;
           try {
+            $context.request = ctx.request;
+            $context.store = ctx.stateStore;
             const v = tag(fcProps);
+            delete $context.request;
+            delete $context.store;
             if (v instanceof Promise) {
               if (eager) {
                 await renderNode({ ...ctx, eager: true, slots: children }, await v);
@@ -356,11 +360,11 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                   + "</m-state>",
               );
               if (key) {
-                ctx.store.set(key, propValue[1].value);
+                ctx.stateStore.set(key, propValue[1].value);
               } else {
                 for (const dep of deps) {
-                  if (!store.has(dep)) {
-                    store.set(dep, undefined);
+                  if (!stateStore.has(dep)) {
+                    stateStore.set(dep, undefined);
                   }
                 }
               }
@@ -625,25 +629,26 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
     new ReadableStream<Uint8Array>({
       async start(controller) {
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
-        const store = new Map<string, unknown>();
+        const stateStore = new Map<string, unknown>();
         const suspenses: Promise<void>[] = [];
         const ctx: RenderContext = {
           request,
           write,
-          store,
+          stateStore,
           suspenses,
           evtHandlerIndex: 0,
           eager: renderOptions?.rendering === "eager",
+          store: renderOptions?.store ?? Object.create(null),
         };
         try {
           write("<!DOCTYPE html>");
           await renderNode(ctx, node);
-          if (store.size > 0) {
+          if (stateStore.size > 0) {
             write(
               "<script>(()=>{"
                 + RUNTIME_STATE
                 + "for(let[n,v]of"
-                + JSON.stringify(Array.from(store.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
+                + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
                 + ")defineState(n,v)})()</script>",
             );
           }
