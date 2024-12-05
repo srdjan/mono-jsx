@@ -1,7 +1,7 @@
 import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { $computed, $context, $fragment, $html, $iconsRegistry, $state, $vnode } from "./symbols.ts";
-import { RUNTIME_STATE, RUNTIME_SUSPENSE } from "./runtime/index.ts";
+import { RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "./runtime/index.ts";
 
 interface RenderContext {
   write: (chunk: string) => void;
@@ -646,14 +646,14 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
           if (stateStore.size > 0) {
             write(
               "<script>(()=>{"
-                + RUNTIME_STATE
+                + RUNTIME_STATE_JS
                 + "for(let[n,v]of"
                 + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
                 + ")defineState(n,v)})()</script>",
             );
           }
           if (suspenses.length > 0) {
-            write("<script>(()=>{" + RUNTIME_SUSPENSE + "})()</script>");
+            write("<script>(()=>{" + RUNTIME_SUSPENSE_JS + "})()</script>");
             await Promise.all(suspenses);
           }
         } finally {

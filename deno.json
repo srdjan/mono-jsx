@@ -8,7 +8,7 @@
   },
   "tasks": {
     "build": "deno run -A --no-lock build.ts",
-    "test": "deno run -A --no-lock build.ts && deno test -A --no-lock test/"
+    "test": "deno task build && deno test -A --no-lock test/"
   },
   "fmt": {
     "lineWidth": 140
