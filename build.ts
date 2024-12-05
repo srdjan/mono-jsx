@@ -1,8 +1,8 @@
 import { build, stop } from "https://deno.land/x/esbuild@v0.24.0/mod.js";
 
-async function buildRuntime(entryPoint: string): Promise<string> {
+async function buildRuntime(name: string): Promise<string> {
   const ret = await build({
-    entryPoints: [`./runtime/${entryPoint}.ts`],
+    entryPoints: [`./runtime/${name}.ts`],
     format: "esm",
     target: "es2018",
     write: false,
@@ -14,17 +14,18 @@ async function buildRuntime(entryPoint: string): Promise<string> {
   return ret.outputFiles[0].text.trim();
 }
 
-async function buildPackageModule(name: string) {
+async function buildPackageModule(name: string, format: "esm" | "cjs" = "esm") {
   const entryPointPath = `./${name}.ts`;
+  const outfile = `./${name}.` + (format === "esm" ? "mjs" : "cjs");
   await build({
     entryPoints: [entryPointPath],
-    outfile: `./${name}.mjs`,
-    format: "esm",
+    outfile,
+    format,
     target: "esnext",
     minify: false,
     bundle: true,
   });
-  return await Deno.lstat(`./${name}.mjs`);
+  return await Deno.lstat(outfile);
 }
 
 if (import.meta.main) {
@@ -44,10 +45,15 @@ if (import.meta.main) {
   console.log(`· RUNTIME_STATE_JS %c(${runtime_state_js.length} bytes)`, "color:grey");
   console.log(`· RUNTIME_SUSPENSE_JS %c(${runtime_suspense_js.length} bytes)`, "color:grey");
 
-  for (const name of ["index.ts", "jsx-runtime.ts"]) {
-    const moduleName = name.replace(/\.ts$/, "");
-    const { size } = await buildPackageModule(moduleName);
-    console.log(`· ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");
+  for (const moduleName of ["index", "jsx-runtime"]) {
+    {
+      const { size } = await buildPackageModule(moduleName, "esm");
+      console.log(`· ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");
+    }
+    {
+      const { size } = await buildPackageModule(moduleName, "cjs");
+      console.log(`· ${moduleName}.cjs %c(${size.toLocaleString()} bytes)`, "color:grey");
+    }
   }
 
   console.log("%cBuild complete! (%d ms)", "color:grey", performance.now() - start);
