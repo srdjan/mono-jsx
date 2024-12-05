@@ -11,8 +11,6 @@ mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object i
 - Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 ```jsx
-/* @jsxImportSource mono-jsx */
-
 export default {
   fetch: (req) => (
     <html>
@@ -40,9 +38,10 @@ bun add mono-jsx
 
 To use mono-jsx as the JSX runtime, add the following configuration to your `tsconfig.json`(`deno.json` for Deno):
 
-```json
+```jsonc
 {
   "compilerOptions": {
+    "allowJs": true, // required for `.jsx` extension in Node.js
     "jsx": "react-jsx",
     "jsxImportSource": "mono-jsx"
   }
@@ -52,7 +51,7 @@ To use mono-jsx as the JSX runtime, add the following configuration to your `tsc
 Alternatively, you can use pragma directive in your JSX file.
 
 ```js
-/* @jsxImportSource mono-jsx */
+/** @jsxImportSource mono-jsx */
 ```
 
 ## Usage
