@@ -2,20 +2,19 @@
 
 ![`<html>` as a `Response`](./.github/html-as-a-response.png)
 
-mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object for server-side rendering(SSR) in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
+mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 - No build step needed
 - Lightweight(7KB gzipped), zero dependencies
 - Minimal state runtime
-- Streaming rendering by default
+- Streaming rendering
 - Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
-- Fully HTML/CSS types provided
 
 ```jsx
 /* @jsxImportSource mono-jsx */
 
 export default {
-  fetch: (request) => (
+  fetch: (req) => (
     <html>
       <h1>Hello World!</h1>
     </html>
@@ -58,13 +57,13 @@ Alternatively, you can use pragma directive in your JSX file.
 
 ## Usage
 
-mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object for server-side rendering(SSR) in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
+To create a html response in server-side, you just need to return a `<html>` element in the `fetch` method.
 
 ```jsx
 // app.jsx
 
 export default {
-  fetch: (request) => (
+  fetch: (req) => (
     <html>
       <h1>Hello World!</h1>
     </html>
@@ -245,7 +244,7 @@ mono-jsx provides a minimal state runtime that allows you to update view based o
 
 ```jsx
 function App() {
-  // Initialize the state 'count' with `0` value
+  // Initialize the state 'count' with value `0`
   $state.count = 0;
   return (
     <div>
@@ -274,7 +273,71 @@ declare global {
 > [!NOTE]
 > The `$state` and `$computed` are global variables injected by mono-jsx.
 
-## Built-in elements
+## Using Hooks
+
+mono-jsx provides some hooks to allow you to access rendering context in function components.
+
+### `$request` Hook
+
+The `$request` hook allows you to access the current request object which is set in the root `<html>` element.
+
+```jsx
+async function App() {
+  const request = $request();
+  return (
+    <p>
+      {request.method} {request.url}
+    </p>
+  );
+}
+
+export default {
+  fetch: (req) => (
+    <html request={req}>
+      <h1>Hello World!</h1>
+      <App />
+    </html>
+  ),
+};
+```
+
+### `$store` Hook
+
+The `$store` hook allows you to access the global store object which is set in the root `<html>` element.
+
+```jsx
+function App() {
+  const { count } = $store();
+  return <p>{ count }</p>;
+}
+
+export default {
+  fetch: (req) => (
+    <html store={{ count: 0 }}>
+      <h1>Hello World!</h1>
+      <App />
+    </html>
+  ),
+};
+```
+
+### Using Hooks in Async Function Components
+
+If you are using hooks in an async function component, you need to call these hooks before any `await` statement.
+
+```jsx
+async function AsyncApp() {
+  const request = $request();
+  const data = await fetchData(new URL(request.url).searchParams.get("id"));
+  const request2 = $request(); // ❌ request2 is undefined
+  return (
+    <p>
+      {data.title}
+    </p>
+  );
+}
+
+## Built-in Elements
 
 mono-jsx provides some built-in elements to help you build your app.
 
@@ -316,11 +379,13 @@ function App() {
 }
 ```
 
-<!-- ### `<cache>` element  -->
+### `<cache>` element
+
+_Work in progress..._
 
 ## Streaming Rendering
 
-By default, mono-jsx renders your `<html>` app streamingly.
+mono-jsx renders your `<html>` as a readable stream, that allows async function components are rendered asynchrously. You can set a `placeholder` attribute to show a loading state while the async component is loading.
 
 ```jsx
 async function Sleep(ms) {
@@ -329,10 +394,30 @@ async function Sleep(ms) {
 }
 
 export default {
-  fetch: (request) => (
+  fetch: (req) => (
     <html>
       <h1>Hello World!</h1>
       <Sleep ms={1000} placeholder={<p>Sleeping...</p>}>
+        <p>After 1 second</p>
+      </Sleep>
+    </html>
+  ),
+};
+```
+
+You can also set `rendering` attribute to control the rendering strategy of the async component. Currently, only `eager` is supported that renders the async component immediately.
+
+```jsx
+async function Sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  return <solt />;
+}
+
+export default {
+  fetch: (req) => (
+    <html>
+      <h1>Hello World!</h1>
+      <Sleep ms={1000} rendering="eager">
         <p>After 1 second</p>
       </Sleep>
     </html>
