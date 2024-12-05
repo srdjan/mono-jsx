@@ -71,4 +71,4 @@ Object.assign(globalThis, {
   $computed: computed,
 });
 
-export { $fragment as Fragment, jsx, jsx as jsxs, jsxIcon };
+export { $fragment as Fragment, jsx, jsx as jsxDEV, jsx as jsxs, jsxIcon };

@@ -9,8 +9,12 @@
       "import": "./index.mjs"
     },
     "./jsx-runtime": {
-      "import": "./jsx-runtime.mjs",
-      "types": "./types/jsx-runtime.d.ts"
+      "types": "./types/jsx-runtime.d.ts",
+      "import": "./jsx-runtime.mjs"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./types/jsx-runtime.d.ts",
+      "import": "./jsx-runtime.mjs"
     }
   },
   "scripts": {
