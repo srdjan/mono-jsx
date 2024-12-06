@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { readFile, writeFile } = require("fs/promises");
-const procss = require("process");
+import { readFile, writeFile } from "node:fs/promises";
+import process from "node:process";
 
 const helpMessage = `npx mono-jsx [command]
 
@@ -10,15 +10,15 @@ Commands:
   help   Print help message
 `;
 
-if (procss.argv[2] === "setup") {
+if (process.argv[2] === "setup") {
   setup();
 } else {
   console.log(helpMessage);
-  procss.exit(0);
+  process.exit(0);
 }
 
 async function setup() {
-  let tsConfig = {};
+  let tsConfig = Object.create(null);
   let tsConfigPath = "";
   for (const file of ["deno.json", "tsconfig.json"]) {
     try {
