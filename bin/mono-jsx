@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+
+const { readFile, writeFile } = require("fs/promises");
+const procss = require("process");
+
+const helpMessage = `npx mono-jsx [command]
+
+Commands:
+  setup  Setup JSX Runtime
+  help   Print help message
+`;
+
+if (procss.argv[2] === "setup") {
+  setup();
+} else {
+  console.log(helpMessage);
+  procss.exit(0);
+}
+
+async function setup() {
+  let tsConfig = {};
+  let tsConfigPath = "";
+  for (const file of ["deno.json", "tsconfig.json"]) {
+    try {
+      const json = await readFile(file, "utf8");
+      tsConfig = JSON.parse(json);
+      tsConfigPath = file;
+      break;
+    } catch {
+      // ignore
+    }
+  }
+  tsConfig.compilerOptions = {
+    ...tsConfig.compilerOptions,
+    alllowJs: true,
+    jsx: "react-jsx",
+    jsxImportSource: "mono-jsx",
+  };
+  await writeFile(tsConfigPath || "tsconfig.json", JSON.stringify(tsConfig, null, 2));
+  console.log("Done!");
+}

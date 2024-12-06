@@ -4,6 +4,9 @@
   "description": "`<html>` as a `Response`.",
   "type": "module",
   "module": "./index.mjs",
+  "bin": {
+    "mono-jsx": "./bin/mono-jsx"
+  },
   "exports": {
     ".": {
       "import": "./index.mjs",

@@ -48,6 +48,12 @@ To use mono-jsx as the JSX runtime, add the following configuration to your `tsc
 }
 ```
 
+You can also run `npx mono-jsx setup` to add the configuration automatically.
+
+```bash
+npx mono-jsx setup
+```
+
 Alternatively, you can use pragma directive in your JSX file.
 
 ```js
