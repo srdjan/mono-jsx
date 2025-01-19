@@ -5,11 +5,6 @@ import chrome from "npm:puppeteer-chromium-resolver@23.0.0";
 let routeIndex = 0;
 let testRoutes: Map<string, JSX.Element> = new Map();
 
-const browser = await puppeteer.launch({
-  executablePath: (await chrome()).executablePath,
-  args: ["--no-sandbox", "--disable-gpu", "--disable-extensions", "--disable-sync", "--disable-background-networking"],
-});
-
 Deno.serve({
   port: 8687,
   onListen: () => {},
@@ -21,15 +16,20 @@ Deno.serve({
   return (
     <html request={request}>
       <head>
-        <title>test</title>
+        <title>Test</title>
       </head>
       <body>{testRoutes.get(url.pathname)}</body>
     </html>
   );
 });
 
+const browser = await puppeteer.launch({
+  executablePath: (await chrome()).executablePath,
+  args: ["--no-sandbox", "--disable-gpu", "--disable-extensions", "--disable-sync", "--disable-background-networking"],
+});
+
 function addTestRoute(content: JSX.Element) {
-  const pathname = `/jsx_${routeIndex++}`;
+  const pathname = `/test_${routeIndex++}`;
   testRoutes.set(pathname, content);
   return `http://localhost:8687${pathname}`;
 }
@@ -37,6 +37,8 @@ function addTestRoute(content: JSX.Element) {
 declare global {
   interface State {
     text: string;
+    foo: string;
+    bar: string;
     counter: number;
     lang: string;
   }
@@ -46,9 +48,7 @@ Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false },
   const testUrl = addTestRoute(
     <div>
       <h1>{$state.text}</h1>
-      <button
-        onClick={() => $state.text = "Hello world!"}
-      />
+      <button onClick={() => $state.text = "Hello world!"} />
     </div>,
   );
 
@@ -108,15 +108,65 @@ Deno.test("[runtime] using state(counter)", { sanitizeResources: false, sanitize
   await page.close();
 });
 
+Deno.test("[runtime] using computed state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  $state.foo = "foo";
+  $state.bar = "bar";
+  const testUrl = addTestRoute(
+    <div>
+      <h1>{$computed(() => `${$state.foo}${$state.bar}!`)}</h1>
+      <button onClick={() => $state.bar = "BAR"} />
+    </div>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testUrl);
+
+  const h1 = await page.$("div h1")!;
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.innerText), "foobar!");
+
+  const button = await page.$("div button")!;
+  assert(button);
+  await button.click();
+
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "fooBAR!");
+
+  await page.close();
+});
+
+Deno.test("[runtime] using computed class name", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  $state.foo = "foo";
+  $state.bar = "bar";
+  const testUrl = addTestRoute(
+    <div>
+      <h1 class={$computed(() => [$state.foo, $state.bar])} />
+      <button onClick={() => $state.bar = "BAR"} />
+    </div>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testUrl);
+
+  const h1 = await page.$("div h1")!;
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.className), "foo bar");
+
+  const button = await page.$("div button")!;
+  assert(button);
+  await button.click();
+
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.className), "foo BAR");
+
+  await page.close();
+});
+
 Deno.test("[runtime] <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testUrl = addTestRoute(
     <div>
       <toggle value={$state.show}>
         <h1>Hello world!</h1>
       </toggle>
-      <button
-        onClick={() => $state.show = !$state.show}
-      >
+      <button onClick={() => $state.show = !$state.show}>
         Show
       </button>
     </div>,
@@ -207,11 +257,7 @@ Deno.test("[runtime] 'mount' handler", { sanitizeResources: false, sanitizeOps: 
 
   const div = await page.$("div")!;
   assert(div);
-  assertEquals(await div.evaluate((el: HTMLElement) => el.childElementCount), 1);
-
-  const h1 = await page.$("div > h1")!;
-  assert(h1);
-  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
+  assertEquals(await div.evaluate((el: HTMLElement) => el.innerHTML), "<h1>Hello world!</h1>");
 
   await page.close();
 });

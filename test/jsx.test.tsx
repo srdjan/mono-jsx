@@ -94,7 +94,7 @@ Deno.test("[jsx] jsx transform", () => {
         children: [
           Symbol.for("mono.computed"),
           {
-            deps: ["num"],
+            deps: { num: 1 },
             value: 2,
             fn: String(() => 2 * $state.num),
           },
@@ -106,8 +106,8 @@ Deno.test("[jsx] jsx transform", () => {
   );
 });
 
-Deno.test("[jsx] <html> as a `Response` object", () => {
-  const res = (
+Deno.test("[jsx] <html> as a `Response` object", async () => {
+  const res: Response = (
     <html lang="en" headers={{ cacheControl: "public" }}>
       <head />
       <body />
@@ -115,4 +115,5 @@ Deno.test("[jsx] <html> as a `Response` object", () => {
   );
   assert(res instanceof Response);
   assertEquals(res.headers.get("cache-control"), "public");
+  assertEquals(await res.text(), '<!DOCTYPE html><html lang="en"><head></head><body></body></html>');
 });

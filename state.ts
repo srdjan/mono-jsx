@@ -1,15 +1,15 @@
 import { $computed, $state, $vnode } from "./symbols.ts";
 
-let collectDeps: ((key: string) => void) | undefined;
+let collectDeps: ((key: string, value: unknown) => void) | undefined;
 
-export const state: State = new Proxy(Object.create(null), {
+export const state = new Proxy(Object.create(null), {
   get(target, key, receiver) {
     const value = Reflect.get(target, key, receiver);
     if (typeof key === "symbol") {
       return value;
     }
     if (collectDeps) {
-      collectDeps(key);
+      collectDeps(key, value);
       return value;
     }
     return [$state, { key, value }, $vnode];
@@ -23,10 +23,10 @@ export const state: State = new Proxy(Object.create(null), {
 });
 
 export const computed = <T = unknown>(fn: () => T): T => {
-  collectDeps = (key) => deps.add(key);
-  const deps = new Set<string>();
+  const deps = Object.create(null) as Record<string, unknown>;
+  collectDeps = (key, value) => deps[key] = value;
   const value = fn();
   collectDeps = undefined;
   if (deps.size === 0) return value;
-  return [$computed, { value, deps: Array.from(deps), fn: fn.toString() }, $vnode] as unknown as T;
+  return [$computed, { value, deps, fn: fn.toString() }, $vnode] as unknown as T;
 };

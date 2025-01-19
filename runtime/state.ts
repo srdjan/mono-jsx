@@ -30,6 +30,7 @@ function createEffect(el: HTMLElement, mode: string, getter: () => unknown, deps
     let slotsMap: Map<string, Array<ChildNode>> | undefined;
     let unnamedSlots: Array<ChildNode> | undefined;
     let getNamedSlots = (slotName: string) => slotsMap!.get(slotName) ?? slotsMap!.set(slotName, []).get(slotName)!;
+    let value: string;
     effect = () => {
       if (!slotsMap) {
         slotsMap = new Map();
@@ -53,25 +54,25 @@ function createEffect(el: HTMLElement, mode: string, getter: () => unknown, deps
           }
         }
       }
+      value = getter() as string;
       el.innerHTML = "";
-      const value = getter();
-      if (typeof value === "string" && slotsMap.has(value)) {
-        el.append(...slotsMap.get(value)!);
-      } else {
-        el.append(...unnamedSlots!);
-      }
+      el.append(...(slotsMap.has(value) ? slotsMap.get(value)! : unnamedSlots!));
     };
   } else if (mode.length > 2 && mode.startsWith("[") && mode.endsWith("]")) {
-    const attrName = mode.slice(1, -1);
-    const parent = el.parentElement!;
+    let attrName = mode.slice(1, -1);
+    let target: Element = el.parentElement!;
+    if (target.tagName === "M-GROUP") {
+      target = target.previousElementSibling!;
+    }
     effect = () => {
       const value = getter();
       if (value === false) {
-        hasAttr(parent, attrName) && parent.removeAttribute(attrName);
+        target.removeAttribute(attrName);
       } else if ((attrName === "class" || attrName === "style") && value && typeof value === "object") {
-        // todo: normalize class and style object
+        // @ts-ignore - `cx` and `styleToCSS` are injected by the renderer
+        target.setAttribute(attrName, attrName === "class" ? cx(value) : styleToCSS(value));
       } else {
-        parent.setAttribute(attrName, value === true ? "" : "" + value);
+        target.setAttribute(attrName, value === true ? "" : "" + value);
       }
     };
   }
@@ -123,7 +124,7 @@ customElements.define(
               });
             }
           }
-        });
+        }, 0);
       }
     }
   },

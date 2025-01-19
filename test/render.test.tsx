@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
+import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
 
 const renderToString = (node: JSX.Element, request?: Request) => {
   const res = (
@@ -167,8 +167,8 @@ Deno.test("[ssr] event handler", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<script>var _m_fn_0=()=>console.log("🔥")</script>`,
-      `<button onclick="_m_fn_0.call(this,event)">Click me</button>`,
+      `<script>var $mf_0=()=>console.log("🔥")</script>`,
+      `<button onclick="$mf_0.call(this,event)">Click me</button>`,
       `</body></html>`,
     ].join(""),
   );
@@ -181,8 +181,8 @@ Deno.test("[ssr] event handler", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<script>var _m_fn_0=(data)=>console.log(data)</script>`,
-      `<form onsubmit="event.preventDefault();_m_fn_0.call(this,new FormData(this))">`,
+      `<script>var $mf_0=(data)=>console.log(data)</script>`,
+      `<form onsubmit="event.preventDefault();$mf_0.call(this,new FormData(this))">`,
       `<input name="foo">`,
       `</form>`,
       `</body></html>`,
@@ -389,8 +389,10 @@ Deno.test("[ssr] catch error", async () => {
 declare global {
   interface State {
     foo: string;
+    bar: string;
     show: boolean;
     num: number;
+    input: string;
     select: string;
   }
 }
@@ -431,11 +433,31 @@ Deno.test("[ssr] using state", async () => {
       `)defineState(n,v)})()</script>`,
     ].join(""),
   );
+
+  $state.input = "Hello, world!";
+  assertEquals(
+    await renderToString(<input value={$state.input} />),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<input value="Hello, world!">`,
+      `<m-group>`,
+      `<m-state mode="[value]" use="input"></m-state>`,
+      `</m-group>`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE_JS,
+      `for(let[n,v]of`,
+      `[["input","Hello, world!"]]`,
+      `)defineState(n,v)})()</script>`,
+    ].join(""),
+  );
 });
 
 Deno.test("[ssr] using computed", async () => {
   $state.foo = "foo";
   $state.bar = "bar";
+
   const message = $computed(() => $state.foo + $state.bar + "!");
   assertEquals(
     await renderToString(<span title={message}>{message}</span>),
@@ -450,7 +472,28 @@ Deno.test("[ssr] using computed", async () => {
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
       `for(let[n,v]of`,
-      `[["foo"],["bar"]]`,
+      `[["foo","foo"],["bar","bar"]]`,
+      `)defineState(n,v)})()</script>`,
+    ].join(""),
+  );
+
+  const fn = () => [$state.foo, $state.bar];
+  assertEquals(
+    await renderToString(<div class={$computed(fn)} />),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<div class="foo bar">`,
+      `<m-state mode="[class]">`,
+      `<script type="computed">$memo(${String(fn)},["foo","bar"])</script>`,
+      `</m-state>`,
+      `</div>`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_COMPONENTS_JS.cx,
+      RUNTIME_STATE_JS,
+      `for(let[n,v]of`,
+      `[["foo","foo"],["bar","bar"]]`,
       `)defineState(n,v)})()</script>`,
     ].join(""),
   );
