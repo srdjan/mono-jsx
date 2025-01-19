@@ -4,7 +4,7 @@ async function buildRuntime(name: string): Promise<string> {
   const ret = await build({
     entryPoints: [`./runtime/${name}.ts`],
     format: "esm",
-    target: "es2018",
+    target: "es2022",
     write: false,
     minify: true,
   });
