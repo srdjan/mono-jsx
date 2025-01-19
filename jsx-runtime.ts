@@ -13,7 +13,7 @@ const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(nu
   }
   if (tag === "html") {
     const renderOptions = Object.create(null);
-    for (const key of ["request", "headers", "rendering"]) {
+    for (const key of ["request", "data", "status", "headers", "rendering"]) {
       if (Object.hasOwn(props, key)) {
         renderOptions[key] = props[key];
         delete props[key];
@@ -42,22 +42,11 @@ const html = (raw: string, ...values: unknown[]): VNode => [
   $vnode,
 ];
 
-const request = (): Request => {
-  if (Object.hasOwn($context, "request")) {
-    const request = $context.request as Request;
-    if (request instanceof Request) {
-      return request;
-    }
-    throw new Error("`request` is not set in the context");
+const context = <T extends Record<string, unknown> = Record<string, unknown>>(): { request: Request; data: T } => {
+  if (!Object.hasOwn($context, "request") || !Object.hasOwn($context, "data")) {
+    throw new Error("calling `$context` outside of a component");
   }
-  throw new Error("calling `$request` outside of a component");
-};
-
-const store = <T extends Record<string, unknown> = Record<string, unknown>>(): T => {
-  if (Object.hasOwn($context, "store")) {
-    return $context.store as T;
-  }
-  throw new Error("calling `$store `outside of a component");
+  return $context as { request: Request; data: T };
 };
 
 // global variables
@@ -65,8 +54,7 @@ Object.assign(globalThis, {
   html,
   css: html,
   js: html,
-  $request: request,
-  $store: store,
+  $context: context,
   $state: state,
   $computed: computed,
 });

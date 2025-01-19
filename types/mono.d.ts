@@ -102,10 +102,8 @@ declare global {
   interface State {
     [key: string]: any;
   }
-  /** The mono request hook. */
-  var $request: () => Request;
-  /** The mono store hook. */
-  var $store: <T extends Record<string, unknown> = Record<string, unknown>>() => T;
+  /** The mono context hook. */
+  var $context: <T extends Record<string, unknown> = Record<string, unknown>>() => { request: Request; data: T };
   /** The mono state object. */
   var $state: State;
   /** Create a computed state. */

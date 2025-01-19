@@ -10,7 +10,7 @@ interface RenderContext {
   evtHandlerIndex: number;
   eager?: boolean;
   request?: Request;
-  store?: Record<string, unknown>;
+  data?: Record<string, unknown>;
   slots?: Children;
   styleIds?: Set<string>;
 }
@@ -289,10 +289,10 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           }
           try {
             $context.request = ctx.request;
-            $context.store = ctx.stateStore;
+            $context.data = ctx.data;
             const v = tag(fcProps);
             delete $context.request;
-            delete $context.store;
+            delete $context.data;
             if (v instanceof Promise) {
               if (eager) {
                 await renderNode({ ...ctx, eager: true, slots: children }, await v);
@@ -605,9 +605,8 @@ function escapeHTML(str: string): string {
   return lastIndex !== index ? html + str.slice(lastIndex, index) : html;
 }
 
-export function render(node: VNode, renderOptions?: RenderOptions): Response {
-  const request = renderOptions?.request;
-  const headersRaw = renderOptions?.headers;
+export function render(node: VNode, renderOptions: RenderOptions = {}): Response {
+  const { request, status = 200, headers: headersRaw, rendering, data } = renderOptions;
   const headers: Record<string, string> = Object.create(null);
   if (headersRaw) {
     const { etag, lastModified } = headersRaw;
@@ -633,12 +632,12 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
         const suspenses: Promise<void>[] = [];
         const ctx: RenderContext = {
           request,
+          data,
           write,
           stateStore,
           suspenses,
           evtHandlerIndex: 0,
-          eager: renderOptions?.rendering === "eager",
-          store: renderOptions?.store ?? Object.create(null),
+          eager: rendering === "eager",
         };
         try {
           write("<!DOCTYPE html>");
@@ -661,6 +660,6 @@ export function render(node: VNode, renderOptions?: RenderOptions): Response {
         }
       },
     }),
-    { headers, status: renderOptions?.status ?? 200 },
+    { headers, status },
   );
 }

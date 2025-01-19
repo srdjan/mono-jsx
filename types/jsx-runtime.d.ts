@@ -10,4 +10,4 @@ export function jsxIcon(name: string, svg: string): void;
 
 export function Fragment(props: Record<string, unknown>): VNode;
 
-export { jsx as jsxs };
+export { jsx as jsxDEV, jsx as jsxs };
