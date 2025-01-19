@@ -3,18 +3,14 @@
 import { readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 
-const helpMessage = `npx mono-jsx [command]
-
-Commands:
-  setup  Setup JSX Runtime
-  help   Print help message
-`;
-
-if (process.argv[2] === "setup") {
-  setup();
-} else {
-  console.log(helpMessage);
-  process.exit(0);
+switch (process.argv[2]) {
+  case "setup":
+    setup().then(() => {
+      console.log("JSX runtime setup complete.");
+    });
+    break;
+  default:
+    process.exit(0);
 }
 
 async function setup() {
@@ -36,6 +32,8 @@ async function setup() {
     jsx: "react-jsx",
     jsxImportSource: "mono-jsx",
   };
-  await writeFile(tsConfigPath || "tsconfig.json", JSON.stringify(tsConfig, null, 2));
-  console.log("Done!");
+  await writeFile(
+    tsConfigPath || (globalThis.Deno ? "deno.json" : "tsconfig.json"),
+    JSON.stringify(tsConfig, null, 2),
+  );
 }
