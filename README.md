@@ -211,7 +211,8 @@ function Button() {
 }
 ```
 
-Note, the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
+> [!NOTE]
+> the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
 
 ```jsx
 function Button() {
@@ -278,27 +279,27 @@ declare global {
 > [!NOTE]
 > The `$state` and `$computed` are global variables injected by mono-jsx.
 
-## Using Hooks
+## Using `$context` Hook
 
-mono-jsx provides some hooks to allow you to access rendering context in function components.
+The `$context` hook allows you to access `data` which is set in the root `<html>` element.
 
-### `$request` Hook
+```tsx
+interface Data {
+  foo: string;
+}
 
-The `$request` hook allows you to access the current request object which is set in the root `<html>` element.
-
-```jsx
 async function App() {
-  const request = $request();
+  const { request, data } = $context<Data>();
   return (
     <p>
-      {request.method} {request.url}
+      {request.method} {request.url} {data.foo}
     </p>
   );
 }
 
 export default {
   fetch: (req) => (
-    <html request={req}>
+    <html request={req} data={{ foo: "bar" }}>
       <h1>Hello World!</h1>
       <App />
     </html>
@@ -306,41 +307,21 @@ export default {
 };
 ```
 
-### `$store` Hook
-
-The `$store` hook allows you to access the global store object which is set in the root `<html>` element.
-
-```jsx
-function App() {
-  const { count } = $store();
-  return <p>{ count }</p>;
-}
-
-export default {
-  fetch: (req) => (
-    <html store={{ count: 0 }}>
-      <h1>Hello World!</h1>
-      <App />
-    </html>
-  ),
-};
-```
-
-### Using Hooks in Async Function Components
-
-If you are using hooks in an async function component, you need to call these hooks before any `await` statement.
+> [!NOTE]
+> If you are using hooks in an async function component, you need to call these hooks before any `await` statement.
 
 ```jsx
 async function AsyncApp() {
-  const request = $request();
+  const { request } = $context();
   const data = await fetchData(new URL(request.url).searchParams.get("id"));
-  const request2 = $request(); // ❌ request2 is undefined
+  const { request } = $context(); // ❌ request is undefined
   return (
     <p>
       {data.title}
     </p>
   );
 }
+```
 
 ## Built-in Elements
 
@@ -352,15 +333,18 @@ mono-jsx provides some built-in elements to help you build your app.
 
 ```jsx
 function App() {
-  $state.show = false
+  $state.show = false;
   return (
     <div>
       <toggle value={$state.show}>
         <h1>Hello World!</h1>
       </toggle>
-      <button onClick={() => $state.show = !$state.show}>{$computed(() => $state.show ? "Hide" : "Show")}</button>
+      <button onClick={toggle}>{$computed(() => $state.show ? "Hide" : "Show")}</button>
     </div>
   );
+  function toggle() {
+    $state.show = !$state.show;
+  }
 }
 ```
 
