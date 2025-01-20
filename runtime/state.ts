@@ -109,18 +109,19 @@ customElements.define(
   class extends HTMLElement {
     connectedCallback() {
       const el = this;
-      const mode = attr(el, "mode") || "text";
+      const mode = attr(el, "mode") ?? "text";
       const use = attr(el, "use");
       if (use) {
         createEffect(el, mode, () => $state[use], [use]);
       } else {
+        // here we use a timeout to ensure that the script is executed after the element is fully parsed
         setTimeout(() => {
           const firstChild = el.firstChild;
           if (firstChild && firstChild.nodeType === 1 && (firstChild as HTMLScriptElement).type === "computed") {
             const js = (firstChild as HTMLScriptElement).textContent;
             if (js) {
-              (new Function("$state", "$memo", js))($state, (memo: () => unknown, deps: string[]) => {
-                createEffect(el, mode, memo, deps);
+              (new Function("$state", "$", js))($state, (getter: () => unknown, deps: string[]) => {
+                createEffect(el, mode, getter, deps);
               });
             }
           }

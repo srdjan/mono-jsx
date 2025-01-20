@@ -102,7 +102,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         // computed
         if (tag === $computed) {
           const { deps, value, fn } = props;
-          write('<m-state><script type="computed">$memo(' + fn + "," + JSON.stringify(Object.keys(deps)) + ")</script>");
+          write('<m-state computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>");
           if (value !== undefined) {
             write(escapeHTML("" + value));
           }
@@ -124,8 +124,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               const { key, deps, value, fn } = valueProp[1];
               const valueOrDefault = value ?? defaultValue;
               write(
-                '<m-state mode="toggle" ' + (key ? "use=" + toAttrStringLit(key) : "") + ">"
-                  + (fn ? '<script type="computed">$memo(' + fn + "," + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
+                '<m-state mode="toggle" ' + (key ? "use=" + toAttrStringLit(key) : "computed") + ">"
+                  + (fn ? '<script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
                   + (!valueOrDefault ? "<template m-slot>" : ""),
               );
               await renderChildren(ctx, children);
@@ -160,9 +160,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             let valueOrDefault: unknown;
             if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
               const { key, deps, value, fn } = valueProp[1];
-              stateful = '<m-state mode="switch" ' + (key ? "use=" + toAttrStringLit(key) : "") + ">";
+              stateful = '<m-state mode="switch" ' + (key ? "use=" + toAttrStringLit(key) : "computed") + ">";
               if (fn) {
-                computed = '<script type="computed">$memo(' + fn + "," + JSON.stringify(deps) + ")</script>";
+                computed = '<script type="computed">$(' + fn + ", " + JSON.stringify(deps) + ")</script>";
               }
               valueOrDefault = value ?? defaultValue;
               if (key) {
@@ -297,9 +297,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               }
               propEffects.push(
                 "<m-state mode=" + toAttrStringLit("[" + propName + "]")
-                  + (key ? " use=" + toAttrStringLit(key) : "")
+                  + (key ? " use=" + toAttrStringLit(key) : " computed")
                   + ">"
-                  + (fn ? '<script type="computed">$memo(' + fn + "," + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
+                  + (fn ? '<script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
                   + "</m-state>",
               );
               if (key) {
@@ -385,7 +385,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                 break;
               case "action":
                 if (typeof propValue === "function" && tag === "form") {
-                  const id = "$mf_" + (ctx.evtHandlerIndex++).toString(36);
+                  const id = "$MEH_" + (ctx.evtHandlerIndex++).toString(36);
                   write("<script>var " + id + "=" + propValue.toString() + "</script>");
                   buffer += " " + renderAttr("onsubmit", "event.preventDefault();" + id + ".call(this,new FormData(this))");
                 } else if (isString(propValue)) {
@@ -401,7 +401,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                 if (regexpHtmlTag.test(propName) && propValue !== undefined) {
                   if (propName.startsWith("on")) {
                     if (typeof propValue === "function") {
-                      const id = "$mf_" + (ctx.evtHandlerIndex++).toString(36);
+                      const id = "$MEH_" + (ctx.evtHandlerIndex++).toString(36);
                       write("<script>var " + id + "=" + propValue.toString() + "</script>");
                       buffer += " " + renderAttr(propName.toLowerCase(), id + ".call(this,event)");
                     }
