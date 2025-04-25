@@ -1,9 +1,9 @@
 import { assertEquals } from "jsr:@std/assert";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
 
-const renderToString = (node: JSX.Element, request?: Request) => {
+const renderToString = (node: JSX.Element, request?: Request, data?: Record<string, unknown>) => {
   const res = (
-    <html lang="en" request={request}>
+    <html lang="en" request={request} data={data}>
       <body>{node}</body>
     </html>
   );
@@ -495,6 +495,32 @@ Deno.test("[ssr] using computed", async () => {
       `for(let[n,v]of`,
       `[["foo","foo"],["bar","bar"]]`,
       `)defineState(n,v)})()</script>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] using context hook", async () => {
+  function App() {
+    const { request, data } = $context();
+    return (
+      <div>
+        <p>{request.headers.get("x-foo")}</p>
+        <p>{data.foo}</p>
+      </div>
+    );
+  }
+  const request = new Request("https://example.com", { headers: { "x-foo": "bar" } });
+  const data = { foo: "bar" };
+  assertEquals(
+    await renderToString(<App />, request, data),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<div>`,
+      `<p>bar</p>`,
+      `<p>bar</p>`,
+      `</div>`,
+      `</body></html>`,
     ].join(""),
   );
 });
