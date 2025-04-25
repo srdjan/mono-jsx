@@ -394,7 +394,7 @@ export default {
 };
 ```
 
-You can also set `rendering` attribute to control the rendering strategy of the async component. Currently, only `eager` is supported that renders the async component immediately.
+You can also set `rendering` attribute to "eager" to render the async component eagerly, which means the async component will be rendered as a sync function component and the `placeholder` will be ignored.
 
 ```jsx
 async function Sleep(ms) {
