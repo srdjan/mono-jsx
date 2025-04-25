@@ -215,15 +215,19 @@ function Button() {
 > the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
 
 ```jsx
-function Button() {
+function Button(props) {
   let message = "BOOM!";
+  console.log(message); // only print message in server-side
   return (
     <button
+      role={props.role}
       onClick={(evt) => {
-        Deno.exit(0); // ❌ Deno is unavailable in the browser
-        alert(message); // ❌ message is a server-side variable
-        document.title = "BOOM!"; // ✅ document is a browser API
-        $state.count++; // ✅ $state is the mono-jsx specific usage
+        alert(message);           // ❌ `message` is a server-side variable
+        console.log(props.role);  // ❌ `props` is a server-side variable
+        Deno.exit(0);             // ❌ `Deno` is unavailable in the browser
+        document.title = "BOOM!"; // ✅ `document` is a browser API
+        $state.count++;           // ✅ `$state` is the mono-jsx specific variable
+        console.log(evt.target);  // ✅ `evt` is the event object
       }}
     >
       Click Me
@@ -281,15 +285,15 @@ declare global {
 
 ## Using `$context` Hook
 
-The `$context` hook allows you to access `data` which is set in the root `<html>` element.
+The `$context` hook allows you to access `request` and `data` which are set in the root `<html>` element.
 
 ```tsx
-interface Data {
+interface IData {
   foo: string;
 }
 
-async function App() {
-  const { request, data } = $context<Data>();
+function App() {
+  const { request, data } = $context<IData>();
   return (
     <p>
       {request.method} {request.url} {data.foo}
@@ -307,8 +311,8 @@ export default {
 };
 ```
 
-> [!NOTE]
-> If you are using hooks in an async function component, you need to call these hooks before any `await` statement.
+> [!WARNING]
+> You should call the `$context` hook before any `await` statement in an async component. Otherwise, the `request` will be undefined.
 
 ```jsx
 async function AsyncApp() {
