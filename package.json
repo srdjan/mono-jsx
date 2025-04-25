@@ -9,18 +9,15 @@
   },
   "exports": {
     ".": {
-      "import": "./index.mjs",
-      "require": "./index.cjs"
+      "import": "./index.mjs"
     },
     "./jsx-runtime": {
       "types": "./types/jsx-runtime.d.ts",
-      "import": "./jsx-runtime.mjs",
-      "require": "./jsx-runtime.cjs"
+      "import": "./jsx-runtime.mjs"
     },
     "./jsx-dev-runtime": {
       "types": "./types/jsx-runtime.d.ts",
-      "import": "./jsx-runtime.mjs",
-      "require": "./jsx-runtime.cjs"
+      "import": "./jsx-runtime.mjs"
     }
   },
   "scripts": {

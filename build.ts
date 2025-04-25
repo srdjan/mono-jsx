@@ -1,4 +1,4 @@
-import { build, stop } from "https://deno.land/x/esbuild@v0.24.0/mod.js";
+import { build, stop } from "https://deno.land/x/esbuild@v0.25.0/mod.js";
 
 async function buildRuntime(name: string): Promise<string> {
   const ret = await build({
@@ -77,10 +77,6 @@ if (import.meta.main) {
     {
       const { size } = await buildPackageModule(moduleName, "esm");
       console.log(`· ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");
-    }
-    {
-      const { size } = await buildPackageModule(moduleName, "cjs");
-      console.log(`· ${moduleName}.cjs %c(${size.toLocaleString()} bytes)`, "color:grey");
     }
   }
 
