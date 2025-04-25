@@ -110,9 +110,9 @@ customElements.define(
     connectedCallback() {
       const el = this;
       const mode = attr(el, "mode") ?? "text";
-      const use = attr(el, "use");
-      if (use) {
-        createEffect(el, mode, () => $state[use], [use]);
+      const key = attr(el, "key");
+      if (key) {
+        createEffect(el, mode, () => $state[key], [key]);
       } else {
         // here we use a timeout to ensure that the script is executed after the element is fully parsed
         setTimeout(() => {

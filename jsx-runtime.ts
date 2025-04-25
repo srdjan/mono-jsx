@@ -3,6 +3,8 @@ import { $context, $fragment, $html, $iconsRegistry, $vnode } from "./symbols.ts
 import { computed, state } from "./state.ts";
 import { render } from "./render.ts";
 
+const Fragment = $fragment as unknown as FC;
+
 const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(null), key?: string | number): VNode => {
   const vnode = new Array(3).fill(null);
   vnode[0] = tag;
@@ -25,7 +27,7 @@ const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(nu
   return vnode as unknown as VNode;
 };
 
-function jsxIcon(name: string, svg: string): void {
+const jsxIcon = (name: string, svg: string) => {
   const svgTagStart = svg.indexOf("<svg");
   const svgTagEnd = svg.indexOf(">", svgTagStart);
   const viewBox = svg.slice(0, svgTagEnd).match(/viewBox=['"]([^'"]+)['"]/)?.[1] ?? "";
@@ -34,13 +36,7 @@ function jsxIcon(name: string, svg: string): void {
     + ' xmlns="http://www.w3.org/2000/svg">'
     + svg.slice(svgTagEnd + 1).replace(/\n/g, "").replace(/=['"](black|#000000)['"]/g, '="currentColor"');
   $iconsRegistry.set(name.replace(/^icon-/, ""), iconSvg);
-}
-
-const html = (raw: string, ...values: unknown[]): VNode => [
-  $html,
-  { innerHTML: String.raw({ raw }, ...values) },
-  $vnode,
-];
+};
 
 const context = <T extends Record<string, unknown> = Record<string, unknown>>(): { request: Request; data: T } => {
   if (!Object.hasOwn($context, "request") || !Object.hasOwn($context, "data")) {
@@ -49,14 +45,20 @@ const context = <T extends Record<string, unknown> = Record<string, unknown>>():
   return $context as { request: Request; data: T };
 };
 
+const html = (raw: string, ...values: unknown[]): VNode => [
+  $html,
+  { innerHTML: String.raw({ raw }, ...values) },
+  $vnode,
+];
+
 // global variables
 Object.assign(globalThis, {
-  html,
-  css: html,
-  js: html,
+  $computed: computed,
   $context: context,
   $state: state,
-  $computed: computed,
+  css: html,
+  html,
+  js: html,
 });
 
-export { $fragment as Fragment, jsx, jsx as jsxDEV, jsx as jsxs, jsxIcon };
+export { Fragment, jsx, jsx as jsxDEV, jsx as jsxs, jsxIcon };

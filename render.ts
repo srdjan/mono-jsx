@@ -90,7 +90,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         // state
         if (tag === $state) {
           const { key, value } = props;
-          write("<m-state use=" + toAttrStringLit(key) + ">");
+          write("<m-state key=" + toAttrStringLit(key) + ">");
           if (value !== undefined && value !== null) {
             write(escapeHTML("" + value));
           }
@@ -119,22 +119,20 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         if (tag === "toggle") {
           if (children !== undefined) {
             const valueProp = props.value;
-            const defaultValue = props.defaultValue;
             if (isVNode(valueProp) && valueProp[0] === $state || valueProp[0] === $computed) {
               const { key, deps, value, fn } = valueProp[1];
-              const valueOrDefault = value ?? defaultValue;
               write(
-                '<m-state mode="toggle" ' + (key ? "use=" + toAttrStringLit(key) : "computed") + ">"
+                '<m-state mode="toggle" ' + (key ? "key=" + toAttrStringLit(key) : "computed") + ">"
                   + (fn ? '<script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
-                  + (!valueOrDefault ? "<template m-slot>" : ""),
+                  + (!value ? "<template m-slot>" : ""),
               );
               await renderChildren(ctx, children);
-              if (!valueOrDefault) {
+              if (!value) {
                 write("</template>");
               }
               write("</m-state>");
               if (key) {
-                stateStore.set(key, valueOrDefault);
+                stateStore.set(key, !!value);
               } else {
                 for (const [key, value] of Object.entries(deps)) {
                   if (!stateStore.has(key)) {
@@ -142,7 +140,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                   }
                 }
               }
-            } else if (valueProp ?? defaultValue) {
+            } else if (valueProp) {
               await renderChildren(ctx, children);
             }
           }
@@ -160,7 +158,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             let valueOrDefault: unknown;
             if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
               const { key, deps, value, fn } = valueProp[1];
-              stateful = '<m-state mode="switch" ' + (key ? "use=" + toAttrStringLit(key) : "computed") + ">";
+              stateful = '<m-state mode="switch" ' + (key ? "key=" + toAttrStringLit(key) : "computed") + ">";
               if (fn) {
                 computed = '<script type="computed">$(' + fn + ", " + JSON.stringify(deps) + ")</script>";
               }
@@ -263,10 +261,12 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               await renderNode({ ...ctx, eager, slots: children }, v);
             }
           } catch (err) {
-            if (typeof catchFC === "function") {
-              await renderNode({ ...ctx, eager: true }, catchFC(err));
-            } else {
-              write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.stack) + "</code></pre>");
+            if (err instanceof Error) {
+              if (typeof catchFC === "function") {
+                await renderNode({ ...ctx, eager: true }, catchFC(err));
+              } else {
+                write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.stack ?? err.message) + "</code></pre>");
+              }
             }
           }
           break;
@@ -297,7 +297,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               }
               propEffects.push(
                 "<m-state mode=" + toAttrStringLit("[" + propName + "]")
-                  + (key ? " use=" + toAttrStringLit(key) : " computed")
+                  + (key ? " key=" + toAttrStringLit(key) : " computed")
                   + ">"
                   + (fn ? '<script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
                   + "</m-state>",

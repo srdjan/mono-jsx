@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-explicit-any no-var
+// deno-lint-ignore-file no-explicit-any
 
 import type * as CSS from "./css.d.ts";
 
@@ -80,7 +80,6 @@ export interface AsyncComponentAttributes {
 export interface Elements {
   toggle: {
     value: boolean;
-    defaultValue?: boolean;
   };
   switch: {
     value: string;

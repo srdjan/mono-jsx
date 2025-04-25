@@ -1,4 +1,4 @@
-// deno-lint-ignore-file no-explicit-any no-var
+// deno-lint-ignore-file no-explicit-any
 
 import type * as Mono from "./mono.d.ts";
 import type { HTML } from "./html.d.ts";

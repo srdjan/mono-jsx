@@ -11,23 +11,23 @@ const renderToString = (node: JSX.Element, request?: Request) => {
 };
 
 Deno.test("[ssr] condition&loop", async () => {
-  const If = ({ value }: { value: boolean }) => {
-    if (value) {
+  const If = ({ true: ok }: { true: boolean }) => {
+    if (ok) {
       return <slot />;
     }
     return null;
   };
-  function* For({ value }: { value: unknown[] }) {
-    for (const i of value) {
+  function* For({ items }: { items: unknown[] }) {
+    for (const i of items) {
       yield <>{i}</>;
     }
   }
   const App = () => (
     <>
       <h1>{"<"}html{">"} as a Response.</h1>
-      <If value={true}>
+      <If true>
         <p>
-          <For value={["Building", " ", <b>U</b>, "ser", " ", <b>I</b>, "nterfaces", "."]} />
+          <For items={["Building", " ", <b>U</b>, "ser", " ", <b>I</b>, "nterfaces", "."]} />
         </p>
       </If>
     </>
@@ -93,13 +93,13 @@ Deno.test("[ssr] style", async () => {
     const id = hashCode("background-color:#fff|:hover>background-color:#eee").toString(36);
     assertEquals(
       await renderToString(
-        <button role="button" style={{ backgroundColor: "#fff", ":hover": { backgroundColor: "#eee" } }}>Click me</button>,
+        <button type="button" role="button" style={{ backgroundColor: "#fff", ":hover": { backgroundColor: "#eee" } }}>Click me</button>,
       ),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
         `<style id="css-${id}">[data-css-${id}]{background-color:#fff}[data-css-${id}]:hover{background-color:#eee}</style>`,
-        `<button role="button" data-css-${id}>Click me</button>`,
+        `<button type="button" role="button" data-css-${id}>Click me</button>`,
         `</body></html>`,
       ].join(""),
     );
@@ -163,12 +163,12 @@ Deno.test("[ssr] style", async () => {
 
 Deno.test("[ssr] event handler", async () => {
   assertEquals(
-    await renderToString(<button onClick={() => console.log("🔥" as string)}>Click me</button>),
+    await renderToString(<button type="button" onClick={() => console.log("🔥" as string)}>Click me</button>),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<script>var $MEH_0=()=>console.log("🔥")</script>`,
-      `<button onclick="$MEH_0.call(this,event)">Click me</button>`,
+      `<button type="button" onclick="$MEH_0.call(this,event)">Click me</button>`,
       `</body></html>`,
     ].join(""),
   );
@@ -221,7 +221,7 @@ Deno.test("[ssr] <slot>", async () => {
   const App = () => (
     <Container>
       <Logo slot="logo" />
-      <p slot="copyright">(c) 2023 All rights reserved.</p>
+      <p slot="copyright">(c) 2025 All rights reserved.</p>
       <h1>Welcome to Mono!</h1>
       <p>Building user interfaces.</p>
     </Container>
@@ -236,7 +236,7 @@ Deno.test("[ssr] <slot>", async () => {
       `<img src="/poster.png">`,
       `<h1>Welcome to Mono!</h1>`,
       `<p>Building user interfaces.</p>`,
-      `<footer><p>(c) 2023 All rights reserved.</p></footer>`,
+      `<footer><p>(c) 2025 All rights reserved.</p></footer>`,
       `</div>`,
       `</body></html>`,
     ].join(""),
@@ -404,7 +404,7 @@ Deno.test("[ssr] using state", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<span>`,
-      `<m-state use="foo"></m-state>`,
+      `<m-state key="foo"></m-state>`,
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -422,8 +422,8 @@ Deno.test("[ssr] using state", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<span title="bar">`,
-      `<m-state mode="[title]" use="foo"></m-state>`,
-      `<m-state use="foo">bar</m-state>`,
+      `<m-state mode="[title]" key="foo"></m-state>`,
+      `<m-state key="foo">bar</m-state>`,
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -442,7 +442,7 @@ Deno.test("[ssr] using state", async () => {
       `<html lang="en"><body>`,
       `<input value="Hello, world!">`,
       `<m-group>`,
-      `<m-state mode="[value]" use="input"></m-state>`,
+      `<m-state mode="[value]" key="input"></m-state>`,
       `</m-group>`,
       `</body></html>`,
       `<script>(()=>{`,
@@ -502,24 +502,26 @@ Deno.test("[ssr] using computed", async () => {
 Deno.test("[ssr] using <toggle>", async () => {
   assertEquals(
     await renderToString(
-      <toggle value={$state.show} defaultValue={true}>
+      <toggle value={$state.show}>
         <h1>👋</h1>
       </toggle>,
     ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="toggle" use="show">`,
-      `<h1>👋</h1>`,
+      `<m-state mode="toggle" key="show">`,
+      `<template m-slot><h1>👋</h1></template>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
       `for(let[n,v]of`,
-      `[["show",true]]`,
+      `[["show",false]]`,
       `)defineState(n,v)})()</script>`,
     ].join(""),
   );
+
+  $state.show = true;
 
   assertEquals(
     await renderToString(
@@ -530,14 +532,14 @@ Deno.test("[ssr] using <toggle>", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="toggle" use="show">`,
-      `<template m-slot><h1>👋</h1></template>`,
+      `<m-state mode="toggle" key="show">`,
+      `<h1>👋</h1>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
       `for(let[n,v]of`,
-      `[["show"]]`,
+      `[["show",true]]`,
       `)defineState(n,v)})()</script>`,
     ].join(""),
   );
@@ -556,7 +558,7 @@ Deno.test("[ssr] using <switch>", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="switch" use="select" match="a">`,
+      `<m-state mode="switch" key="select" match="a">`,
       `<span>A</span>`,
       `<template m-slot><span slot="b">B</span><span>C</span><span>D</span></template>`,
       `</m-state>`,
@@ -581,7 +583,7 @@ Deno.test("[ssr] using <switch>", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="switch" use="select" match="b">`,
+      `<m-state mode="switch" key="select" match="b">`,
       `<span>B</span>`,
       `<template m-slot><span slot="a">A</span><span>C</span><span>D</span></template>`,
       `</m-state>`,
@@ -606,7 +608,7 @@ Deno.test("[ssr] using <switch>", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="switch" use="select">`,
+      `<m-state mode="switch" key="select">`,
       `<span>C</span><span>D</span>`,
       `<template m-slot><span slot="a">A</span><span slot="b">B</span></template>`,
       `</m-state>`,

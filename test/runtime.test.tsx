@@ -44,11 +44,11 @@ declare global {
   }
 }
 
-Deno.test("[run] using state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[run] using state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testUrl = addTestRoute(
     <div>
       <h1>{$state.text}</h1>
-      <button onClick={() => $state.text = "Hello world!"} />
+      <button type="button" onClick={() => $state.text = "Hello world!"} />
     </div>,
   );
 
@@ -73,13 +73,9 @@ Deno.test("[runtime] using state(counter)", { sanitizeResources: false, sanitize
 
   const testUrl = addTestRoute(
     <div>
-      <button
-        onClick={() => $state.counter--}
-      />
+      <button type="button" onClick={() => $state.counter--} />
       <strong>{$state.counter}</strong>
-      <button
-        onClick={() => $state.counter++}
-      />
+      <button type="button" onClick={() => $state.counter++} />
     </div>,
   );
 
@@ -114,7 +110,7 @@ Deno.test("[runtime] using computed state", { sanitizeResources: false, sanitize
   const testUrl = addTestRoute(
     <div>
       <h1>{$computed(() => `${$state.foo}${$state.bar}!`)}</h1>
-      <button onClick={() => $state.bar = "BAR"} />
+      <button type="button" onClick={() => $state.bar = "BAR"} />
     </div>,
   );
 
@@ -140,7 +136,7 @@ Deno.test("[runtime] using computed class name", { sanitizeResources: false, san
   const testUrl = addTestRoute(
     <div>
       <h1 class={$computed(() => [$state.foo, $state.bar])} />
-      <button onClick={() => $state.bar = "BAR"} />
+      <button type="button" onClick={() => $state.bar = "BAR"} />
     </div>,
   );
 
@@ -166,7 +162,7 @@ Deno.test("[runtime] <toggle> element", { sanitizeResources: false, sanitizeOps:
       <toggle value={$state.show}>
         <h1>Hello world!</h1>
       </toggle>
-      <button onClick={() => $state.show = !$state.show}>
+      <button type="button" onClick={() => $state.show = !$state.show}>
         Show
       </button>
     </div>,
@@ -201,13 +197,13 @@ Deno.test("[runtime] <switch> element", { sanitizeResources: false, sanitizeOps:
         <h1 slot="zh">你好，世界！</h1>
         <h1>✋🌎❗️</h1>
       </switch>
-      <button onClick={() => $state.lang = "en"}>
+      <button type="button" onClick={() => $state.lang = "en"}>
         English
       </button>
-      <button onClick={() => $state.lang = "zh"}>
+      <button type="button" onClick={() => $state.lang = "zh"}>
         中
       </button>
-      <button onClick={() => $state.lang = "emoji"}>
+      <button type="button" onClick={() => $state.lang = "emoji"}>
         emoji
       </button>
     </div>,
@@ -288,6 +284,7 @@ Deno.test("[runtime] 'action' handler", { sanitizeResources: false, sanitizeOps:
   const button = await page.$("button")!;
   assert(button);
   await button.click();
+
   assertEquals(await p.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
 
   await page.close();

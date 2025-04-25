@@ -12,7 +12,7 @@ Deno.test("[jsx] jsx transform", () => {
     ],
   );
   assertEquals(
-    <span>{1}{"/"}{false}{[<i key={1} />, <i key={2} />]}</span> as VNode,
+    <span>{1}/{false}{[<i key={1} />, <i key={2} />]}</span> as VNode,
     [
       "span",
       {
