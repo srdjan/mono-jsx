@@ -3,6 +3,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "mono-jsx"
   },
+  "nodeModulesDir": "none",
   "imports": {
     "mono-jsx/jsx-runtime": "./jsx-runtime.ts"
   },
