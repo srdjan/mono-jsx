@@ -12,7 +12,7 @@ const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(nu
   }
   if (tag === "html") {
     const renderOptions = Object.create(null);
-    for (const key of ["request", "data", "status", "headers", "rendering"]) {
+    for (const key of ["request", "status", "headers", "rendering"]) {
       if (Object.hasOwn(props, key)) {
         renderOptions[key] = props[key];
         delete props[key];
