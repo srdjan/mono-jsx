@@ -1,1 +1,1 @@
-console.log("Weclome to mono-jsx!");
+console.log("Welcome to mono-jsx!");

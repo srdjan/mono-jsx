@@ -9,7 +9,7 @@ export type Children = ChildType | (ChildType | ChildType[])[];
 export type VNode = readonly [
   tag: string | symbol | FC<any>,
   props: Record<string, any>,
-  nodeType: symbol,
+  $vnode: symbol,
 ];
 
 export interface FC<P = {}> {
