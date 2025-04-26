@@ -11,16 +11,6 @@ mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object i
 - ⏳ Streaming rendering
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
-```jsx
-export default {
-  fetch: (req) => (
-    <html>
-      <h1>Hello World!</h1>
-    </html>
-  ),
-};
-```
-
 ## Installation
 
 mono-jsx supports all modern JavaScript runtimes including Node.js, Deno, Bun, Cloudflare Workers, etc.
@@ -111,7 +101,7 @@ serve({
 });
 ```
 
-and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app.
+and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app without a build step.
 
 ```bash
 npx tsx app.tsx
