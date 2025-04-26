@@ -1,6 +1,6 @@
 {
   "name": "mono-jsx",
-  "version": "0.0.0-alpha.15",
+  "version": "0.0.0-alpha.16",
   "description": "`<html>` as a `Response`.",
   "type": "module",
   "module": "./index.mjs",
@@ -13,11 +13,13 @@
     },
     "./jsx-runtime": {
       "types": "./types/jsx-runtime.d.ts",
-      "import": "./jsx-runtime.mjs"
+      "import": "./jsx-runtime.mjs",
+      "node": "./jsx-runtime.mjs"
     },
     "./jsx-dev-runtime": {
       "types": "./types/jsx-runtime.d.ts",
-      "import": "./jsx-runtime.mjs"
+      "import": "./jsx-runtime.mjs",
+      "node": "./jsx-runtime.mjs"
     }
   },
   "scripts": {
