@@ -70,8 +70,8 @@ bunx mono-jsx setup
 
 To create a html response in server-side, you just need to return a `<html>` element in the `fetch` handler.
 
-```jsx
-// app.jsx
+```tsx
+// app.tsx
 
 export default {
   fetch: (req) => (
@@ -82,17 +82,17 @@ export default {
 };
 ```
 
-For Deno/Bun users, you can run the `app.jsx` directly.
+For Deno/Bun users, you can run the `app.tsx` directly.
 
 ```bash
-deno serve app.jsx
-bun run app.jsx
+deno serve app.tsx
+bun run app.tsx
 ```
 
-If you are building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` command to start the app in local development.
+If you are building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` command to start the app in local development mode.
 
 ```bash
-npx wrangler dev app.jsx
+npx wrangler dev app.tsx
 ```
 
 **Node.js does not support JSX syntax and declarative fetch server**, we recommend using mono-jsx with [srvx](https://srvx.h3.dev/).
