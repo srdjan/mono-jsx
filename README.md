@@ -35,7 +35,7 @@ deno add npm:mono-jsx
 bun add mono-jsx
 ```
 
-## Setup JSX runtime
+## Setup JSX Runtime
 
 To use mono-jsx as JSX runtime, add the following configuration to your `tsconfig.json`(`deno.json` for Deno):
 
@@ -49,21 +49,26 @@ To use mono-jsx as JSX runtime, add the following configuration to your `tsconfi
 }
 ```
 
-You can also run `npx mono-jsx setup` to add the configuration automatically.
-
-```bash
-npx mono-jsx setup
-```
-
-Alternatively, you can use pragma directive in your JSX file.
+Alternatively, you can also use pragma directive in your JSX file.
 
 ```js
 /** @jsxImportSource mono-jsx */
 ```
 
+You can also run `mono-jsx setup` to automatically add the configuration to your `tsconfig.json` or `deno.json`.
+
+```bash
+# Node.js, Cloudflare Workers, or other node-compatible runtimes
+npx mono-jsx setup
+# Deno
+deno run npm:mono-jsx setup
+# Bun
+bunx mono-jsx setup
+```
+
 ## Usage
 
-To create a html response in server-side, you just need to return a `<html>` element in the `fetch` method.
+To create a html response in server-side, you just need to return a `<html>` element in the `fetch` handler.
 
 ```jsx
 // app.jsx
@@ -84,10 +89,16 @@ deno serve app.jsx
 bun run app.jsx
 ```
 
-**Node.js does not support JSX module and declarative fetch server**, we recommend using mono-jsx with [srvx](https://srvx.h3.dev/).
+If you are building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` command to start the app in local development.
 
-```jsx
-// app.jsx
+```bash
+npx wrangler dev app.jsx
+```
+
+**Node.js does not support JSX syntax and declarative fetch server**, we recommend using mono-jsx with [srvx](https://srvx.h3.dev/).
+
+```tsx
+// app.tsx
 
 import { serve } from "srvx";
 
@@ -104,13 +115,7 @@ serve({
 and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app.
 
 ```bash
-npx tsx app.jsx
-```
-
-If you are building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), you can use the `wrangler dev` command to start the app in local development.
-
-```bash
-npx wrangler dev app.jsx
+npx tsx app.tsx
 ```
 
 ## Using JSX
@@ -383,7 +388,7 @@ export default {
 
 You can access the request info in a function component by using the `request` property in the `this` context. And you must pass the `request` object to the root `<html>` element to make it work.
 
-```jsx
+```tsx
 function RequestInfo(this: FC) {
   const { request } = this;
   return (
