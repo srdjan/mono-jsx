@@ -11,9 +11,6 @@
     "build": "deno run -A --no-lock build.ts",
     "test": "deno task build && deno test -A --no-lock test/"
   },
-  "fmt": {
-    "lineWidth": 140
-  },
   "lint": {
     "exclude": [
       "**/*.mjs"

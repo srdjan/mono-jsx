@@ -1,0 +1,19 @@
+{
+  "indentWidth": 2,
+  "lineWidth": 140,
+  "typescript": {
+    "quoteStyle": "preferDouble",
+    "module.sortImportDeclarations": "maintain"
+  },
+  "includes": [
+    "README.md",
+    "**/*.ts"
+  ],
+  "excludes": [
+    "runtime/index.ts",
+  ],
+  "plugins": [
+    "https://plugins.dprint.dev/typescript-0.94.0.wasm",
+    "https://plugins.dprint.dev/markdown-0.18.0.wasm"
+  ]
+}
