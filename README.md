@@ -43,7 +43,7 @@ To use mono-jsx as JSX runtime, add the following configuration to your `tsconfi
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "mono-jsx",
-    "allowJs": true // required for `.jsx` extension in Node.js
+    "allowJs": true // required for supporting `.jsx` extension in Node.js
   }
 }
 ```
@@ -83,22 +83,21 @@ deno serve app.jsx
 bun run app.jsx
 ```
 
-**Node.js does not support JSX module and declarative fetch server**, we recommend using mono-jsx with [hono](https://hono.dev).
+**Node.js does not support JSX module and declarative fetch server**, we recommend using mono-jsx with [srvx](https://srvx.h3.dev/).
 
 ```jsx
 // app.jsx
 
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
-const app = new Hono();
+import { serve } from "srvx";
 
-app.get("/", (c) => (
-  <html>
-    <h1>Hello World!</h1>
-  </html>
-));
-
-serve(app);
+serve({
+  port: 3000,
+  fetch: (req) => (
+    <html>
+      <h1>Hello World!</h1>
+    </html>
+  ),
+});
 ```
 
 and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app.
@@ -224,12 +223,12 @@ function Button(this: FC, props: { role: string }) {
     <button
       role={props.role}
       onClick={(evt) => {
-        alert(message); // ❌ `message` is a server-side variable
-        console.log(props.role); // ❌ `props` is a server-side variable
-        Deno.exit(0); // ❌ `Deno` is unavailable in the browser
+        alert(message);           // ❌ `message` is a server-side variable
+        console.log(props.role);  // ❌ `props` is a server-side variable
+        Deno.exit(0);             // ❌ `Deno` is unavailable in the browser
         document.title = "BOOM!"; // ✅ `document` is a browser API
-        console.log(evt.target); // ✅ `evt` is the event object
-        this.count++; // ✅ update the state `count`
+        console.log(evt.target);  // ✅ `evt` is the event object
+        this.count++;             // ✅ update the state `count`
       }}
     >
       Click Me
@@ -424,3 +423,7 @@ export default {
   ),
 };
 ```
+
+## License
+
+[MIT](LICENSE)
