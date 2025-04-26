@@ -43,8 +43,7 @@ To use mono-jsx as JSX runtime, add the following configuration to your `tsconfi
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "mono-jsx",
-    "allowJs": true // required for supporting `.jsx` extension in Node.js
+    "jsxImportSource": "mono-jsx"
   }
 }
 ```
@@ -260,7 +259,7 @@ function App() {
 mono-jsx provides a minimal state runtime that allows you to update view based on state changes in client-side.
 
 ```tsx
-function App(
+function Counter(
   this: FC<{ count: number }>,
   props: { initialCount?: number },
 ) {
