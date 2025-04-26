@@ -1,6 +1,7 @@
 import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
-import { $computed, $context, $fragment, $html, $iconsRegistry, $state, $vnode } from "./symbols.ts";
+import { $computed, $fragment, $html, $state, $vnode } from "./symbols.ts";
+import { createState } from "./state.ts";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "./runtime/index.ts";
 import { cx, isObject, isString, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
 
@@ -8,11 +9,10 @@ interface RenderContext {
   write: (chunk: string) => void;
   stateStore: Map<string, unknown>;
   suspenses: Promise<void>[];
-  evtHandlerIndex: number;
-  rtComponents: { cx?: boolean; styleToCSS?: boolean };
-  eager?: boolean;
+  index: { fc: number; mf: number };
+  rtComponents: { cx: boolean; styleToCSS: boolean };
   request?: Request;
-  data?: Record<string, unknown>;
+  eager?: boolean;
   slots?: Children;
   styleIds?: Set<string>;
 }
@@ -87,29 +87,35 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           break;
         }
 
+        const fcIndex = toString36(ctx.index.fc);
+
         // state
         if (tag === $state) {
           const { key, value } = props;
-          write("<m-state key=" + toAttrStringLit(key) + ">");
+          write('<m-state fc="' + fcIndex + '" key=' + toAttrStringLit(key) + ">");
           if (value !== undefined && value !== null) {
             write(escapeHTML("" + value));
           }
           write("</m-state>");
-          stateStore.set(key, value);
+          stateStore.set(fcIndex + ":" + key, value);
           break;
         }
 
         // computed
         if (tag === $computed) {
           const { deps, value, fn } = props;
-          write('<m-state computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>");
+          write(
+            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps))
+              + ")</script>",
+          );
           if (value !== undefined) {
             write(escapeHTML("" + value));
           }
           write("</m-state>");
           for (const [key, value] of Object.entries(deps)) {
-            if (!stateStore.has(key)) {
-              stateStore.set(key, value);
+            const stateKey = fcIndex + ":" + key;
+            if (!stateStore.has(stateKey)) {
+              stateStore.set(stateKey, value);
             }
           }
           break;
@@ -121,25 +127,27 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             const valueProp = props.value;
             if (isVNode(valueProp) && valueProp[0] === $state || valueProp[0] === $computed) {
               const { key, deps, value, fn } = valueProp[1];
-              write(
-                '<m-state mode="toggle" ' + (key ? "key=" + toAttrStringLit(key) : "computed") + ">"
-                  + (fn ? '<script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
-                  + (!value ? "<template m-slot>" : ""),
-              );
+              write('<m-state mode="toggle" fc="' + fcIndex + '" ');
+              if (key) {
+                write("key=" + toAttrStringLit(key) + ">");
+                stateStore.set(fcIndex + ":" + key, !!value);
+              } else {
+                write('computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>");
+                for (const [key, value] of Object.entries(deps)) {
+                  const stateKey = fcIndex + ":" + key;
+                  if (!stateStore.has(stateKey)) {
+                    stateStore.set(stateKey, value);
+                  }
+                }
+              }
+              if (!value) {
+                write("<template m-slot>");
+              }
               await renderChildren(ctx, children);
               if (!value) {
                 write("</template>");
               }
               write("</m-state>");
-              if (key) {
-                stateStore.set(key, !!value);
-              } else {
-                for (const [key, value] of Object.entries(deps)) {
-                  if (!stateStore.has(key)) {
-                    stateStore.set(key, value);
-                  }
-                }
-              }
             } else if (valueProp) {
               await renderChildren(ctx, children);
             }
@@ -158,17 +166,17 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             let valueOrDefault: unknown;
             if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
               const { key, deps, value, fn } = valueProp[1];
-              stateful = '<m-state mode="switch" ' + (key ? "key=" + toAttrStringLit(key) : "computed") + ">";
-              if (fn) {
-                computed = '<script type="computed">$(' + fn + ", " + JSON.stringify(deps) + ")</script>";
-              }
               valueOrDefault = value ?? defaultValue;
+              stateful = '<m-state mode="switch" fc="' + fcIndex + '" ';
               if (key) {
-                stateStore.set(key, valueOrDefault);
+                stateful += "key=" + toAttrStringLit(key) + ">";
+                stateStore.set(fcIndex + ":" + key, valueOrDefault);
               } else {
-                for (const dep of deps) {
-                  if (!stateStore.has(dep)) {
-                    stateStore.set(dep, undefined);
+                stateful += 'computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>";
+                for (const [key, value] of Object.entries(deps)) {
+                  const stateKey = fcIndex + ":" + key;
+                  if (!stateStore.has(stateKey)) {
+                    stateStore.set(stateKey, value);
                   }
                 }
               }
@@ -224,16 +232,13 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             eager = true;
           }
           try {
-            $context.request = ctx.request;
-            $context.data = ctx.data;
-            const v = tag(fcProps);
-            delete $context.request;
-            delete $context.data;
+            const v = tag.call(createState(ctx.request), fcProps);
+            ctx.index.fc++;
             if (v instanceof Promise) {
               if (eager) {
                 await renderNode({ ...ctx, eager: true, slots: children }, await v);
               } else {
-                const chunkId = (ctx.suspenses.length + 1).toString(36);
+                const chunkId = toString36(ctx.suspenses.length + 1);
                 ctx.suspenses.push(v.then(async (c) => {
                   write('<m-chunk chunk-id="' + chunkId + '"><template>');
                   await renderNode({ ...ctx, eager, slots: children }, c);
@@ -274,13 +279,6 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
 
         // regular html element
         if (isString(tag) && regexpHtmlTag.test(tag)) {
-          if (tag.startsWith("icon-")) {
-            const svg = $iconsRegistry.get(tag.slice(5));
-            if (svg) {
-              write(svg);
-              break;
-            }
-          }
           let buffer = "<" + tag;
           let propEffects: string[] = [];
           let onMountHandler: (() => void) | undefined;
@@ -289,29 +287,27 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               continue;
             }
             if (isVNode(propValue) && (propValue[0] === $state || propValue[0] === $computed)) {
-              const { key, deps, fn } = propValue[1];
+              const { key, deps, fn, value } = propValue[1];
               if (propName === "class") {
                 ctx.rtComponents.cx = true;
               } else if (propName === "style") {
                 ctx.rtComponents.styleToCSS = true;
               }
-              propEffects.push(
-                "<m-state mode=" + toAttrStringLit("[" + propName + "]")
-                  + (key ? " key=" + toAttrStringLit(key) : " computed")
-                  + ">"
-                  + (fn ? '<script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>" : "")
-                  + "</m-state>",
-              );
+              propEffects.push("<m-state mode=" + toAttrStringLit("[" + propName + "]") + ' fc="' + fcIndex + '" ');
               if (key) {
-                ctx.stateStore.set(key, propValue[1].value);
+                propEffects.push("key=" + toAttrStringLit(key) + ">");
+                stateStore.set(fcIndex + ":" + key, value);
               } else {
+                propEffects.push('computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>");
                 for (const [key, value] of Object.entries(deps)) {
-                  if (!stateStore.has(key)) {
-                    stateStore.set(key, value);
+                  const stateKey = fcIndex + ":" + key;
+                  if (!stateStore.has(stateKey)) {
+                    stateStore.set(stateKey, value);
                   }
                 }
               }
-              propValue = propValue[1].value;
+              propEffects.push("</m-state>");
+              propValue = value;
             }
             switch (propName) {
               case "class":
@@ -354,7 +350,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                     }
                     raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
                     styleIds = ctx.styleIds ?? (ctx.styleIds = new Set());
-                    id = hashCode(raw).toString(36);
+                    id = toString36(hashCode(raw));
                     cssSelector = "[data-css-" + id + "]";
                     if (!styleIds.has(id)) {
                       styleIds.add(id);
@@ -385,9 +381,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                 break;
               case "action":
                 if (typeof propValue === "function" && tag === "form") {
-                  const id = "$MEH_" + (ctx.evtHandlerIndex++).toString(36);
-                  write("<script>var " + id + "=" + propValue.toString() + "</script>");
-                  buffer += " " + renderAttr("onsubmit", "event.preventDefault();" + id + ".call(this,new FormData(this))");
+                  const id = "$MF_" + toString36(ctx.index.mf++);
+                  write("<script>function " + id + "(fd){(" + propValue.toString() + ")(fd)}</script>");
+                  buffer += ' onsubmit="$onsubmit(event,this,' + id + ",'" + fcIndex + "')\"";
                 } else if (isString(propValue)) {
                   buffer += " " + renderAttr(propName, propValue);
                 }
@@ -401,9 +397,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                 if (regexpHtmlTag.test(propName) && propValue !== undefined) {
                   if (propName.startsWith("on")) {
                     if (typeof propValue === "function") {
-                      const id = "$MEH_" + (ctx.evtHandlerIndex++).toString(36);
-                      write("<script>var " + id + "=" + propValue.toString() + "</script>");
-                      buffer += " " + renderAttr(propName.toLowerCase(), id + ".call(this,event)");
+                      const id = "$MF_" + toString36(ctx.index.mf++);
+                      write("<script>function " + id + "(e){(" + propValue.toString() + ")(e)}</script>");
+                      buffer += " " + propName.toLowerCase() + '="$emit(event,this,' + id + ",'" + fcIndex + "')\"";
                     }
                   } else if (typeof propValue === "boolean") {
                     if (propValue) {
@@ -432,10 +428,11 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             write("</m-group>");
           }
           if (onMountHandler) {
+            ctx.index.mf++;
             write(
-              "<script>{const target=document.currentScript.previousElementSibling;("
+              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,'
                 + onMountHandler.toString()
-                + ')({type:"mount",currentTarget:target,target})}</script>',
+                + ',"' + fcIndex + '"))}</script>',
             );
           }
         }
@@ -460,6 +457,10 @@ async function renderChildren(ctx: RenderContext, children: Children, stripSlotP
 
 function renderAttr(key: string, value: unknown): string {
   return value === true ? key : key + "=" + toAttrStringLit("" + value);
+}
+
+function toString36(num: number): string {
+  return num.toString(36);
 }
 
 /**
@@ -520,7 +521,7 @@ function escapeHTML(str: string): string {
 
 /** Renders a VNode to a `Response` object. */
 export function render(node: VNode, renderOptions: RenderOptions = {}): Response {
-  const { request, status = 200, headers: headersRaw, rendering, data } = renderOptions;
+  const { request, status, headers: headersRaw, rendering } = renderOptions;
   const headers: Record<string, string> = Object.create(null);
   if (headersRaw) {
     const { etag, lastModified } = headersRaw;
@@ -544,34 +545,42 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
         const stateStore = new Map<string, unknown>();
         const suspenses: Promise<void>[] = [];
-        const rtComponents: { cx?: boolean; styleToCSS?: boolean } = {};
+        const rtComponents = { cx: false, styleToCSS: false };
         const ctx: RenderContext = {
-          request,
-          data,
           write,
+          request,
           stateStore,
           suspenses,
           rtComponents,
-          evtHandlerIndex: 0,
+          index: { fc: 0, mf: 0 },
           eager: rendering === "eager",
         };
         try {
           write("<!DOCTYPE html>");
           await renderNode(ctx, node);
+          let js = "";
           if (stateStore.size > 0) {
-            write(
-              "<script>(()=>{"
-                + (rtComponents.cx ? RUNTIME_COMPONENTS_JS.cx : "")
-                + (rtComponents.styleToCSS ? RUNTIME_COMPONENTS_JS.styleToCSS : "")
-                + RUNTIME_STATE_JS
-                + "for(let[n,v]of"
-                + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
-                + ")defineState(n,v)"
-                + "})()</script>",
-            );
+            if (rtComponents.cx) {
+              js += RUNTIME_COMPONENTS_JS.cx;
+            }
+            if (rtComponents.styleToCSS) {
+              js += RUNTIME_COMPONENTS_JS.styleToCSS;
+            }
+            js += RUNTIME_STATE_JS;
+            js += "for(let[k,v]of"
+              + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
+              + ")$defineState(k,v);";
+          }
+          if (ctx.index.mf > 0) {
+            js += RUNTIME_COMPONENTS_JS.event;
           }
           if (suspenses.length > 0) {
-            write("<script>(()=>{" + RUNTIME_SUSPENSE_JS + "})()</script>");
+            js += RUNTIME_SUSPENSE_JS;
+          }
+          if (js) {
+            write("<script>(()=>{" + js + "})()</script>");
+          }
+          if (suspenses.length > 0) {
             await Promise.all(suspenses);
           }
         } finally {

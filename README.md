@@ -86,6 +86,8 @@ bun run app.jsx
 **Node.js does not support JSX module and declarative fetch server**, we recommend using mono-jsx with [hono](https://hono.dev).
 
 ```jsx
+// app.jsx
+
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 const app = new Hono();
@@ -214,8 +216,8 @@ function Button() {
 > [!NOTE]
 > the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
 
-```jsx
-function Button(props) {
+```tsx
+function Button(this: FC, props: { role: string }) {
   let message = "BOOM!";
   console.log(message); // only print message in server-side
   return (
@@ -226,8 +228,8 @@ function Button(props) {
         console.log(props.role);  // ❌ `props` is a server-side variable
         Deno.exit(0);             // ❌ `Deno` is unavailable in the browser
         document.title = "BOOM!"; // ✅ `document` is a browser API
-        $state.count++;           // ✅ `$state` is the mono-jsx specific variable
         console.log(evt.target);  // ✅ `evt` is the event object
+        this.count++;             // ✅ update the state `count`
       }}
     >
       Click Me
@@ -252,77 +254,38 @@ function App() {
 
 mono-jsx provides a minimal state runtime that allows you to update view based on state changes in client-side.
 
-```jsx
-function App() {
-  // Initialize the state 'count' with value `0`
-  $state.count = 0;
+```tsx
+function App(
+  this: FC<{ count: number }>,
+  props: { initialCount?: number },
+) {
+  this.count = props.initialCount ?? 0;
   return (
     <div>
       {/* use the state */}
-      <span>{$state.count}</span>
-      {/* computed state */}
-      <span>doubled: {$computed(() => 2 * $state.count)}</span>
+      <span>{this.count}</span>
+      {/* use computed state */}
+      <span>doubled: {this.computed(() => 2 * this.count)}</span>
       {/* update the state in event handlers */}
-      <button onClick={() => $state.count--}>-</button>
-      <button onClick={() => $state.count++}>+</button>
+      <button onClick={() => this.count--}>-</button>
+      <button onClick={() => this.count++}>+</button>
     </div>
   );
 }
 ```
 
-To support type checking in TypeScript, declare the `State` interface in the global scope:
-
-```ts
-declare global {
-  interface State {
-    count: number;
-  }
-}
-```
-
-> [!NOTE]
-> The `$state` and `$computed` are global variables injected by mono-jsx.
-
-## Using `$context` Hook
-
-The `$context` hook allows you to access `request` and `data` which are set in the root `<html>` element.
-
-```tsx
-interface IData {
-  foo: string;
-}
-
-function App() {
-  const { request, data } = $context<IData>();
-  return (
-    <p>
-      {request.method} {request.url} {data.foo}
-    </p>
-  );
-}
-
-export default {
-  fetch: (req) => (
-    <html request={req} data={{ foo: "bar" }}>
-      <h1>Hello World!</h1>
-      <App />
-    </html>
-  ),
-};
-```
-
 > [!WARNING]
-> You should call the `$context` hook before any `await` statement in an async component. Otherwise, the `request` will be undefined.
+> The state cannot be used in an arrow function component, you should use a `function` declaration instead.
 
 ```jsx
-async function AsyncApp() {
-  const { request } = $context();
-  const data = await fetchData(new URL(request.url).searchParams.get("id"));
-  const { request } = $context(); // ❌ request is undefined
+// ❌ `this.count++` won't update the view, please use a function declaration instead
+const App = () => {
+  this.count = 0;
   return (
-    <p>
-      {data.title}
-    </p>
+    <div>
+      <span>{this.count}</span>
+      <button onClick={() => this.count++}>+</button>
+    </div>
   );
 }
 ```
@@ -335,19 +298,19 @@ mono-jsx provides some built-in elements to help you build your app.
 
 `<toggle>` element allows you to toggle the visibility of the slotted content.
 
-```jsx
-function App() {
-  $state.show = false;
+```tsx
+function App(this: FC<{ show: boolean }>) {
+  this.show = false;
   return (
     <div>
-      <toggle value={$state.show}>
+      <toggle value={this.show}>
         <h1>Hello World!</h1>
       </toggle>
-      <button onClick={toggle}>{$computed(() => $state.show ? "Hide" : "Show")}</button>
+      <button onClick={toggle}>{this.computed(() => this.show ? "Hide" : "Show")}</button>
     </div>
   );
   function toggle() {
-    $state.show = !$state.show;
+    this.show = !this.show;
   }
 }
 ```
@@ -356,25 +319,23 @@ function App() {
 
 `<switch>` element allows you to switch the slotted content based on the `value` property. You need to define the `slot` attribute in the slotted content to match the `value`, otherwise, the default slots will be rendered.
 
-```jsx
-function App() {
+```tsx
+function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
+  this.lang = "en";
   return (
     <div>
-      <switch value={$state.lang}>
+      <switch value={this.lang}>
         <h1 slot="en">Hello, world!</h1>
         <h1 slot="zh">你好，世界！</h1>
         <h1>✋🌎❗️</h1>
       </switch>
-      <button onClick={() => $state.lang = "en"}>English</button>
-      <button onClick={() => $state.lang = "zh"}>中文</button>
+      <button onClick={() => this.lang = "en"}>English</button>
+      <button onClick={() => this.lang = "zh"}>中文</button>
+      <button onClick={() => this.lang = "emoji"}>Emoji</button>
     </div>
   );
 }
 ```
-
-### `<cache>` element
-
-_Work in progress..._
 
 ## Streaming Rendering
 

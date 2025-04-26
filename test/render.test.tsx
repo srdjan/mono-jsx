@@ -1,9 +1,10 @@
+// deno-lint-ignore-file jsx-key
 import { assertEquals } from "jsr:@std/assert";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
 
-const renderToString = (node: JSX.Element, request?: Request, data?: Record<string, unknown>) => {
+const renderToString = (node: JSX.Element, request?: Request) => {
   const res = (
-    <html lang="en" request={request} data={data}>
+    <html lang="en" request={request}>
       <body>{node}</body>
     </html>
   );
@@ -167,9 +168,12 @@ Deno.test("[ssr] event handler", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<script>var $MEH_0=()=>console.log("🔥")</script>`,
-      `<button type="button" onclick="$MEH_0.call(this,event)">Click me</button>`,
+      `<script>function $MF_0(e){(()=>console.log("🔥"))(e)}</script>`,
+      `<button type="button" onclick="$emit(event,this,$MF_0,'0')">Click me</button>`,
       `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_COMPONENTS_JS.event,
+      `})()</script>`,
     ].join(""),
   );
   assertEquals(
@@ -181,11 +185,14 @@ Deno.test("[ssr] event handler", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<script>var $MEH_0=(data)=>console.log(data)</script>`,
-      `<form onsubmit="event.preventDefault();$MEH_0.call(this,new FormData(this))">`,
+      `<script>function $MF_0(fd){((data)=>console.log(data))(fd)}</script>`,
+      `<form onsubmit="$onsubmit(event,this,$MF_0,'0')">`,
       `<input name="foo">`,
       `</form>`,
       `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_COMPONENTS_JS.event,
+      `})()</script>`,
     ].join(""),
   );
   assertEquals(
@@ -194,10 +201,13 @@ Deno.test("[ssr] event handler", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<div>Using HTML</div>`,
-      `<script>{const target=document.currentScript.previousElementSibling;(`,
+      `<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,`,
       `(e)=>console.log(e.target)`,
-      `)({type:"mount",currentTarget:target,target})}</script>`,
+      `,"0"))}</script>`,
       `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_COMPONENTS_JS.event,
+      `})()</script>`,
     ].join(""),
   );
 });
@@ -386,138 +396,125 @@ Deno.test("[ssr] catch error", async () => {
   );
 });
 
-declare global {
-  interface State {
-    foo: string;
-    bar: string;
-    show: boolean;
-    num: number;
-    input: string;
-    select: string;
-  }
-}
-
 Deno.test("[ssr] using state", async () => {
+  function Foo(this: FC) {
+    return <span>{this.foo}</span>;
+  }
+
   assertEquals(
-    await renderToString(<span>{$state.foo}</span>),
+    await renderToString(<Foo />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<span>`,
-      `<m-state key="foo"></m-state>`,
+      `<m-state fc="1" key="foo"></m-state>`,
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["foo"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:foo"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 
-  $state.foo = "bar";
+  function FooBar(this: FC<{ foo: string }>) {
+    this.foo = "bar";
+    return <span title={this.foo}>{this.foo}</span>;
+  }
   assertEquals(
-    await renderToString(<span title={$state.foo}>{$state.foo}</span>),
+    await renderToString(<FooBar />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<span title="bar">`,
-      `<m-state mode="[title]" key="foo"></m-state>`,
-      `<m-state key="foo">bar</m-state>`,
+      `<m-state mode="[title]" fc="1" key="foo"></m-state>`,
+      `<m-state fc="1" key="foo">bar</m-state>`,
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["foo","bar"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:foo","bar"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 
-  $state.input = "Hello, world!";
+  function Input(this: FC<{ value: string }>) {
+    this.value = "Hello, world!";
+    return <input value={this.value} />;
+  }
   assertEquals(
-    await renderToString(<input value={$state.input} />),
+    await renderToString(<Input />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<input value="Hello, world!">`,
       `<m-group>`,
-      `<m-state mode="[value]" key="input"></m-state>`,
+      `<m-state mode="[value]" fc="1" key="value"></m-state>`,
       `</m-group>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["input","Hello, world!"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:value","Hello, world!"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 });
 
 Deno.test("[ssr] using computed", async () => {
-  $state.foo = "foo";
-  $state.bar = "bar";
+  function FooBar(this: FC<{ foo: string; bar: string }>) {
+    this.foo = "foo";
+    this.bar = "bar";
+    const className = this.computed(() => [this.foo, this.bar]);
+    const text = this.computed(() => this.foo + this.bar + "!");
+    return <span class={className} title={text}>{text}</span>;
+  }
 
-  const message = $computed(() => $state.foo + $state.bar + "!");
   assertEquals(
-    await renderToString(<span title={message}>{message}</span>),
+    await renderToString(<FooBar />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<span title="foobar!">`,
-      `<m-state mode="[title]" computed><script type="computed">$(()=>$state.foo + $state.bar + "!", ["foo","bar"])</script></m-state>`,
-      `<m-state computed><script type="computed">$(()=>$state.foo + $state.bar + "!", ["foo","bar"])</script>foobar!</m-state>`,
+      `<span class="foo bar" title="foobar!">`,
+      `<m-state mode="[class]" fc="1" computed><script type="computed">$(${
+        // @ts-ignore this
+        String(() => [this.foo, this.bar])}, ["foo","bar"])</script></m-state>`,
+      `<m-state mode="[title]" fc="1" computed><script type="computed">$(${
+        // @ts-ignore this
+        String(() => this.foo + this.bar + "!")}, ["foo","bar"])</script></m-state>`,
+      `<m-state fc="1" computed><script type="computed">$(${
+        // @ts-ignore this
+        String(() => this.foo + this.bar + "!")}, ["foo","bar"])</script>foobar!</m-state>`,
       `</span>`,
-      `</body></html>`,
-      `<script>(()=>{`,
-      RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["foo","foo"],["bar","bar"]]`,
-      `)defineState(n,v)})()</script>`,
-    ].join(""),
-  );
-
-  const fn = () => [$state.foo, $state.bar];
-  assertEquals(
-    await renderToString(<div class={$computed(fn)} />),
-    [
-      `<!DOCTYPE html>`,
-      `<html lang="en"><body>`,
-      `<div class="foo bar">`,
-      `<m-state mode="[class]" computed>`,
-      `<script type="computed">$(${String(fn)}, ["foo","bar"])</script>`,
-      `</m-state>`,
-      `</div>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_COMPONENTS_JS.cx,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["foo","foo"],["bar","bar"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:foo","foo"],["1:bar","bar"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 });
 
-Deno.test("[ssr] using context hook", async () => {
-  function App() {
-    const { request, data } = $context();
+Deno.test("[ssr] using request object", async () => {
+  function App(this: FC) {
+    const { request } = this;
     return (
       <div>
         <p>{request.headers.get("x-foo")}</p>
-        <p>{data.foo}</p>
       </div>
     );
   }
   const request = new Request("https://example.com", { headers: { "x-foo": "bar" } });
-  const data = { foo: "bar" };
   assertEquals(
-    await renderToString(<App />, request, data),
+    await renderToString(<App />, request),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<div>`,
-      `<p>bar</p>`,
       `<p>bar</p>`,
       `</div>`,
       `</body></html>`,
@@ -526,124 +523,113 @@ Deno.test("[ssr] using context hook", async () => {
 });
 
 Deno.test("[ssr] using <toggle>", async () => {
-  assertEquals(
-    await renderToString(
-      <toggle value={$state.show}>
+  function Toggle(this: FC<{ show: boolean }>, props: { show?: boolean }) {
+    this.show = !!props.show;
+    return (
+      <toggle value={this.show}>
         <h1>👋</h1>
-      </toggle>,
-    ),
+      </toggle>
+    );
+  }
+
+  assertEquals(
+    await renderToString(<Toggle />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="toggle" key="show">`,
+      `<m-state mode="toggle" fc="1" key="show">`,
       `<template m-slot><h1>👋</h1></template>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["show",false]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:show",false]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 
-  $state.show = true;
-
   assertEquals(
-    await renderToString(
-      <toggle value={$state.show}>
-        <h1>👋</h1>
-      </toggle>,
-    ),
+    await renderToString(<Toggle show />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="toggle" key="show">`,
+      `<m-state mode="toggle" fc="1" key="show">`,
       `<h1>👋</h1>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["show",true]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:show",true]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 });
 
 Deno.test("[ssr] using <switch>", async () => {
-  assertEquals(
-    await renderToString(
-      <switch value={$state.select} defaultValue="a">
+  function Switch(this: FC<{ select?: string }>, props: { defaultValue?: string }) {
+    return (
+      <switch value={this.select} defaultValue={props.defaultValue}>
         <span slot="a">A</span>
         <span slot="b">B</span>
         <span>C</span>
         <span>D</span>
-      </switch>,
-    ),
+      </switch>
+    );
+  }
+
+  assertEquals(
+    await renderToString(<Switch defaultValue="a" />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="switch" key="select" match="a">`,
+      `<m-state mode="switch" fc="1" key="select" match="a">`,
       `<span>A</span>`,
       `<template m-slot><span slot="b">B</span><span>C</span><span>D</span></template>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["select","a"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:select","a"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 
   assertEquals(
-    await renderToString(
-      <switch value={$state.select} defaultValue="b">
-        <span slot="a">A</span>
-        <span slot="b">B</span>
-        <span>C</span>
-        <span>D</span>
-      </switch>,
-    ),
+    await renderToString(<Switch defaultValue="b" />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="switch" key="select" match="b">`,
+      `<m-state mode="switch" fc="1" key="select" match="b">`,
       `<span>B</span>`,
       `<template m-slot><span slot="a">A</span><span>C</span><span>D</span></template>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["select","b"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:select","b"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 
   assertEquals(
-    await renderToString(
-      <switch value={$state.select}>
-        <span slot="a">A</span>
-        <span slot="b">B</span>
-        <span>C</span>
-        <span>D</span>
-      </switch>,
-    ),
+    await renderToString(<Switch />),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<m-state mode="switch" key="select">`,
+      `<m-state mode="switch" fc="1" key="select">`,
       `<span>C</span><span>D</span>`,
       `<template m-slot><span slot="a">A</span><span slot="b">B</span></template>`,
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
-      `for(let[n,v]of`,
-      `[["select"]]`,
-      `)defineState(n,v)})()</script>`,
+      `for(let[k,v]of`,
+      `[["1:select"]]`,
+      `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
 });

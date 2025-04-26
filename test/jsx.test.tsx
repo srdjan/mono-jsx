@@ -67,43 +67,6 @@ Deno.test("[jsx] jsx transform", () => {
       $vnode,
     ],
   );
-  $state.foo = "bar";
-  assertEquals(
-    <span>{$state.foo}</span> as VNode,
-    [
-      "span",
-      {
-        children: [
-          Symbol.for("mono.state"),
-          {
-            key: "foo",
-            value: "bar",
-          },
-          $vnode,
-        ],
-      },
-      $vnode,
-    ],
-  );
-  $state.num = 1;
-  assertEquals(
-    <span>{$computed(() => 2 * $state.num)}</span> as VNode,
-    [
-      "span",
-      {
-        children: [
-          Symbol.for("mono.computed"),
-          {
-            deps: { num: 1 },
-            value: 2,
-            fn: String(() => 2 * $state.num),
-          },
-          $vnode,
-        ],
-      },
-      $vnode,
-    ],
-  );
 });
 
 Deno.test("[jsx] <html> as a `Response` object", async () => {

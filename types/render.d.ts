@@ -1,6 +1,5 @@
 export interface RenderOptions {
   request?: Request;
-  data?: Record<string, unknown>;
   status?: number;
   headers?: {
     [key: string]: string | undefined;

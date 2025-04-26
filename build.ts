@@ -17,7 +17,7 @@ async function buildRuntime(name: string): Promise<string> {
 async function buildRuntimeComponent(name: string): Promise<string> {
   const ret = await build({
     stdin: {
-      contents: `export { ${name}} from "./runtime/utils.ts";`,
+      contents: `export { ${name} } from "./runtime/utils.ts";`,
       resolveDir: "./",
     },
     format: "esm",
@@ -54,6 +54,10 @@ if (import.meta.main) {
   const runtime_suspense_js = await buildRuntime("suspense");
   const runtime_component_cx = await buildRuntimeComponent("cx");
   const runtime_component_styleToCSS = await buildRuntimeComponent("styleToCSS");
+  const runtime_component_event = [
+    `window.$emit=(evt,el,fn,fc)=>fn.call(window.$state?.(fc)??el,evt);`,
+    `window.$onsubmit=(evt,el,fn,fc)=>{evt.preventDefault();fn.call(window.$state?.(fc)??el,new FormData(el),evt)};`,
+  ].join("");
 
   await Deno.writeTextFile(
     "./runtime/index.ts",
@@ -65,6 +69,7 @@ if (import.meta.main) {
         JSON.stringify({
           cx: runtime_component_cx.replaceAll('"', "'"),
           styleToCSS: runtime_component_styleToCSS.replaceAll('"', "'"),
+          event: runtime_component_event.replaceAll('"', "'"),
         })
       };`,
       "", // trailing newline
