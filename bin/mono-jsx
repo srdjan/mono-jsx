@@ -6,7 +6,7 @@ import process from "node:process";
 switch (process.argv[2]) {
   case "setup":
     setup().then(() => {
-      console.log("JSX runtime setup complete.");
+      console.log("✅ JSX runtime setup complete.");
     });
     break;
   default:
@@ -14,26 +14,21 @@ switch (process.argv[2]) {
 }
 
 async function setup() {
+  let tsConfigPath = globalThis.Deno ? "deno.json" : "tsconfig.json";
   let tsConfig = Object.create(null);
-  let tsConfigPath = "";
-  for (const file of ["deno.json", "tsconfig.json"]) {
-    try {
-      const json = await readFile(file, "utf8");
-      tsConfig = JSON.parse(json);
-      tsConfigPath = file;
-      break;
-    } catch {
-      // ignore
-    }
+  try {
+    const json = await readFile(tsConfigPath, "utf8");
+    tsConfig = JSON.parse(json);
+  } catch {
+    // ignore
   }
   tsConfig.compilerOptions = {
     ...tsConfig.compilerOptions,
-    alllowJs: true,
     jsx: "react-jsx",
     jsxImportSource: "mono-jsx",
   };
-  await writeFile(
-    tsConfigPath || (globalThis.Deno ? "deno.json" : "tsconfig.json"),
-    JSON.stringify(tsConfig, null, 2),
-  );
+  if (!globalThis.Deno) {
+    tsConfig.compilerOptions.alllowJs = true
+  }
+  await writeFile(tsConfigPath, JSON.stringify(tsConfig, null, 2));
 }
