@@ -5,7 +5,7 @@
 mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 - No build step needed
-- Lightweight(7KB gzipped), zero dependencies
+- Lightweight(8KB gzipped), zero dependencies
 - Minimal state runtime
 - Streaming rendering
 - Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
@@ -36,14 +36,14 @@ bun add mono-jsx
 
 ## Setup JSX runtime
 
-To use mono-jsx as the JSX runtime, add the following configuration to your `tsconfig.json`(`deno.json` for Deno):
+To use mono-jsx as JSX runtime, add the following configuration to your `tsconfig.json`(`deno.json` for Deno):
 
 ```jsonc
 {
   "compilerOptions": {
-    "allowJs": true, // required for `.jsx` extension in Node.js
     "jsx": "react-jsx",
-    "jsxImportSource": "mono-jsx"
+    "jsxImportSource": "mono-jsx",
+    "allowJs": true // required for `.jsx` extension in Node.js
   }
 }
 ```
@@ -224,12 +224,12 @@ function Button(this: FC, props: { role: string }) {
     <button
       role={props.role}
       onClick={(evt) => {
-        alert(message);           // ❌ `message` is a server-side variable
-        console.log(props.role);  // ❌ `props` is a server-side variable
-        Deno.exit(0);             // ❌ `Deno` is unavailable in the browser
+        alert(message); // ❌ `message` is a server-side variable
+        console.log(props.role); // ❌ `props` is a server-side variable
+        Deno.exit(0); // ❌ `Deno` is unavailable in the browser
         document.title = "BOOM!"; // ✅ `document` is a browser API
-        console.log(evt.target);  // ✅ `evt` is the event object
-        this.count++;             // ✅ update the state `count`
+        console.log(evt.target); // ✅ `evt` is the event object
+        this.count++; // ✅ update the state `count`
       }}
     >
       Click Me
@@ -287,7 +287,7 @@ const App = () => {
       <button onClick={() => this.count++}>+</button>
     </div>
   );
-}
+};
 ```
 
 ## Built-in Elements
@@ -374,6 +374,52 @@ export default {
       <Sleep ms={1000} rendering="eager">
         <p>After 1 second</p>
       </Sleep>
+    </html>
+  ),
+};
+```
+
+## Accessing Request Info
+
+You can access the request info in a function component by using the `request` property in the `this` context. And you must pass the `request` object to the root `<html>` element to make it work.
+
+```jsx
+function RequestInfo(this: FC) {
+  const { request } = this;
+  return (
+    <div>
+      <h1>Request Info</h1>
+      <p>{request.method}</p>
+      <p>{request.url}</p>
+      <p>{request.headers.get("user-agent")}</p>
+    </div>
+  );
+}
+
+export default {
+  fetch: (req) => (
+    <html request={req}>
+      <RequestInfo />
+    </html>
+  ),
+};
+```
+
+## Customizing Response
+
+You can add `status` or `headers` attribute to the `<html>` element to customize the response.
+
+```jsx
+export default {
+  fetch: (req) => (
+    <html
+      status={404}
+      headers={{
+        cacheControl: "public, max-age=0, must-revalidate",
+        setCookie: "name=value",
+      }}
+    >
+      <h1>Page Not Found</h1>
     </html>
   ),
 };
