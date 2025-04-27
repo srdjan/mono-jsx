@@ -5,9 +5,9 @@
 mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 - 🚀 No build step needed
-- 🦋 Lightweight(8KB gzipped), zero dependencies
+- 🦋 Lightweight (8KB gzipped), zero dependencies
 - 🔫 Minimal state runtime
-- 🚨 Full Web API types
+- 🚨 Complete Web API Typescript definitions
 - ⏳ Streaming rendering
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
@@ -57,7 +57,7 @@ bunx mono-jsx setup
 
 ## Usage
 
-To create a html response in server-side, you just need to return a `<html>` element in the `fetch` handler.
+mono-jsx allows you to return an `<html>` JSX element as a `Response` object in the `fetch` handler.
 
 ```tsx
 // app.tsx
@@ -113,11 +113,11 @@ mono-jsx uses [**JSX**](https://react.dev/learn/describing-the-ui) to describe t
 
 ### Using Standard HTML Property Names
 
-mono-jsx uses standard HTML property names instead of React's overthinked property names.
+mono-jsx adopts standard HTML property names, avoiding React's custom property naming conventions.
 
-- `className` -> `class`
-- `htmlFor` -> `for`
-- `onChange` -> `onInput`
+- `className` becomes `class`
+- `htmlFor` becomes `for`
+- `onChange` becomes `onInput`
 
 ### Composition `class`
 
@@ -148,7 +148,7 @@ mono-jsx allows you to use [pseudo classes](https://developer.mozilla.org/en-US/
 
 ### `<slot>` Element
 
-mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content(Equivalent to React's `children` proptery). Plus, you also can add the `name` attribute to define a named slot.
+mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content (Equivalent to React's `children` property). Plus, you also can add the `name` attribute to define a named slot.
 
 ```jsx
 function Container() {
@@ -208,7 +208,7 @@ function Button() {
 ```
 
 > [!NOTE]
-> the event handler would never be called in server-side. Instead it will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
+> the event handler would never be called in server-side. It will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
 
 ```tsx
 function Button(this: FC, props: { role: string }) {
@@ -333,12 +333,12 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
 
 ## Streaming Rendering
 
-mono-jsx renders your `<html>` as a readable stream, that allows async function components are rendered asynchrously. You can set a `placeholder` attribute to show a loading state while the async component is loading.
+mono-jsx renders your `<html>` as a readable stream, that allows async function components are rendered asynchronously. You can set a `placeholder` attribute to show a loading state while the async component is loading.
 
 ```jsx
 async function Sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
-  return <solt />;
+  return <slot />;
 }
 
 export default {
@@ -358,7 +358,7 @@ You can also set `rendering` attribute to "eager" to render the async component 
 ```jsx
 async function Sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
-  return <solt />;
+  return <slot />;
 }
 
 export default {
