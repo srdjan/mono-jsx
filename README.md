@@ -65,7 +65,7 @@ mono-jsx allows you to return an `<html>` JSX element as a `Response` object in 
 export default {
   fetch: (req) => (
     <html>
-      <h1>Hello World!</h1>
+      <h1>Welcome to mono-jsx!</h1>
     </html>
   ),
 };
@@ -95,7 +95,7 @@ serve({
   port: 3000,
   fetch: (req) => (
     <html>
-      <h1>Hello World!</h1>
+      <h1>Welcome to mono-jsx!</h1>
     </html>
   ),
 });
@@ -238,7 +238,7 @@ Plus, mono-jsx supports the `mount` event that will be triggered when the elemen
 function App() {
   return (
     <div onMount={(evt) => console.log(evt.target, "Mounted!")}>
-      <h1>Hello World!</h1>
+      <h1>Welcome to mono-jsx!</h1>
     </div>
   );
 }
@@ -316,7 +316,7 @@ function App(this: FC<{ show: boolean }>) {
   return (
     <div>
       <toggle value={this.show}>
-        <h1>Hello World!</h1>
+        <h1>Welcome to mono-jsx!</h1>
       </toggle>
       <button onClick={toggle}>{this.computed(() => this.show ? "Hide" : "Show")}</button>
     </div>
@@ -362,7 +362,7 @@ async function Sleep(ms) {
 export default {
   fetch: (req) => (
     <html>
-      <h1>Hello World!</h1>
+      <h1>Welcome to mono-jsx!</h1>
       <Sleep ms={1000} placeholder={<p>Sleeping...</p>}>
         <p>After 1 second</p>
       </Sleep>
@@ -382,7 +382,7 @@ async function Sleep(ms) {
 export default {
   fetch: (req) => (
     <html>
-      <h1>Hello World!</h1>
+      <h1>Welcome to mono-jsx!</h1>
       <Sleep ms={1000} rendering="eager">
         <p>After 1 second</p>
       </Sleep>
