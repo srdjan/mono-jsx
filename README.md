@@ -244,6 +244,24 @@ function App() {
 }
 ```
 
+mono-jsx also accepts a function as the `action` property for `form` elements, which will be called when the form is submitted.
+
+```tsx
+function App() {
+  return (
+    <form
+      action={(data: FormData, evt) => {
+        evt.defaultPrevented // true
+        console.log(data.get("name"));
+      }}
+    >
+      <input type="text" name="name" />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
 ## Using State
 
 mono-jsx provides a minimal state runtime that allows you to update view based on state changes in client-side.
