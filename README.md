@@ -2,32 +2,34 @@
 
 ![`<html>` as a `Response`](./.github/og-image.png)
 
-mono-jsx is a JSX runtime that renders `<html>` element to a `Response` object in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
+mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 - 🚀 No build step needed
 - 🦋 Lightweight (8KB gzipped), zero dependencies
 - 🔫 Minimal state runtime
-- 🚨 Complete Web API Typescript definitions
+- 🚨 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 ## Installation
 
-mono-jsx supports all modern JavaScript runtimes including Node.js, Deno, Bun, Cloudflare Workers, etc.
-You can install it via `npm i`, `deno add`, or `bun add`.
+mono-jsx supports all modern JavaScript runtimes including Node.js, Deno, Bun, and Cloudflare Workers.
+You can install it via `npm`, `deno`, or `bun`:
 
 ```bash
 # Node.js, Cloudflare Workers, or other node-compatible runtimes
 npm i mono-jsx
+
 # Deno
 deno add npm:mono-jsx
+
 # Bun
 bun add mono-jsx
 ```
 
 ## Setup JSX Runtime
 
-To use mono-jsx as JSX runtime, add the following configuration to your `tsconfig.json`(`deno.json` for Deno):
+To use mono-jsx as your JSX runtime, add the following configuration to your `tsconfig.json` (or `deno.json` for Deno):
 
 ```jsonc
 {
@@ -38,30 +40,31 @@ To use mono-jsx as JSX runtime, add the following configuration to your `tsconfi
 }
 ```
 
-Alternatively, you can also use pragma directive in your JSX file.
+Alternatively, you can use a pragma directive in your JSX file:
 
 ```js
 /** @jsxImportSource mono-jsx */
 ```
 
-You can also run `mono-jsx setup` to automatically add the configuration to your `tsconfig.json` or `deno.json`.
+You can also run `mono-jsx setup` to automatically add the configuration to your project:
 
 ```bash
 # Node.js, Cloudflare Workers, or other node-compatible runtimes
 npx mono-jsx setup
+
 # Deno
-deno run npm:mono-jsx setup
+deno run -A npm:mono-jsx setup
+
 # Bun
 bunx mono-jsx setup
 ```
 
 ## Usage
 
-mono-jsx allows you to return an `<html>` JSX element as a `Response` object in the `fetch` handler.
+mono-jsx allows you to return an `<html>` JSX element as a `Response` object in the `fetch` handler:
 
 ```tsx
 // app.tsx
-
 export default {
   fetch: (req) => (
     <html>
@@ -71,24 +74,23 @@ export default {
 };
 ```
 
-For Deno/Bun users, you can run the `app.tsx` directly.
+For Deno/Bun users, you can run the `app.tsx` directly:
 
 ```bash
 deno serve app.tsx
 bun run app.tsx
 ```
 
-If you are building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` command to start the app in local development mode.
+If you're building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` to start local development:
 
 ```bash
 npx wrangler dev app.tsx
 ```
 
-**Node.js does not support JSX syntax and declarative fetch server**, we recommend using mono-jsx with [srvx](https://srvx.h3.dev/).
+**Node.js doesn't support JSX syntax or declarative fetch servers**, so we recommend using mono-jsx with [srvx](https://srvx.h3.dev/):
 
 ```tsx
 // app.tsx
-
 import { serve } from "srvx";
 
 serve({
@@ -101,7 +103,7 @@ serve({
 });
 ```
 
-and you will need [tsx](https://www.npmjs.com/package/tsx) to start the app without a build step.
+You'll need [tsx](https://www.npmjs.com/package/tsx) to start the app without a build step:
 
 ```bash
 npx tsx app.tsx
@@ -109,27 +111,33 @@ npx tsx app.tsx
 
 ## Using JSX
 
-mono-jsx uses [**JSX**](https://react.dev/learn/describing-the-ui) to describe the user interface, similar to React but with some differences.
+mono-jsx uses [**JSX**](https://react.dev/learn/describing-the-ui) to describe the user interface, similar to React but with key differences.
 
 ### Using Standard HTML Property Names
 
-mono-jsx adopts standard HTML property names, avoiding React's custom property naming conventions.
+mono-jsx adopts standard HTML property names, avoiding React's custom naming conventions:
 
-- `className` becomes `class`
-- `htmlFor` becomes `for`
-- `onChange` becomes `onInput`
+- `className` → `class`
+- `htmlFor` → `for`
+- `onChange` → `onInput`
 
-### Composition `class`
+### Composition with `class`
 
-mono-jsx allows you to compose the `class` property using an array of strings, objects, or expressions.
+mono-jsx allows you to compose the `class` property using arrays of strings, objects, or expressions:
 
 ```jsx
-<div class={["container box", isActive && "active", { hover: isHover }]} />;
+<div
+  class={[
+    "container box",
+    isActive && "active",
+    { hover: isHover },
+  ]}
+/>;
 ```
 
-### Using Pseudo Classes and Media Queries in the `style` Property
+### Using Pseudo Classes and Media Queries in `style`
 
-mono-jsx allows you to use [pseudo classes](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes), [pseudo elements](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements), [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries), and [css nesting](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_nesting/Using_CSS_nesting) in the `style` property.
+mono-jsx supports [pseudo classes](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes), [pseudo elements](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements), [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries), and [CSS nesting](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_nesting/Using_CSS_nesting) in the `style` property:
 
 ```jsx
 <a
@@ -148,14 +156,16 @@ mono-jsx allows you to use [pseudo classes](https://developer.mozilla.org/en-US/
 
 ### `<slot>` Element
 
-mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) element to render the slotted content (Equivalent to React's `children` property). Plus, you also can add the `name` attribute to define a named slot.
+mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) elements to render slotted content (equivalent to React's `children` property). You can also add the `name` attribute to define named slots:
 
 ```jsx
 function Container() {
   return (
     <div class="container">
-      <slot /> {/* <h1>Hello world!</h1> */}
-      <slot name="desc" /> {/* <p>This is a description.</p> */}
+      {/* Default slot */}
+      <slot />
+      {/* Named slot */}
+      <slot name="desc" />
     </div>
   );
 }
@@ -163,7 +173,9 @@ function Container() {
 function App() {
   return (
     <Container>
+      {/* This goes to the named slot */}
       <p slot="desc">This is a description.</p>
+      {/* This goes to the default slot */}
       <h1>Hello world!</h1>
     </Container>
   );
@@ -172,7 +184,7 @@ function App() {
 
 ### `html` Tag Function
 
-mono-jsx doesn't support the `dangerouslySetInnerHTML` property, instead, it provides a `html` tag function to render raw HTML in JSX.
+mono-jsx provides an `html` tag function to render raw HTML in JSX instead of React's `dangerouslySetInnerHTML`:
 
 ```jsx
 function App() {
@@ -180,8 +192,7 @@ function App() {
 }
 ```
 
-The `html` tag function is a global function injected by mono-jsx, you can use it in any JSX expression without importing it.
-You also can use the `css` and `js`, that are just aliases of the `html` tag function, to render CSS and JavaScript code.
+The `html` tag function is globally available without importing. You can also use `css` and `js` tag functions for CSS and JavaScript:
 
 ```jsx
 function App() {
@@ -195,31 +206,38 @@ function App() {
 ```
 
 > [!WARNING]
-> the `html` tag function is **unsafe** that can cause [**XSS**](https://en.wikipedia.org/wiki/Cross-site_scripting) vulnerabilities.
+> The `html` tag function is **unsafe** and can cause [**XSS**](https://en.wikipedia.org/wiki/Cross-site_scripting) vulnerabilities.
 
 ### Event Handlers
 
-mono-jsx allows you to write event handlers directly in the JSX code, like React.
+mono-jsx lets you write event handlers directly in JSX, similar to React:
 
 ```jsx
 function Button() {
-  return <button onClick={(evt) => alert("BOOM!")}>Click Me</button>;
+  return (
+    <button onClick={(evt) => alert("BOOM!")}>
+      Click Me
+    </button>
+  );
 }
 ```
 
 > [!NOTE]
-> the event handler would never be called in server-side. It will be serialized to a string and sent to the client-side. **This means you should NOT use any server-side variables or functions in the event handler.**
+> Event handlers are never called on the server-side. They're serialized to strings and sent to the client. **This means you should NOT use server-side variables or functions in event handlers.**
 
 ```tsx
+import { doSomething } from "some-library";
+
 function Button(this: FC, props: { role: string }) {
   let message = "BOOM!";
-  console.log(message); // only print message in server-side
+  console.log(message); // only executes on server-side
   return (
     <button
       role={props.role}
       onClick={(evt) => {
         alert(message);           // ❌ `message` is a server-side variable
         console.log(props.role);  // ❌ `props` is a server-side variable
+        doSomething();            // ❌ `doSomething` is imported on the server-side
         Deno.exit(0);             // ❌ `Deno` is unavailable in the browser
         document.title = "BOOM!"; // ✅ `document` is a browser API
         console.log(evt.target);  // ✅ `evt` is the event object
@@ -232,7 +250,7 @@ function Button(this: FC, props: { role: string }) {
 }
 ```
 
-Plus, mono-jsx supports the `mount` event that will be triggered when the element is mounted in the client-side.
+Additionally, mono-jsx supports the `mount` event for when elements are mounted in the client-side DOM:
 
 ```jsx
 function App() {
@@ -244,14 +262,14 @@ function App() {
 }
 ```
 
-mono-jsx also accepts a function as the `action` property for `form` elements, which will be called when the form is submitted.
+mono-jsx also accepts functions for the `action` property on `form` elements, which will be called on form submission:
 
 ```tsx
 function App() {
   return (
     <form
-      action={(data: FormData, evt) => {
-        evt.defaultPrevented // true
+      action={(data: FormData, event: SubmitEvent) => {
+        event.preventDefault(); // true
         console.log(data.get("name"));
       }}
     >
@@ -262,23 +280,28 @@ function App() {
 }
 ```
 
-## Using State
+## Reactive
 
-mono-jsx provides a minimal state runtime that allows you to update view based on state changes in client-side.
+mono-jsx provides a minimal state runtime for updating the view based on client-side state changes:
+
+### Using State
+
+You can use `this` to define state in your components. The view will automatically update when the state changes:
 
 ```tsx
 function Counter(
   this: FC<{ count: number }>,
   props: { initialCount?: number },
 ) {
+  // Initialize state
   this.count = props.initialCount ?? 0;
+
   return (
     <div>
-      {/* use the state */}
+      {/* render state */}
       <span>{this.count}</span>
-      {/* use computed state */}
-      <span>doubled: {this.computed(() => 2 * this.count)}</span>
-      {/* update the state in event handlers */}
+
+      {/* Update state to trigger re-render */}
       <button onClick={() => this.count--}>-</button>
       <button onClick={() => this.count++}>+</button>
     </div>
@@ -286,11 +309,36 @@ function Counter(
 }
 ```
 
-> [!WARNING]
-> The state cannot be used in an arrow function component, you should use a `function` declaration instead.
+### Using Computed Properties
 
-```jsx
-// ❌ `this.count++` won't update the view, please use a function declaration instead
+You can use `this.computed` to create computed properties based on state. The computed property will automatically update when the state changes:
+
+```tsx
+function App(this: FC<{ input: string }>) {
+  this.input = 'Hello, world';
+  return (
+    <div>
+      <h1>{this.computed(() = this.input + "!")}</h1>
+
+      <form
+        action={(data: FormData ) => {
+          this.input = data.get("input") as string;
+        }}
+      >
+        <input type="text" name="input" value={this.input} />
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  );
+}
+```
+
+### Limitation of State API
+
+1. State cannot be used in arrow function components.
+
+```tsx
+// ❌ Won't work - state updates won't refresh the view
 const App = () => {
   this.count = 0;
   return (
@@ -300,40 +348,95 @@ const App = () => {
     </div>
   );
 };
+
+// ✅ Works correctly
+function App(this: FC) {
+  this.count = 0;
+  return (
+    <div>
+      <span>{this.count}</span>
+      <button onClick={() => this.count++}>+</button>
+    </div>
+  );
+}
+```
+
+2. State cannot be computed outside of the `this.computed` method.
+
+```tsx
+// ❌ Won't work - state updates won't refresh the view
+function App(this: FC<{ message: string }>) {
+  this.message = "Hello, world";
+  return (
+    <div>
+      <h1 title={this.message + "!"}>{this.message + "!"}</h1>
+      <button
+        onClick={() => {
+          this.message = "Foobar";
+        }}
+      >
+        Foobar
+      </button>
+    </div>
+  );
+}
+
+// ✅ Works correctly
+function App(this: FC) {
+  this.message = "Hello, world";
+  return (
+    <div>
+      <h1 title={this.computed(() => this.message + "!")}>{this.computed(() => this.message + "!")}</h1>
+      <button
+        onClick={() => {
+          this.message = "Foobar";
+        }}
+      >
+        Foobar
+      </button>
+    </div>
+  );
+}
 ```
 
 ## Built-in Elements
 
-mono-jsx provides some built-in elements to help you build your app.
+mono-jsx provides built-in elements to help you build reactive UIs.
 
 ### `<toggle>` element
 
-`<toggle>` element allows you to toggle the visibility of the slotted content.
+The `<toggle>` element conditionally renders content based on a boolean value:
 
 ```tsx
 function App(this: FC<{ show: boolean }>) {
   this.show = false;
+
+  function toggle() {
+    this.show = !this.show;
+  }
+
   return (
     <div>
       <toggle value={this.show}>
         <h1>Welcome to mono-jsx!</h1>
       </toggle>
-      <button onClick={toggle}>{this.computed(() => this.show ? "Hide" : "Show")}</button>
+
+      <button onClick={toggle}>
+        {this.computed(() => this.show ? "Hide" : "Show")}
+      </button>
     </div>
   );
-  function toggle() {
-    this.show = !this.show;
-  }
 }
 ```
 
 ### `<switch>` element
 
-`<switch>` element allows you to switch the slotted content based on the `value` property. You need to define the `slot` attribute in the slotted content to match the `value`, otherwise, the default slots will be rendered.
+The `<switch>` element renders different content based on a value. Elements with matching `slot` attributes are displayed when their value matches, otherwise default content is shown:
 
 ```tsx
 function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
   this.lang = "en";
+
   return (
     <div>
       <switch value={this.lang}>
@@ -341,6 +444,7 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
         <h1 slot="zh">你好，世界！</h1>
         <h1>✋🌎❗️</h1>
       </switch>
+
       <button onClick={() => this.lang = "en"}>English</button>
       <button onClick={() => this.lang = "zh"}>中文</button>
       <button onClick={() => this.lang = "emoji"}>Emoji</button>
@@ -351,10 +455,10 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
 
 ## Streaming Rendering
 
-mono-jsx renders your `<html>` as a readable stream, that allows async function components are rendered asynchronously. You can set a `placeholder` attribute to show a loading state while the async component is loading.
+mono-jsx renders your `<html>` as a readable stream, allowing async components to render asynchronously. You can use `placeholder` to display a loading state while waiting for async components to render:
 
 ```jsx
-async function Sleep(ms) {
+async function Sleep({ ms }) {
   await new Promise((resolve) => setTimeout(resolve, ms));
   return <slot />;
 }
@@ -363,6 +467,7 @@ export default {
   fetch: (req) => (
     <html>
       <h1>Welcome to mono-jsx!</h1>
+
       <Sleep ms={1000} placeholder={<p>Sleeping...</p>}>
         <p>After 1 second</p>
       </Sleep>
@@ -371,10 +476,10 @@ export default {
 };
 ```
 
-You can also set `rendering` attribute to "eager" to render the async component eagerly, which means the async component will be rendered as a sync function component and the `placeholder` will be ignored.
+You can set the `rendering` attribute to `"eager"` to force synchronous rendering (the `placeholder` will be ignored):
 
 ```jsx
-async function Sleep(ms) {
+async function Sleep({ ms }) {
   await new Promise((resolve) => setTimeout(resolve, ms));
   return <slot />;
 }
@@ -383,6 +488,7 @@ export default {
   fetch: (req) => (
     <html>
       <h1>Welcome to mono-jsx!</h1>
+
       <Sleep ms={1000} rendering="eager">
         <p>After 1 second</p>
       </Sleep>
@@ -393,7 +499,7 @@ export default {
 
 ## Accessing Request Info
 
-You can access the request info in a function component by using the `request` property in the `this` context. And you must pass the `request` object to the root `<html>` element to make it work.
+You can access request information in components via the `request` property in `this`. Pass the request to the root `<html>` element:
 
 ```tsx
 function RequestInfo(this: FC) {
@@ -419,7 +525,7 @@ export default {
 
 ## Customizing Response
 
-You can add `status` or `headers` attribute to the `<html>` element to customize the response.
+Add `status` or `headers` attributes to the `<html>` element to customize the response:
 
 ```jsx
 export default {
