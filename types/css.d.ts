@@ -1,6 +1,6 @@
 /**
- * csstyp without Hyphen properties.
- * Based on https://github.com/frenic/csstype/tree/v3.1.2
+ * csstype without Hyphen properties.
+ * Based on https://github.com/frenic/csstype/tree/v3.1.3
  *
  * Copyright (c) 2017-2018 Fredrik Nicol
  * MIT License
@@ -89,7 +89,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome  | Firefox | Safari | Edge | IE  |
    * | :-----: | :-----: | :----: | :--: | :-: |
-   * | **112** |   n/a   | **16** | n/a  | No  |
+   * | **112** | **115** | **16** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/animation-composition
    */
@@ -200,15 +200,43 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    */
   animationPlayState?: Property.AnimationPlayState | undefined;
   /**
+   * The **`animation-range-end`** CSS property is used to set the end of an animation's attachment range along its timeline, i.e. where along the timeline an animation will end.
+   *
+   * **Syntax**: `[ normal | <length-percentage> | <timeline-range-name> <length-percentage>? ]#`
+   *
+   * **Initial value**: `normal`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/animation-range-end
+   */
+  animationRangeEnd?: Property.AnimationRangeEnd<TLength> | undefined;
+  /**
+   * The **`animation-range-start`** CSS property is used to set the start of an animation's attachment range along its timeline, i.e. where along the timeline an animation will start.
+   *
+   * **Syntax**: `[ normal | <length-percentage> | <timeline-range-name> <length-percentage>? ]#`
+   *
+   * **Initial value**: `normal`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/animation-range-start
+   */
+  animationRangeStart?: Property.AnimationRangeStart<TLength> | undefined;
+  /**
    * The **`animation-timeline`** CSS property specifies the timeline that is used to control the progress of an animation.
    *
    * **Syntax**: `<single-animation-timeline>#`
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   |   n/a   |   No   | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/animation-timeline
    */
@@ -278,10 +306,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `visible`
    *
-   * |  Chrome  | Firefox  |  Safari   |  Edge  |   IE   |
-   * | :------: | :------: | :-------: | :----: | :----: |
-   * |  **36**  |  **16**  | **15.4**  | **12** | **10** |
-   * | 12 _-x-_ | 10 _-x-_ | 5.1 _-x-_ |        |        |
+   * |  Chrome  | Firefox |  Safari   |  Edge  |   IE   |
+   * | :------: | :-----: | :-------: | :----: | :----: |
+   * |  **36**  | **16**  | **15.4**  | **12** | **10** |
+   * | 12 _-x-_ |         | 5.1 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/backface-visibility
    */
@@ -323,7 +351,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox | Safari  |  Edge  |  IE   |
    * | :----: | :-----: | :-----: | :----: | :---: |
-   * | **1**  |  **4**  | **14**  | **12** | **9** |
+   * | **1**  |  **4**  |  **5**  | **12** | **9** |
    * |        |         | 3 _-x-_ |        |       |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/background-clip
@@ -1429,13 +1457,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`contain-intrinsic-block-size`** CSS logical property defines the block size of an element that a browser can use for layout when the element is subject to size containment.
    *
-   * **Syntax**: `none | <length> | auto <length>`
+   * **Syntax**: `auto? [ none | <length> ]`
    *
    * **Initial value**: `none`
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
-   * | **95** | **107** |   No   | n/a  | No  |
+   * | **95** | **107** | **17** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/contain-intrinsic-contain-intrinsic-block-size
    */
@@ -1443,13 +1471,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`contain-intrinsic-length`** CSS property sets the height of an element that a browser can use for layout when the element is subject to size containment.
    *
-   * **Syntax**: `none | <length> | auto <length>`
+   * **Syntax**: `auto? [ none | <length> ]`
    *
    * **Initial value**: `none`
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
-   * | **83** | **107** |   No   | n/a  | No  |
+   * | **95** | **107** | **17** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/contain-intrinsic-height
    */
@@ -1457,13 +1485,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`contain-intrinsic-inline-size`** CSS logical property defines the inline-size of an element that a browser can use for layout when the element is subject to size containment.
    *
-   * **Syntax**: `none | <length> | auto <length>`
+   * **Syntax**: `auto? [ none | <length> ]`
    *
    * **Initial value**: `none`
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
-   * | **95** | **107** |   No   | n/a  | No  |
+   * | **95** | **107** | **17** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/contain-intrinsic-contain-intrinsic-inline-size
    */
@@ -1471,13 +1499,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`contain-intrinsic-width`** CSS property sets the width of an element that a browser will use for layout when the element is subject to size containment.
    *
-   * **Syntax**: `none | <length> | auto <length>`
+   * **Syntax**: `auto? [ none | <length> ]`
    *
    * **Initial value**: `none`
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
-   * | **83** | **107** |   No   | n/a  | No  |
+   * | **95** | **107** | **17** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/contain-intrinsic-width
    */
@@ -1531,9 +1559,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `visible`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * | **85** |   n/a   |   No   | n/a  | No  |
+   * | Chrome |   Firefox   | Safari | Edge | IE  |
+   * | :----: | :---------: | :----: | :--: | :-: |
+   * | **85** | **preview** |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/content-visibility
    */
@@ -1573,9 +1601,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `none`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * | **85** | **68**  |   No   | n/a  | No  |
+   * | Chrome | Firefox |  Safari  | Edge | IE  |
+   * | :----: | :-----: | :------: | :--: | :-: |
+   * | **85** | **68**  | **17.2** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/counter-set
    */
@@ -1898,9 +1926,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`font-synthesis`** CSS property controls which missing typefaces, bold, italic, or small-caps, may be synthesized by the browser.
    *
-   * **Syntax**: `none | [ weight || style || small-caps ]`
+   * **Syntax**: `none | [ weight || style || small-caps || position]`
    *
-   * **Initial value**: `weight style`
+   * **Initial value**: `weight style small-caps position `
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
@@ -1909,6 +1937,62 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * @see https://developer.mozilla.org/docs/Web/CSS/font-synthesis
    */
   fontSynthesis?: Property.FontSynthesis | undefined;
+  /**
+   * The **`font-synthesis-position`** CSS property lets you specify whether or not a browser may synthesize the subscript and superscript "position" typefaces when they are missing in a font family, while using `font-variant-position` to set the positions.
+   *
+   * **Syntax**: `auto | none`
+   *
+   * **Initial value**: `none`
+   *
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * |   No   | **118** |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/font-synthesis-position
+   */
+  fontSynthesisPosition?: Property.FontSynthesisPosition | undefined;
+  /**
+   * The **`font-synthesis-small-caps`** CSS property lets you specify whether or not the browser may synthesize small-caps typeface when it is missing in a font family. Small-caps glyphs typically use the form of uppercase letters but are reduced to the size of lowercase letters.
+   *
+   * **Syntax**: `auto | none`
+   *
+   * **Initial value**: `auto`
+   *
+   * | Chrome | Firefox |  Safari  | Edge | IE  |
+   * | :----: | :-----: | :------: | :--: | :-: |
+   * | **97** | **111** | **16.4** | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/font-synthesis-small-caps
+   */
+  fontSynthesisSmallCaps?: Property.FontSynthesisSmallCaps | undefined;
+  /**
+   * The **`font-synthesis-style`** CSS property lets you specify whether or not the browser may synthesize the oblique typeface when it is missing in a font family.
+   *
+   * **Syntax**: `auto | none`
+   *
+   * **Initial value**: `auto`
+   *
+   * | Chrome | Firefox |  Safari  | Edge | IE  |
+   * | :----: | :-----: | :------: | :--: | :-: |
+   * | **97** | **111** | **16.4** | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/font-synthesis-style
+   */
+  fontSynthesisStyle?: Property.FontSynthesisStyle | undefined;
+  /**
+   * The **`font-synthesis-weight`** CSS property lets you specify whether or not the browser may synthesize the bold typeface when it is missing in a font family.
+   *
+   * **Syntax**: `auto | none`
+   *
+   * **Initial value**: `auto`
+   *
+   * | Chrome | Firefox |  Safari  | Edge | IE  |
+   * | :----: | :-----: | :------: | :--: | :-: |
+   * | **97** | **111** | **16.4** | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/font-synthesis-weight
+   */
+  fontSynthesisWeight?: Property.FontSynthesisWeight | undefined;
   /**
    * The **`font-variant`** CSS shorthand property allows you to set all the font variants for a font.
    *
@@ -1930,9 +2014,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `normal`
    *
-   * | Chrome | Firefox | Safari  | Edge | IE  |
-   * | :----: | :-----: | :-----: | :--: | :-: |
-   * |   No   | **34**  | **9.1** | n/a  | No  |
+   * | Chrome  | Firefox | Safari  | Edge | IE  |
+   * | :-----: | :-----: | :-----: | :--: | :-: |
+   * | **111** | **34**  | **9.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/font-variant-alternates
    */
@@ -1972,7 +2056,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   | **108** |   No   | n/a  | No  |
+   * |   No   |   n/a   |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/font-variant-emoji
    */
@@ -2013,9 +2097,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `normal`
    *
-   * | Chrome | Firefox | Safari  | Edge | IE  |
-   * | :----: | :-----: | :-----: | :--: | :-: |
-   * |   No   | **34**  | **9.1** | n/a  | No  |
+   * | Chrome  | Firefox | Safari  | Edge | IE  |
+   * | :-----: | :-----: | :-----: | :--: | :-: |
+   * | **117** | **34**  | **9.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/font-variant-position
    */
@@ -2057,7 +2141,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox | Safari |              Edge               |                 IE                  |
    * | :----: | :-----: | :----: | :-----------------------------: | :---------------------------------: |
-   * | **89** |   No    |   No   |             **79**              | **10** _(-ms-high-contrast-adjust)_ |
+   * | **89** | **113** |   No   |             **79**              | **10** _(-ms-high-contrast-adjust)_ |
    * |        |         |        | 12 _(-ms-high-contrast-adjust)_ |                                     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/forced-color-adjust
@@ -2238,10 +2322,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * | Chrome  | Firefox |    Safari     | Edge | IE  |
-   * | :-----: | :-----: | :-----------: | :--: | :-: |
-   * | **106** | **98**  | **5.1** _-x-_ | n/a  | No  |
-   * | 6 _-x-_ |         |               |      |     |
+   * | Chrome  | Firefox |  Safari   | Edge | IE  |
+   * | :-----: | :-----: | :-------: | :--: | :-: |
+   * | **106** | **98**  |  **17**   | n/a  | No  |
+   * | 6 _-x-_ |         | 5.1 _-x-_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/hyphenate-character
    */
@@ -2265,10 +2349,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `manual`
    *
-   * |  Chrome  | Firefox |    Safari     |  Edge  |      IE      |
-   * | :------: | :-----: | :-----------: | :----: | :----------: |
-   * |  **55**  | **43**  | **5.1** _-x-_ | **79** | **10** _-x-_ |
-   * | 13 _-x-_ | 6 _-x-_ |               |        |              |
+   * |  Chrome  | Firefox |  Safari   |  Edge  |      IE      |
+   * | :------: | :-----: | :-------: | :----: | :----------: |
+   * |  **55**  | **43**  |  **17**   | **79** | **10** _-x-_ |
+   * | 13 _-x-_ | 6 _-x-_ | 5.1 _-x-_ |        |              |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/hyphens
    */
@@ -2590,7 +2674,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox |  Safari  | Edge | IE  |
    * | :----: | :-----: | :------: | :--: | :-: |
-   * | **87** | **41**  | **12.1** | n/a  | No  |
+   * | **69** | **41**  | **12.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/margin-block-end
    */
@@ -2604,7 +2688,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox |  Safari  | Edge | IE  |
    * | :----: | :-----: | :------: | :--: | :-: |
-   * | **87** | **41**  | **12.1** | n/a  | No  |
+   * | **69** | **41**  | **12.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/margin-block-start
    */
@@ -2632,7 +2716,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * |          Chrome          |        Firefox        |          Safari          | Edge | IE  |
    * | :----------------------: | :-------------------: | :----------------------: | :--: | :-: |
-   * |          **87**          |        **41**         |         **12.1**         | n/a  | No  |
+   * |          **69**          |        **41**         |         **12.1**         | n/a  | No  |
    * | 2 _(-webkit-margin-end)_ | 3 _(-moz-margin-end)_ | 3 _(-webkit-margin-end)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/margin-inline-end
@@ -2647,7 +2731,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * |           Chrome           |         Firefox         |           Safari           | Edge | IE  |
    * | :------------------------: | :---------------------: | :------------------------: | :--: | :-: |
-   * |           **87**           |         **41**          |          **12.1**          | n/a  | No  |
+   * |           **69**           |         **41**          |          **12.1**          | n/a  | No  |
    * | 2 _(-webkit-margin-start)_ | 3 _(-moz-margin-start)_ | 3 _(-webkit-margin-start)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/margin-inline-start
@@ -2724,9 +2808,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * |                 Chrome                  | Firefox |                  Safari                   | Edge | IE  |
-   * | :-------------------------------------: | :-----: | :---------------------------------------: | :--: | :-: |
-   * | **1** _(-webkit-mask-box-image-outset)_ |   No    | **3.1** _(-webkit-mask-box-image-outset)_ | n/a  | No  |
+   * |                 Chrome                  | Firefox |                Safari                 | Edge | IE  |
+   * | :-------------------------------------: | :-----: | :-----------------------------------: | :--: | :-: |
+   * | **1** _(-webkit-mask-box-image-outset)_ |   No    |               **17.2**                | n/a  | No  |
+   * |                                         |         | 3.1 _(-webkit-mask-box-image-outset)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-border-outset
    */
@@ -2738,9 +2823,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `stretch`
    *
-   * |                 Chrome                  | Firefox |                  Safari                   | Edge | IE  |
-   * | :-------------------------------------: | :-----: | :---------------------------------------: | :--: | :-: |
-   * | **1** _(-webkit-mask-box-image-repeat)_ |   No    | **3.1** _(-webkit-mask-box-image-repeat)_ | n/a  | No  |
+   * |                 Chrome                  | Firefox |                Safari                 | Edge | IE  |
+   * | :-------------------------------------: | :-----: | :-----------------------------------: | :--: | :-: |
+   * | **1** _(-webkit-mask-box-image-repeat)_ |   No    |               **17.2**                | n/a  | No  |
+   * |                                         |         | 3.1 _(-webkit-mask-box-image-repeat)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-border-repeat
    */
@@ -2752,9 +2838,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * |                 Chrome                 | Firefox |                  Safari                  | Edge | IE  |
-   * | :------------------------------------: | :-----: | :--------------------------------------: | :--: | :-: |
-   * | **1** _(-webkit-mask-box-image-slice)_ |   No    | **3.1** _(-webkit-mask-box-image-slice)_ | n/a  | No  |
+   * |                 Chrome                 | Firefox |                Safari                | Edge | IE  |
+   * | :------------------------------------: | :-----: | :----------------------------------: | :--: | :-: |
+   * | **1** _(-webkit-mask-box-image-slice)_ |   No    |               **17.2**               | n/a  | No  |
+   * |                                        |         | 3.1 _(-webkit-mask-box-image-slice)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-border-slice
    */
@@ -2766,9 +2853,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `none`
    *
-   * |                 Chrome                  | Firefox |                  Safari                   | Edge | IE  |
-   * | :-------------------------------------: | :-----: | :---------------------------------------: | :--: | :-: |
-   * | **1** _(-webkit-mask-box-image-source)_ |   No    | **3.1** _(-webkit-mask-box-image-source)_ | n/a  | No  |
+   * |                 Chrome                  | Firefox |                Safari                 | Edge | IE  |
+   * | :-------------------------------------: | :-----: | :-----------------------------------: | :--: | :-: |
+   * | **1** _(-webkit-mask-box-image-source)_ |   No    |               **17.2**                | n/a  | No  |
+   * |                                         |         | 3.1 _(-webkit-mask-box-image-source)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-border-source
    */
@@ -2780,9 +2868,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * |                 Chrome                 | Firefox |                  Safari                  | Edge | IE  |
-   * | :------------------------------------: | :-----: | :--------------------------------------: | :--: | :-: |
-   * | **1** _(-webkit-mask-box-image-width)_ |   No    | **3.1** _(-webkit-mask-box-image-width)_ | n/a  | No  |
+   * |                 Chrome                 | Firefox |                Safari                | Edge | IE  |
+   * | :------------------------------------: | :-----: | :----------------------------------: | :--: | :-: |
+   * | **1** _(-webkit-mask-box-image-width)_ |   No    |               **17.2**               | n/a  | No  |
+   * |                                        |         | 3.1 _(-webkit-mask-box-image-width)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-border-width
    */
@@ -2794,10 +2883,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `border-box`
    *
-   * |   Chrome    | Firefox |  Safari  | Edge | IE  |
-   * | :---------: | :-----: | :------: | :--: | :-: |
-   * | **1** _-x-_ | **53**  | **15.4** | n/a  | No  |
-   * |             |         | 4 _-x-_  |      |     |
+   * | Chrome  | Firefox |  Safari  | Edge | IE  |
+   * | :-----: | :-----: | :------: | :--: | :-: |
+   * | **120** | **53**  | **15.4** | n/a  | No  |
+   * | 1 _-x-_ |         | 4 _-x-_  |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-clip
    */
@@ -2809,9 +2898,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `add`
    *
-   * | Chrome | Firefox |  Safari  | Edge  | IE  |
-   * | :----: | :-----: | :------: | :---: | :-: |
-   * |   No   | **53**  | **15.4** | 18-79 | No  |
+   * | Chrome  | Firefox |  Safari  | Edge  | IE  |
+   * | :-----: | :-----: | :------: | :---: | :-: |
+   * | **120** | **53**  | **15.4** | 18-79 | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-composite
    */
@@ -2823,10 +2912,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `none`
    *
-   * |   Chrome    | Firefox |  Safari  | Edge  | IE  |
-   * | :---------: | :-----: | :------: | :---: | :-: |
-   * | **1** _-x-_ | **53**  | **15.4** | 16-79 | No  |
-   * |             |         | 4 _-x-_  |       |     |
+   * | Chrome  | Firefox |  Safari  | Edge  | IE  |
+   * | :-----: | :-----: | :------: | :---: | :-: |
+   * | **120** | **53**  | **15.4** | 16-79 | No  |
+   * | 1 _-x-_ |         | 4 _-x-_  |       |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-image
    */
@@ -2838,9 +2927,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `match-source`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * |   No   | **53**  | **15.4** | n/a  | No  |
+   * | Chrome  | Firefox |  Safari  | Edge | IE  |
+   * | :-----: | :-----: | :------: | :--: | :-: |
+   * | **120** | **53**  | **15.4** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-mode
    */
@@ -2852,10 +2941,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `border-box`
    *
-   * |   Chrome    | Firefox |  Safari  | Edge | IE  |
-   * | :---------: | :-----: | :------: | :--: | :-: |
-   * | **1** _-x-_ | **53**  | **15.4** | n/a  | No  |
-   * |             |         | 4 _-x-_  |      |     |
+   * | Chrome  | Firefox |  Safari  | Edge | IE  |
+   * | :-----: | :-----: | :------: | :--: | :-: |
+   * | **120** | **53**  | **15.4** | n/a  | No  |
+   * | 1 _-x-_ |         | 4 _-x-_  |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-origin
    */
@@ -2867,10 +2956,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `center`
    *
-   * |   Chrome    | Firefox |  Safari   | Edge  | IE  |
-   * | :---------: | :-----: | :-------: | :---: | :-: |
-   * | **1** _-x-_ | **53**  | **15.4**  | 18-79 | No  |
-   * |             |         | 3.1 _-x-_ |       |     |
+   * | Chrome  | Firefox |  Safari   | Edge  | IE  |
+   * | :-----: | :-----: | :-------: | :---: | :-: |
+   * | **120** | **53**  | **15.4**  | 18-79 | No  |
+   * | 1 _-x-_ |         | 3.1 _-x-_ |       |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-position
    */
@@ -2882,10 +2971,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `repeat`
    *
-   * |   Chrome    | Firefox |  Safari   | Edge  | IE  |
-   * | :---------: | :-----: | :-------: | :---: | :-: |
-   * | **1** _-x-_ | **53**  | **15.4**  | 18-79 | No  |
-   * |             |         | 3.1 _-x-_ |       |     |
+   * | Chrome  | Firefox |  Safari   | Edge  | IE  |
+   * | :-----: | :-----: | :-------: | :---: | :-: |
+   * | **120** | **53**  | **15.4**  | 18-79 | No  |
+   * | 1 _-x-_ |         | 3.1 _-x-_ |       |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-repeat
    */
@@ -2897,10 +2986,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * |   Chrome    | Firefox |  Safari  | Edge  | IE  |
-   * | :---------: | :-----: | :------: | :---: | :-: |
-   * | **4** _-x-_ | **53**  | **15.4** | 18-79 | No  |
-   * |             |         | 4 _-x-_  |       |     |
+   * | Chrome  | Firefox |  Safari  | Edge  | IE  |
+   * | :-----: | :-----: | :------: | :---: | :-: |
+   * | **120** | **53**  | **15.4** | 18-79 | No  |
+   * | 4 _-x-_ |         | 4 _-x-_  |       |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-size
    */
@@ -2920,6 +3009,20 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    */
   maskType?: Property.MaskType | undefined;
   /**
+   * This feature is not Baseline because it does not work in some of the most widely-used browsers.
+   *
+   * **Syntax**: `[ pack | next ] || [ definite-first | ordered ]`
+   *
+   * **Initial value**: `pack`
+   *
+   * | Chrome | Firefox |   Safari    | Edge | IE  |
+   * | :----: | :-----: | :---------: | :--: | :-: |
+   * |   No   |   No    | **preview** | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/masonry-auto-flow
+   */
+  masonryAutoFlow?: Property.MasonryAutoFlow | undefined;
+  /**
    * The **`math-depth`** property describes a notion of _depth_ for each element of a mathematical formula, with respect to the top-level container of that formula. Concretely, this is used to determine the computed value of the font-size property when its specified value is `math`.
    *
    * **Syntax**: `auto-add | add(<integer>) | <integer>`
@@ -2928,7 +3031,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome  | Firefox | Safari | Edge | IE  |
    * | :-----: | :-----: | :----: | :--: | :-: |
-   * | **109** |   n/a   |   No   | n/a  | No  |
+   * | **109** | **117** |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/math-depth
    */
@@ -2956,7 +3059,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome  | Firefox |  Safari  | Edge | IE  |
    * | :-----: | :-----: | :------: | :--: | :-: |
-   * | **109** |   n/a   | **14.1** | n/a  | No  |
+   * | **109** | **117** | **14.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/math-style
    */
@@ -3101,10 +3204,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * |         Chrome         | Firefox |   Safari    | Edge | IE  |
-   * | :--------------------: | :-----: | :---------: | :--: | :-: |
-   * |         **55**         | **72**  | **preview** | n/a  | No  |
-   * | 46 _(motion-distance)_ |         |             |      |     |
+   * |         Chrome         | Firefox | Safari | Edge | IE  |
+   * | :--------------------: | :-----: | :----: | :--: | :-: |
+   * |         **55**         | **72**  | **16** | n/a  | No  |
+   * | 46 _(motion-distance)_ |         |        |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-distance
    */
@@ -3112,7 +3215,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`offset-path`** CSS property specifies a motion path for an element to follow and defines the element's positioning within the parent container or SVG coordinate system.
    *
-   * **Syntax**: `none | ray( [ <angle> && <size> && contain? ] ) | <path()> | <url> | [ <basic-shape> || <geometry-box> ]`
+   * **Syntax**: `none | <offset-path> || <coord-box>`
    *
    * **Initial value**: `none`
    *
@@ -3131,10 +3234,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * |         Chrome         | Firefox |   Safari    | Edge | IE  |
-   * | :--------------------: | :-----: | :---------: | :--: | :-: |
-   * |         **56**         | **72**  | **preview** | n/a  | No  |
-   * | 46 _(motion-rotation)_ |         |             |      |     |
+   * |         Chrome         | Firefox | Safari | Edge | IE  |
+   * | :--------------------: | :-----: | :----: | :--: | :-: |
+   * |         **56**         | **72**  | **16** | n/a  | No  |
+   * | 46 _(motion-rotation)_ |         |        |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-rotate
    */
@@ -3172,9 +3275,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox |   Safari    | Edge | IE  |
-   * | :----: | :-----: | :---------: | :--: | :-: |
-   * |   No   | **72**  | **preview** | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **116** | **72**  | **16** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-anchor
    */
@@ -3186,10 +3289,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * |         Chrome         | Firefox |   Safari    | Edge | IE  |
-   * | :--------------------: | :-----: | :---------: | :--: | :-: |
-   * |         **55**         | **72**  | **preview** | n/a  | No  |
-   * | 46 _(motion-distance)_ |         |             |      |     |
+   * |         Chrome         | Firefox | Safari | Edge | IE  |
+   * | :--------------------: | :-----: | :----: | :--: | :-: |
+   * |         **55**         | **72**  | **16** | n/a  | No  |
+   * | 46 _(motion-distance)_ |         |        |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-distance
    */
@@ -3197,7 +3300,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`offset-path`** CSS property specifies a motion path for an element to follow and defines the element's positioning within the parent container or SVG coordinate system.
    *
-   * **Syntax**: `none | ray( [ <angle> && <size> && contain? ] ) | <path()> | <url> | [ <basic-shape> || <geometry-box> ]`
+   * **Syntax**: `none | <offset-path> || <coord-box>`
    *
    * **Initial value**: `none`
    *
@@ -3210,13 +3313,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    */
   offsetPath?: Property.OffsetPath | undefined;
   /**
-   * **Syntax**: `auto | <position>`
+   * **Syntax**: `normal | auto | <position>`
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox |   Safari    | Edge | IE  |
-   * | :----: | :-----: | :---------: | :--: | :-: |
-   * |   No   |   No    | **preview** | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **116** |   n/a   | **16** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-position
    */
@@ -3228,10 +3331,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * |         Chrome         | Firefox |   Safari    | Edge | IE  |
-   * | :--------------------: | :-----: | :---------: | :--: | :-: |
-   * |         **56**         | **72**  | **preview** | n/a  | No  |
-   * | 46 _(motion-rotation)_ |         |             |      |     |
+   * |         Chrome         | Firefox | Safari | Edge | IE  |
+   * | :--------------------: | :-----: | :----: | :--: | :-: |
+   * |         **56**         | **72**  | **16** | n/a  | No  |
+   * | 46 _(motion-rotation)_ |         |        |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-rotate
    */
@@ -3243,10 +3346,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * |         Chrome         | Firefox |   Safari    | Edge | IE  |
-   * | :--------------------: | :-----: | :---------: | :--: | :-: |
-   * |         **56**         | **72**  | **preview** | n/a  | No  |
-   * | 46 _(motion-rotation)_ |         |             |      |     |
+   * |         Chrome         | Firefox | Safari | Edge | IE  |
+   * | :--------------------: | :-----: | :----: | :--: | :-: |
+   * |         **56**         | **72**  | **16** | n/a  | No  |
+   * | 46 _(motion-rotation)_ |         |        |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/offset-rotate
    */
@@ -3380,12 +3483,6 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * **Syntax**: `padding-box | content-box`
    *
    * **Initial value**: `padding-box`
-   *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   | **29**  |   No   | n/a  | No  |
-   *
-   * @see https://developer.mozilla.org/docs/Mozilla/Gecko/Chrome/CSS/overflow-clip-box
    */
   overflowClipBox?: Property.OverflowClipBox | undefined;
   /**
@@ -3456,6 +3553,20 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    */
   overflowY?: Property.OverflowY | undefined;
   /**
+   * The **`overlay`** CSS property specifies whether an element appearing in the top layer (for example, a shown popover or modal `<dialog>` element) is actually rendered in the top layer. This property is only relevant within a list of `transition-property` values, and only if `allow-discrete` is set as the `transition-behavior`.
+   *
+   * **Syntax**: `none | auto`
+   *
+   * **Initial value**: `none`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **117** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/overlay
+   */
+  overlay?: Property.Overlay | undefined;
+  /**
    * The **`overscroll-behavior-block`** CSS property sets the browser's behavior when the block direction boundary of a scrolling area is reached.
    *
    * **Syntax**: `contain | none | auto`
@@ -3520,7 +3631,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox |  Safari  | Edge | IE  |
    * | :----: | :-----: | :------: | :--: | :-: |
-   * | **87** | **41**  | **12.1** | n/a  | No  |
+   * | **69** | **41**  | **12.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/padding-block-end
    */
@@ -3534,7 +3645,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox |  Safari  | Edge | IE  |
    * | :----: | :-----: | :------: | :--: | :-: |
-   * | **87** | **41**  | **12.1** | n/a  | No  |
+   * | **69** | **41**  | **12.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/padding-block-start
    */
@@ -3562,7 +3673,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * |          Chrome           |        Firefox         |          Safari           | Edge | IE  |
    * | :-----------------------: | :--------------------: | :-----------------------: | :--: | :-: |
-   * |          **87**           |         **41**         |         **12.1**          | n/a  | No  |
+   * |          **69**           |         **41**         |         **12.1**          | n/a  | No  |
    * | 2 _(-webkit-padding-end)_ | 3 _(-moz-padding-end)_ | 3 _(-webkit-padding-end)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/padding-inline-end
@@ -3577,7 +3688,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * |           Chrome            |         Firefox          |           Safari            | Edge | IE  |
    * | :-------------------------: | :----------------------: | :-------------------------: | :--: | :-: |
-   * |           **87**            |          **41**          |          **12.1**           | n/a  | No  |
+   * |           **69**            |          **41**          |          **12.1**           | n/a  | No  |
    * | 2 _(-webkit-padding-start)_ | 3 _(-moz-padding-start)_ | 3 _(-webkit-padding-start)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/padding-inline-start
@@ -3632,9 +3743,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox |   Safari    | Edge | IE  |
-   * | :----: | :-----: | :---------: | :--: | :-: |
-   * | **85** | **110** | **preview** | n/a  | No  |
+   * | Chrome | Firefox |  Safari   | Edge | IE  |
+   * | :----: | :-----: | :-------: | :--: | :-: |
+   * | **85** | **110** | **≤13.1** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/page
    */
@@ -3702,10 +3813,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `none`
    *
-   * |  Chrome  | Firefox  | Safari  |  Edge  |   IE   |
-   * | :------: | :------: | :-----: | :----: | :----: |
-   * |  **36**  |  **16**  |  **9**  | **12** | **10** |
-   * | 12 _-x-_ | 10 _-x-_ | 4 _-x-_ |        |        |
+   * |  Chrome  | Firefox | Safari  |  Edge  |   IE   |
+   * | :------: | :-----: | :-----: | :----: | :----: |
+   * |  **36**  | **16**  |  **9**  | **12** | **10** |
+   * | 12 _-x-_ |         | 4 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/perspective
    */
@@ -3717,10 +3828,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `50% 50%`
    *
-   * |  Chrome  | Firefox  | Safari  |  Edge  |   IE   |
-   * | :------: | :------: | :-----: | :----: | :----: |
-   * |  **36**  |  **16**  |  **9**  | **12** | **10** |
-   * | 12 _-x-_ | 10 _-x-_ | 4 _-x-_ |        |        |
+   * |  Chrome  | Firefox | Safari  |  Edge  |   IE   |
+   * | :------: | :-----: | :-----: | :----: | :----: |
+   * |  **36**  | **16**  |  **9**  | **12** | **10** |
+   * | 12 _-x-_ |         | 4 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/perspective-origin
    */
@@ -3908,9 +4019,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * | **69** | **68**  | **14.1** | n/a  | No  |
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * | **69** | **68**  | **15** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-margin-block-end
    */
@@ -3922,9 +4033,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * | **69** | **68**  | **14.1** | n/a  | No  |
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * | **69** | **68**  | **15** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-margin-block-start
    */
@@ -3951,9 +4062,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * | **69** | **68**  | **14.1** | n/a  | No  |
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * | **69** | **68**  | **15** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-margin-inline-end
    */
@@ -3965,9 +4076,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `0`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * | **69** | **68**  | **14.1** | n/a  | No  |
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * | **69** | **68**  | **15** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-margin-inline-start
    */
@@ -4235,13 +4346,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`scroll-timeline-axis`** CSS property can be used to specify the scrollbar that will be used to provide the timeline for a scroll-timeline animation.
    *
-   * **Syntax**: `[ block | inline | vertical | horizontal ]#`
+   * **Syntax**: `[ block | inline | x | y ]#`
    *
    * **Initial value**: `block`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   |   n/a   |   No   | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-timeline-axis
    */
@@ -4249,13 +4360,13 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`scroll-timeline-name`** CSS property defines a name that can be used to identify an element as the source of a scroll timeline for an animation.
    *
-   * **Syntax**: `none | <custom-ident>#`
+   * **Syntax**: `none | <dashed-ident>#`
    *
    * **Initial value**: `none`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   |   n/a   |   No   | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-timeline-name
    */
@@ -4267,9 +4378,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   | **64**  |   No   | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **121** | **64**  |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scrollbar-color
    */
@@ -4295,9 +4406,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   | **64**  |   No   | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **121** | **64**  |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scrollbar-width
    */
@@ -4408,10 +4519,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `none`
    *
-   * |           Chrome           | Firefox |            Safari            | Edge  |                   IE                   |
-   * | :------------------------: | :-----: | :--------------------------: | :---: | :------------------------------------: |
-   * |           **48**           | **48**  |         **preview**          | 15-79 | **11** _(-ms-text-combine-horizontal)_ |
-   * | 9 _(-webkit-text-combine)_ |         | 5.1 _(-webkit-text-combine)_ |       |                                        |
+   * |           Chrome           | Firefox |            Safari            |  Edge  |                   IE                   |
+   * | :------------------------: | :-----: | :--------------------------: | :----: | :------------------------------------: |
+   * |           **48**           | **48**  |           **15.4**           | **79** | **11** _(-ms-text-combine-horizontal)_ |
+   * | 9 _(-webkit-text-combine)_ |         | 5.1 _(-webkit-text-combine)_ |        |                                        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/text-combine-upright
    */
@@ -4570,9 +4681,9 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `auto`
    *
-   * | Chrome | Firefox | Safari |  Edge  |   IE   |
-   * | :----: | :-----: | :----: | :----: | :----: |
-   * |  n/a   | **55**  |   No   | **12** | **11** |
+   * | Chrome | Firefox | Safari | Edge  |   IE   |
+   * | :----: | :-----: | :----: | :---: | :----: |
+   * |  n/a   | **55**  |   No   | 12-79 | **11** |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/text-justify
    */
@@ -4692,6 +4803,34 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    */
   textUnderlinePosition?: Property.TextUnderlinePosition | undefined;
   /**
+   * The **`text-wrap`** CSS property controls how text inside an element is wrapped. The different values provide:
+   *
+   * **Syntax**: `wrap | nowrap | balance | stable | pretty`
+   *
+   * **Initial value**: `wrap`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **114** | **121** |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/text-wrap
+   */
+  textWrap?: Property.TextWrap | undefined;
+  /**
+   * The **`timeline-scope`** CSS property modifies the scope of a named animation timeline.
+   *
+   * **Syntax**: `none | <dashed-ident>#`
+   *
+   * **Initial value**: `none`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **116** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/timeline-scope
+   */
+  timelineScope?: Property.TimelineScope | undefined;
+  /**
    * The **`top`** CSS property participates in specifying the vertical position of a positioned element. It has no effect on non-positioned elements.
    *
    * **Syntax**: `<length> | <percentage> | auto`
@@ -4756,10 +4895,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `50% 50% 0`
    *
-   * | Chrome  |  Firefox  | Safari  |  Edge  |   IE    |
-   * | :-----: | :-------: | :-----: | :----: | :-----: |
-   * | **36**  |  **16**   |  **9**  | **12** | **10**  |
-   * | 1 _-x-_ | 3.5 _-x-_ | 2 _-x-_ |        | 9 _-x-_ |
+   * | Chrome  | Firefox | Safari  |  Edge  |   IE    |
+   * | :-----: | :-----: | :-----: | :----: | :-----: |
+   * | **36**  | **16**  |  **9**  | **12** | **10**  |
+   * | 1 _-x-_ |         | 2 _-x-_ |        | 9 _-x-_ |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transform-origin
    */
@@ -4771,14 +4910,28 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * **Initial value**: `flat`
    *
-   * |  Chrome  | Firefox  | Safari  |  Edge  | IE  |
-   * | :------: | :------: | :-----: | :----: | :-: |
-   * |  **36**  |  **16**  |  **9**  | **12** | No  |
-   * | 12 _-x-_ | 10 _-x-_ | 4 _-x-_ |        |     |
+   * |  Chrome  | Firefox | Safari  |  Edge  | IE  |
+   * | :------: | :-----: | :-----: | :----: | :-: |
+   * |  **36**  | **16**  |  **9**  | **12** | No  |
+   * | 12 _-x-_ |         | 4 _-x-_ |        |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transform-style
    */
   transformStyle?: Property.TransformStyle | undefined;
+  /**
+   * The **`transition-behavior`** CSS property specifies whether transitions will be started for properties whose animation behavior is discrete.
+   *
+   * **Syntax**: `<transition-behavior-value>#`
+   *
+   * **Initial value**: `normal`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **117** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/transition-behavior
+   */
+  transitionBehavior?: Property.TransitionBehavior | undefined;
   /**
    * The **`transition-delay`** CSS property specifies the duration to wait before starting a property's transition effect when its value changes.
    *
@@ -4789,7 +4942,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * | Chrome  | Firefox | Safari  |  Edge  |   IE   |
    * | :-----: | :-----: | :-----: | :----: | :----: |
    * | **26**  | **16**  |  **9**  | **12** | **10** |
-   * | 1 _-x-_ | 4 _-x-_ | 4 _-x-_ |        |        |
+   * | 1 _-x-_ |         | 4 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transition-delay
    */
@@ -4804,7 +4957,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * | Chrome  | Firefox |  Safari   |  Edge  |   IE   |
    * | :-----: | :-----: | :-------: | :----: | :----: |
    * | **26**  | **16**  |   **9**   | **12** | **10** |
-   * | 1 _-x-_ | 4 _-x-_ | 3.1 _-x-_ |        |        |
+   * | 1 _-x-_ |         | 3.1 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transition-duration
    */
@@ -4819,7 +4972,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * | Chrome  | Firefox |  Safari   |  Edge  |   IE   |
    * | :-----: | :-----: | :-------: | :----: | :----: |
    * | **26**  | **16**  |   **9**   | **12** | **10** |
-   * | 1 _-x-_ | 4 _-x-_ | 3.1 _-x-_ |        |        |
+   * | 1 _-x-_ |         | 3.1 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transition-property
    */
@@ -4834,7 +4987,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * | Chrome  | Firefox |  Safari   |  Edge  |   IE   |
    * | :-----: | :-----: | :-------: | :----: | :----: |
    * | **26**  | **16**  |   **9**   | **12** | **10** |
-   * | 1 _-x-_ | 4 _-x-_ | 3.1 _-x-_ |        |        |
+   * | 1 _-x-_ |         | 3.1 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transition-timing-function
    */
@@ -4897,6 +5050,48 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    */
   verticalAlign?: Property.VerticalAlign<TLength> | undefined;
   /**
+   * The **`view-timeline-axis`** CSS property is used to specify the scrollbar direction that will be used to provide the timeline for a _named view progress timeline_ animation, which is progressed through based on the change in visibility of an element (known as the _subject_) inside a scrollable element (_scroller_). `view-timeline-axis` is set on the subject. See CSS scroll-driven animations for more details.
+   *
+   * **Syntax**: `[ block | inline | x | y ]#`
+   *
+   * **Initial value**: `block`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/view-timeline-axis
+   */
+  viewTimelineAxis?: Property.ViewTimelineAxis | undefined;
+  /**
+   * The **`view-timeline-inset`** CSS property is used to specify one or two values representing an adjustment to the position of the scrollport (see Scroll container for more details) in which the subject element of a _named view progress timeline_ animation is deemed to be visible. Put another way, this allows you to specify start and/or end inset (or outset) values that offset the position of the timeline.
+   *
+   * **Syntax**: `[ [ auto | <length-percentage> ]{1,2} ]#`
+   *
+   * **Initial value**: `auto`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/view-timeline-inset
+   */
+  viewTimelineInset?: Property.ViewTimelineInset<TLength> | undefined;
+  /**
+   * The **`view-timeline-name`** CSS property is used to define the name of a _named view progress timeline_, which is progressed through based on the change in visibility of an element (known as the _subject_) inside a scrollable element (_scroller_). `view-timeline` is set on the subject.
+   *
+   * **Syntax**: `none | <dashed-ident>#`
+   *
+   * **Initial value**: `none`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/view-timeline-name
+   */
+  viewTimelineName?: Property.ViewTimelineName | undefined;
+  /**
    * The **`view-transition-name`** CSS property provides the selected element with a distinct identifying name (a `<custom-ident>`) and causes it to participate in a separate view transition from the root view transition — or no view transition if the `none` value is specified.
    *
    * **Syntax**: `none | <custom-ident>`
@@ -4927,7 +5122,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
   /**
    * The **`white-space`** CSS property sets how white space inside an element is handled.
    *
-   * **Syntax**: `normal | pre | nowrap | pre-wrap | pre-line | break-spaces`
+   * **Syntax**: `normal | pre | nowrap | pre-wrap | pre-line | break-spaces | [ <'white-space-collapse'> || <'text-wrap'> || <'white-space-trim'> ]`
    *
    * **Initial value**: `normal`
    *
@@ -4938,6 +5133,26 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * @see https://developer.mozilla.org/docs/Web/CSS/white-space
    */
   whiteSpace?: Property.WhiteSpace | undefined;
+  /**
+   * The **`white-space-collapse`** CSS property controls how white space inside an element is collapsed.
+   *
+   * **Syntax**: `collapse | discard | preserve | preserve-breaks | preserve-spaces | break-spaces`
+   *
+   * **Initial value**: `collapse`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **114** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/white-space-collapse
+   */
+  whiteSpaceCollapse?: Property.WhiteSpaceCollapse | undefined;
+  /**
+   * **Syntax**: `none | discard-before || discard-after || discard-inner`
+   *
+   * **Initial value**: `none`
+   */
+  whiteSpaceTrim?: Property.WhiteSpaceTrim | undefined;
   /**
    * The **`widows`** CSS property sets the minimum number of lines in a block container that must be shown at the _top_ of a page, region, or column.
    *
@@ -5014,6 +5229,10 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    * **Syntax**: `normal | break-word`
    *
    * **Initial value**: `normal`
+   *
+   * | Chrome  | Firefox |  Safari   |  Edge   | IE  |
+   * | :-----: | :-----: | :-------: | :-----: | :-: |
+   * | **≤80** | **≤72** | **≤13.1** | **≤80** | No  |
    */
   wordWrap?: Property.WordWrap | undefined;
   /**
@@ -5054,7 +5273,7 @@ export interface StandardLonghandProperties<TLength = (string & {}) | 0, TTime =
    *
    * | Chrome | Firefox | Safari  |  Edge  |   IE    |
    * | :----: | :-----: | :-----: | :----: | :-----: |
-   * | **1**  |   No    | **3.1** | **12** | **5.5** |
+   * | **1**  |   n/a   | **3.1** | **12** | **5.5** |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/zoom
    */
@@ -5089,6 +5308,18 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    * @see https://developer.mozilla.org/docs/Web/CSS/animation
    */
   animation?: Property.Animation<TTime> | undefined;
+  /**
+   * The **`animation-range`** CSS shorthand property is used to set the start and end of an animation's attachment range along its timeline, i.e. where along the timeline an animation will start and end.
+   *
+   * **Syntax**: `[ <'animation-range-start'> <'animation-range-end'>? ]#`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   No    |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/animation-range
+   */
+  animationRange?: Property.AnimationRange<TLength> | undefined;
   /**
    * The **`background`** shorthand CSS property sets all background style properties at once, such as color, image, origin and size, or repeat method.
    *
@@ -5340,11 +5571,11 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
   /**
    * The **`contain-intrinsic-size`** CSS shorthand property sets the size of an element that a browser will use for layout when the element is subject to size containment.
    *
-   * **Syntax**: `[ none | <length> | auto <length> ]{1,2}`
+   * **Syntax**: `[ auto? [ none | <length> ] ]{1,2}`
    *
    * | Chrome | Firefox | Safari | Edge | IE  |
    * | :----: | :-----: | :----: | :--: | :-: |
-   * | **83** | **107** |   No   | n/a  | No  |
+   * | **83** | **107** | **17** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/contain-intrinsic-size
    */
@@ -5566,9 +5797,10 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    *
    * **Syntax**: `<mask-layer>#`
    *
-   * | Chrome | Firefox | Safari  | Edge  | IE  |
-   * | :----: | :-----: | :-----: | :---: | :-: |
-   * | **1**  |  **2**  | **3.1** | 12-79 | No  |
+   * | Chrome | Firefox |  Safari   | Edge  | IE  |
+   * | :----: | :-----: | :-------: | :---: | :-: |
+   * | **1**  | **53**  | **15.4**  | 12-79 | No  |
+   * |        |         | 3.1 _-x-_ |       |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask
    */
@@ -5578,9 +5810,10 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    *
    * **Syntax**: `<'mask-border-source'> || <'mask-border-slice'> [ / <'mask-border-width'>? [ / <'mask-border-outset'> ]? ]? || <'mask-border-repeat'> || <'mask-border-mode'>`
    *
-   * |              Chrome              | Firefox |               Safari               | Edge | IE  |
-   * | :------------------------------: | :-----: | :--------------------------------: | :--: | :-: |
-   * | **1** _(-webkit-mask-box-image)_ |   No    | **3.1** _(-webkit-mask-box-image)_ | n/a  | No  |
+   * |              Chrome              | Firefox |             Safari             | Edge | IE  |
+   * | :------------------------------: | :-----: | :----------------------------: | :--: | :-: |
+   * | **1** _(-webkit-mask-box-image)_ |   No    |            **17.2**            | n/a  | No  |
+   * |                                  |         | 3.1 _(-webkit-mask-box-image)_ |      |     |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/mask-border
    */
@@ -5616,9 +5849,9 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    *
    * **Syntax**: `[ <'outline-color'> || <'outline-style'> || <'outline-width'> ]`
    *
-   * | Chrome | Firefox | Safari  |  Edge  |  IE   |
-   * | :----: | :-----: | :-----: | :----: | :---: |
-   * | **94** | **88**  | **1.2** | **94** | **8** |
+   * | Chrome | Firefox |  Safari  |  Edge  |  IE   |
+   * | :----: | :-----: | :------: | :----: | :---: |
+   * | **94** | **88**  | **16.4** | **94** | **8** |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/outline
    */
@@ -5741,9 +5974,9 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    *
    * **Syntax**: `<length>{1,2}`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * | **69** | **68**  | **14.1** | n/a  | No  |
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * | **69** | **68**  | **15** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-margin-block
    */
@@ -5753,9 +5986,9 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    *
    * **Syntax**: `<length>{1,2}`
    *
-   * | Chrome | Firefox |  Safari  | Edge | IE  |
-   * | :----: | :-----: | :------: | :--: | :-: |
-   * | **69** | **68**  | **14.1** | n/a  | No  |
+   * | Chrome | Firefox | Safari | Edge | IE  |
+   * | :----: | :-----: | :----: | :--: | :-: |
+   * | **69** | **68**  | **15** | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-margin-inline
    */
@@ -5812,11 +6045,11 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
   /**
    * The **`scroll-timeline`** CSS shorthand property defines a name that can be used to identify the source element of a scroll timeline, along with the scrollbar axis that should provide the timeline.
    *
-   * **Syntax**: `[<'scroll-timeline-name'> <'scroll-timeline-axis'>?]#`
+   * **Syntax**: `[ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#`
    *
-   * | Chrome | Firefox | Safari | Edge | IE  |
-   * | :----: | :-----: | :----: | :--: | :-: |
-   * |   No   |   n/a   |   No   | n/a  | No  |
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/scroll-timeline
    */
@@ -5854,16 +6087,27 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
    * | Chrome  | Firefox |  Safari   |  Edge  |   IE   |
    * | :-----: | :-----: | :-------: | :----: | :----: |
    * | **26**  | **16**  |   **9**   | **12** | **10** |
-   * | 1 _-x-_ | 4 _-x-_ | 3.1 _-x-_ |        |        |
+   * | 1 _-x-_ |         | 3.1 _-x-_ |        |        |
    *
    * @see https://developer.mozilla.org/docs/Web/CSS/transition
    */
   transition?: Property.Transition<TTime> | undefined;
+  /**
+   * The **`view-timeline`** CSS shorthand property is used to define a _named view progress timeline_, which is progressed through based on the change in visibility of an element (known as the _subject_) inside a scrollable element (_scroller_). `view-timeline` is set on the subject.
+   *
+   * **Syntax**: `[ <'view-timeline-name'> <'view-timeline-axis'>? ]#`
+   *
+   * | Chrome  | Firefox | Safari | Edge | IE  |
+   * | :-----: | :-----: | :----: | :--: | :-: |
+   * | **115** |   n/a   |   No   | n/a  | No  |
+   *
+   * @see https://developer.mozilla.org/docs/Web/CSS/view-timeline
+   */
+  viewTimeline?: Property.ViewTimeline | undefined;
 }
 
 export interface StandardProperties<TLength = (string & {}) | 0, TTime = string & {}>
-  extends StandardLonghandProperties<TLength, TTime>, StandardShorthandProperties<TLength, TTime>
-{}
+  extends StandardLonghandProperties<TLength, TTime>, StandardShorthandProperties<TLength, TTime> {}
 
 export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = string & {}> {
   /**
@@ -5938,14 +6182,6 @@ export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = s
    * **Initial value**: `none` (but this value is overridden in the user agent CSS)
    */
   MozAppearance?: Property.MozAppearance | undefined;
-  /**
-   * The **`backface-visibility`** CSS property sets whether the back face of an element is visible when turned towards the user.
-   *
-   * **Syntax**: `visible | hidden`
-   *
-   * **Initial value**: `visible`
-   */
-  MozBackfaceVisibility?: Property.BackfaceVisibility | undefined;
   /**
    * The **`-moz-binding`** CSS property is used by Mozilla-based applications to attach an XBL binding to a DOM element.
    *
@@ -6155,6 +6391,38 @@ export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = s
    */
   MozOsxFontSmoothing?: Property.FontSmooth<TLength> | undefined;
   /**
+   * In Mozilla applications, the **`-moz-outline-radius-bottomleft`** CSS property can be used to round the bottom-left corner of an element's `outline`.
+   *
+   * **Syntax**: `<outline-radius>`
+   *
+   * **Initial value**: `0`
+   */
+  MozOutlineRadiusBottomleft?: Property.MozOutlineRadiusBottomleft<TLength> | undefined;
+  /**
+   * In Mozilla applications, the **`-moz-outline-radius-bottomright`** CSS property can be used to round the bottom-right corner of an element's `outline`.
+   *
+   * **Syntax**: `<outline-radius>`
+   *
+   * **Initial value**: `0`
+   */
+  MozOutlineRadiusBottomright?: Property.MozOutlineRadiusBottomright<TLength> | undefined;
+  /**
+   * In Mozilla applications, the **`-moz-outline-radius-topleft`** CSS property can be used to round the top-left corner of an element's `outline`.
+   *
+   * **Syntax**: `<outline-radius>`
+   *
+   * **Initial value**: `0`
+   */
+  MozOutlineRadiusTopleft?: Property.MozOutlineRadiusTopleft<TLength> | undefined;
+  /**
+   * In Mozilla applications, the **`-moz-outline-radius-topright`** CSS property can be used to round the top-right corner of an element's `outline`.
+   *
+   * **Syntax**: `<outline-radius>`
+   *
+   * **Initial value**: `0`
+   */
+  MozOutlineRadiusTopright?: Property.MozOutlineRadiusTopright<TLength> | undefined;
+  /**
    * The **`padding-inline-end`** CSS property defines the logical inline end padding of an element, which maps to a physical padding depending on the element's writing mode, directionality, and text orientation.
    *
    * **Syntax**: `<'padding-left'>`
@@ -6170,22 +6438,6 @@ export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = s
    * **Initial value**: `0`
    */
   MozPaddingStart?: Property.PaddingInlineStart<TLength> | undefined;
-  /**
-   * The **`perspective`** CSS property determines the distance between the z=0 plane and the user in order to give a 3D-positioned element some perspective.
-   *
-   * **Syntax**: `none | <length>`
-   *
-   * **Initial value**: `none`
-   */
-  MozPerspective?: Property.Perspective<TLength> | undefined;
-  /**
-   * The **`perspective-origin`** CSS property determines the position at which the viewer is looking. It is used as the _vanishing point_ by the `perspective` property.
-   *
-   * **Syntax**: `<position>`
-   *
-   * **Initial value**: `50% 50%`
-   */
-  MozPerspectiveOrigin?: Property.PerspectiveOrigin<TLength> | undefined;
   /**
    * **`-moz-stack-sizing`** is an extended CSS property. Normally, a `<xul:stack>` will change its size so that all of its child elements are completely visible. For example, moving a child of the stack far to the right will widen the stack so the child remains visible.
    *
@@ -6218,54 +6470,6 @@ export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = s
    * **Initial value**: `auto` for smartphone browsers supporting inflation, `none` in other cases (and then not modifiable).
    */
   MozTextSizeAdjust?: Property.TextSizeAdjust | undefined;
-  /**
-   * The **`transform-origin`** CSS property sets the origin for an element's transformations.
-   *
-   * **Syntax**: `[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?`
-   *
-   * **Initial value**: `50% 50% 0`
-   */
-  MozTransformOrigin?: Property.TransformOrigin<TLength> | undefined;
-  /**
-   * The **`transform-style`** CSS property sets whether children of an element are positioned in the 3D space or are flattened in the plane of the element.
-   *
-   * **Syntax**: `flat | preserve-3d`
-   *
-   * **Initial value**: `flat`
-   */
-  MozTransformStyle?: Property.TransformStyle | undefined;
-  /**
-   * The **`transition-delay`** CSS property specifies the duration to wait before starting a property's transition effect when its value changes.
-   *
-   * **Syntax**: `<time>#`
-   *
-   * **Initial value**: `0s`
-   */
-  MozTransitionDelay?: Property.TransitionDelay<TTime> | undefined;
-  /**
-   * The **`transition-duration`** CSS property sets the length of time a transition animation should take to complete. By default, the value is `0s`, meaning that no animation will occur.
-   *
-   * **Syntax**: `<time>#`
-   *
-   * **Initial value**: `0s`
-   */
-  MozTransitionDuration?: Property.TransitionDuration<TTime> | undefined;
-  /**
-   * The **`transition-property`** CSS property sets the CSS properties to which a transition effect should be applied.
-   *
-   * **Syntax**: `none | <single-transition-property>#`
-   *
-   * **Initial value**: all
-   */
-  MozTransitionProperty?: Property.TransitionProperty | undefined;
-  /**
-   * The **`transition-timing-function`** CSS property sets how intermediate values are calculated for CSS properties being affected by a transition effect.
-   *
-   * **Syntax**: `<easing-function>#`
-   *
-   * **Initial value**: `ease`
-   */
-  MozTransitionTimingFunction?: Property.TransitionTimingFunction | undefined;
   /**
    * The **`-moz-user-focus`** CSS property is used to indicate whether an element can have the focus.
    *
@@ -6467,7 +6671,7 @@ export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = s
    */
   msHyphens?: Property.Hyphens | undefined;
   /**
-   * The **`-ms-ime-align`** CSS property is a Microsoft extension aligning the Input Method Editor (IME) candidate window box relative to the element on which the IME composition is active. The extension is implemented in Microsoft Edge and Internet Explorer 11.
+   * The **`-ms-ime-align`** CSS property is a Microsoft extension aligning the Input Method Editor (IME) candidate window box relative to the element on which the IME composition is active. The extension is implemented in Microsoft Edge and Internet Explorer 11.
    *
    * **Syntax**: `auto | after`
    *
@@ -7686,11 +7890,11 @@ export interface VendorShorthandProperties<TLength = (string & {}) | 0, TTime = 
    */
   MozColumns?: Property.Columns<TLength> | undefined;
   /**
-   * The **`transition`** CSS property is a shorthand property for `transition-property`, `transition-duration`, `transition-timing-function`, and `transition-delay`.
+   * In Mozilla applications like Firefox, the **`-moz-outline-radius`** CSS shorthand property can be used to give an element's `outline` rounded corners.
    *
-   * **Syntax**: `<single-transition>#`
+   * **Syntax**: `<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?`
    */
-  MozTransition?: Property.Transition<TTime> | undefined;
+  MozOutlineRadius?: Property.MozOutlineRadius<TLength> | undefined;
   /**
    * The **`-ms-content-zoom-limit`** CSS shorthand property is a Microsoft extension that specifies values for the `-ms-content-zoom-limit-min` and `-ms-content-zoom-limit-max` properties.
    *
@@ -7814,8 +8018,7 @@ export interface VendorShorthandProperties<TLength = (string & {}) | 0, TTime = 
 }
 
 export interface VendorProperties<TLength = (string & {}) | 0, TTime = string & {}>
-  extends VendorLonghandProperties<TLength, TTime>, VendorShorthandProperties<TLength, TTime>
-{}
+  extends VendorLonghandProperties<TLength, TTime>, VendorShorthandProperties<TLength, TTime> {}
 
 export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string & {}> {
   /**
@@ -8183,6 +8386,16 @@ export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string 
    */
   KhtmlUserSelect?: Property.UserSelect | undefined;
   /**
+   * The **`backface-visibility`** CSS property sets whether the back face of an element is visible when turned towards the user.
+   *
+   * **Syntax**: `visible | hidden`
+   *
+   * **Initial value**: `visible`
+   *
+   * @deprecated
+   */
+  MozBackfaceVisibility?: Property.BackfaceVisibility | undefined;
+  /**
    * The **`background-clip`** CSS property sets whether an element's background extends underneath its border box, padding box, or content box.
    *
    * **Syntax**: `<box>#`
@@ -8389,54 +8602,6 @@ export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string 
    */
   MozOutlineColor?: Property.OutlineColor | undefined;
   /**
-   * In Mozilla applications like Firefox, the **`-moz-outline-radius`** CSS shorthand property can be used to give an element's `outline` rounded corners.
-   *
-   * **Syntax**: `<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?`
-   *
-   * @deprecated
-   */
-  MozOutlineRadius?: Property.MozOutlineRadius<TLength> | undefined;
-  /**
-   * In Mozilla applications, the **`-moz-outline-radius-bottomleft`** CSS property can be used to round the bottom-left corner of an element's `outline`.
-   *
-   * **Syntax**: `<outline-radius>`
-   *
-   * **Initial value**: `0`
-   *
-   * @deprecated
-   */
-  MozOutlineRadiusBottomleft?: Property.MozOutlineRadiusBottomleft<TLength> | undefined;
-  /**
-   * In Mozilla applications, the **`-moz-outline-radius-bottomright`** CSS property can be used to round the bottom-right corner of an element's `outline`.
-   *
-   * **Syntax**: `<outline-radius>`
-   *
-   * **Initial value**: `0`
-   *
-   * @deprecated
-   */
-  MozOutlineRadiusBottomright?: Property.MozOutlineRadiusBottomright<TLength> | undefined;
-  /**
-   * In Mozilla applications, the **`-moz-outline-radius-topleft`** CSS property can be used to round the top-left corner of an element's `outline`.
-   *
-   * **Syntax**: `<outline-radius>`
-   *
-   * **Initial value**: `0`
-   *
-   * @deprecated
-   */
-  MozOutlineRadiusTopleft?: Property.MozOutlineRadiusTopleft<TLength> | undefined;
-  /**
-   * In Mozilla applications, the **`-moz-outline-radius-topright`** CSS property can be used to round the top-right corner of an element's `outline`.
-   *
-   * **Syntax**: `<outline-radius>`
-   *
-   * **Initial value**: `0`
-   *
-   * @deprecated
-   */
-  MozOutlineRadiusTopright?: Property.MozOutlineRadiusTopright<TLength> | undefined;
-  /**
    * The **`outline-style`** CSS property sets the style of an element's outline. An outline is a line that is drawn around an element, outside the `border`.
    *
    * **Syntax**: `auto | <'border-style'>`
@@ -8456,6 +8621,26 @@ export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string 
    * @deprecated
    */
   MozOutlineWidth?: Property.OutlineWidth<TLength> | undefined;
+  /**
+   * The **`perspective`** CSS property determines the distance between the z=0 plane and the user in order to give a 3D-positioned element some perspective.
+   *
+   * **Syntax**: `none | <length>`
+   *
+   * **Initial value**: `none`
+   *
+   * @deprecated
+   */
+  MozPerspective?: Property.Perspective<TLength> | undefined;
+  /**
+   * The **`perspective-origin`** CSS property determines the position at which the viewer is looking. It is used as the _vanishing point_ by the `perspective` property.
+   *
+   * **Syntax**: `<position>`
+   *
+   * **Initial value**: `50% 50%`
+   *
+   * @deprecated
+   */
+  MozPerspectiveOrigin?: Property.PerspectiveOrigin<TLength> | undefined;
   /**
    * The **`text-align-last`** CSS property sets how the last line of a block or a line, right before a forced line break, is aligned.
    *
@@ -8496,6 +8681,84 @@ export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string 
    * @deprecated
    */
   MozTextDecorationStyle?: Property.TextDecorationStyle | undefined;
+  /**
+   * The **`transform`** CSS property lets you rotate, scale, skew, or translate an element. It modifies the coordinate space of the CSS visual formatting model.
+   *
+   * **Syntax**: `none | <transform-list>`
+   *
+   * **Initial value**: `none`
+   *
+   * @deprecated
+   */
+  MozTransform?: Property.Transform | undefined;
+  /**
+   * The **`transform-origin`** CSS property sets the origin for an element's transformations.
+   *
+   * **Syntax**: `[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?`
+   *
+   * **Initial value**: `50% 50% 0`
+   *
+   * @deprecated
+   */
+  MozTransformOrigin?: Property.TransformOrigin<TLength> | undefined;
+  /**
+   * The **`transform-style`** CSS property sets whether children of an element are positioned in the 3D space or are flattened in the plane of the element.
+   *
+   * **Syntax**: `flat | preserve-3d`
+   *
+   * **Initial value**: `flat`
+   *
+   * @deprecated
+   */
+  MozTransformStyle?: Property.TransformStyle | undefined;
+  /**
+   * The **`transition`** CSS property is a shorthand property for `transition-property`, `transition-duration`, `transition-timing-function`, and `transition-delay`.
+   *
+   * **Syntax**: `<single-transition>#`
+   *
+   * @deprecated
+   */
+  MozTransition?: Property.Transition<TTime> | undefined;
+  /**
+   * The **`transition-delay`** CSS property specifies the duration to wait before starting a property's transition effect when its value changes.
+   *
+   * **Syntax**: `<time>#`
+   *
+   * **Initial value**: `0s`
+   *
+   * @deprecated
+   */
+  MozTransitionDelay?: Property.TransitionDelay<TTime> | undefined;
+  /**
+   * The **`transition-duration`** CSS property sets the length of time a transition animation should take to complete. By default, the value is `0s`, meaning that no animation will occur.
+   *
+   * **Syntax**: `<time>#`
+   *
+   * **Initial value**: `0s`
+   *
+   * @deprecated
+   */
+  MozTransitionDuration?: Property.TransitionDuration<TTime> | undefined;
+  /**
+   * The **`transition-property`** CSS property sets the CSS properties to which a transition effect should be applied.
+   *
+   * **Syntax**: `none | <single-transition-property>#`
+   *
+   * **Initial value**: all
+   *
+   * @deprecated
+   */
+  MozTransitionProperty?: Property.TransitionProperty | undefined;
+  /**
+   * The **`transition-timing-function`** CSS property sets how intermediate values are calculated for CSS properties being affected by a transition effect.
+   *
+   * **Syntax**: `<easing-function>#`
+   *
+   * **Initial value**: `ease`
+   *
+   * @deprecated
+   */
+  MozTransitionTimingFunction?: Property.TransitionTimingFunction | undefined;
   /**
    * In Mozilla applications, **`-moz-user-input`** determines if an element will accept user input.
    *
@@ -8810,26 +9073,6 @@ export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string 
    * @deprecated
    */
   WebkitBoxPack?: Property.BoxPack | undefined;
-  /**
-   * The **`scroll-snap-points-x`** CSS property defines the horizontal positioning of snap points within the content of the scroll container they are applied to.
-   *
-   * **Syntax**: `none | repeat( <length-percentage> )`
-   *
-   * **Initial value**: `none`
-   *
-   * @deprecated
-   */
-  WebkitScrollSnapPointsX?: Property.ScrollSnapPointsX | undefined;
-  /**
-   * The **`scroll-snap-points-y`** CSS property defines the vertical positioning of snap points within the content of the scroll container they are applied to.
-   *
-   * **Syntax**: `none | repeat( <length-percentage> )`
-   *
-   * **Initial value**: `none`
-   *
-   * @deprecated
-   */
-  WebkitScrollSnapPointsY?: Property.ScrollSnapPointsY | undefined;
 }
 
 export interface SvgProperties<TLength = (string & {}) | 0, TTime = string & {}> {
@@ -8900,8 +9143,7 @@ export interface Properties<TLength = (string & {}) | 0, TTime = string & {}>
     StandardProperties<TLength, TTime>,
     VendorProperties<TLength, TTime>,
     ObsoleteProperties<TLength, TTime>,
-    SvgProperties<TLength, TTime>
-{}
+    SvgProperties<TLength, TTime> {}
 
 export type AtRules =
   | "@charset"
@@ -8917,7 +9159,9 @@ export type AtRules =
   | "@namespace"
   | "@page"
   | "@property"
+  | "@scope"
   | "@scroll-timeline"
+  | "@starting-style"
   | "@supports"
   | "@viewport";
 
@@ -9075,6 +9319,7 @@ export type HtmlAttributes =
   | "[alt]"
   | "[archive]"
   | "[async]"
+  | "[attributionsrc]"
   | "[autobuffer]"
   | "[autocapitalize]"
   | "[autocomplete]"
@@ -9084,8 +9329,10 @@ export type HtmlAttributes =
   | "[background]"
   | "[behavior]"
   | "[bgcolor]"
+  | "[blocking]"
   | "[border]"
   | "[bottommargin]"
+  | "[browsingtopics]"
   | "[capture]"
   | "[cellpadding]"
   | "[cellspacing]"
@@ -9097,7 +9344,6 @@ export type HtmlAttributes =
   | "[class]"
   | "[classid]"
   | "[clear]"
-  | "[code]"
   | "[codebase]"
   | "[codetype]"
   | "[color]"
@@ -9112,8 +9358,6 @@ export type HtmlAttributes =
   | "[credentialless]"
   | "[crossorigin]"
   | "[data]"
-  | "[datafld]"
-  | "[datasrc]"
   | "[datetime]"
   | "[declare]"
   | "[decoding]"
@@ -9176,13 +9420,13 @@ export type HtmlAttributes =
   | "[marginwidth]"
   | "[max]"
   | "[maxlength]"
-  | "[mayscript]"
   | "[media]"
   | "[method]"
   | "[methods]"
   | "[min]"
   | "[minlength]"
   | "[moz-opaque]"
+  | "[mozactionhint]"
   | "[mozallowfullscreen]"
   | "[msallowfullscreen]"
   | "[multiple]"
@@ -9195,7 +9439,6 @@ export type HtmlAttributes =
   | "[noshade]"
   | "[novalidate]"
   | "[nowrap]"
-  | "[object]"
   | "[onerror]"
   | "[open]"
   | "[optimum]"
@@ -9203,8 +9446,10 @@ export type HtmlAttributes =
   | "[pattern]"
   | "[ping]"
   | "[placeholder]"
+  | "[popover]"
+  | "[popovertarget]"
+  | "[popovertargetaction]"
   | "[poster]"
-  | "[prefetch]"
   | "[preload]"
   | "[profile]"
   | "[readonly]"
@@ -9217,14 +9462,6 @@ export type HtmlAttributes =
   | "[rows]"
   | "[rowspan]"
   | "[rules]"
-  | "[sandbox-allow-downloads]"
-  | "[sandbox-allow-modals]"
-  | "[sandbox-allow-popups-to-escape-sandbox]"
-  | "[sandbox-allow-popups]"
-  | "[sandbox-allow-presentation]"
-  | "[sandbox-allow-same-origin]"
-  | "[sandbox-allow-storage-access-by-user-activation]"
-  | "[sandbox-allow-top-navigation-by-user-activation]"
   | "[sandbox]"
   | "[scope]"
   | "[scrollamount]"
@@ -9278,6 +9515,7 @@ export type SvgAttributes =
   | "[animation]"
   | "[arabic-form]"
   | "[ascent]"
+  | "[async]"
   | "[attributeName]"
   | "[attributeType]"
   | "[azimuth]"
@@ -9300,10 +9538,13 @@ export type SvgAttributes =
   | "[color]"
   | "[contentScriptType]"
   | "[contentStyleType]"
+  | "[crossorigin]"
   | "[cursor]"
   | "[cx]"
   | "[cy]"
   | "[d]"
+  | "[decoding]"
+  | "[defer]"
   | "[descent]"
   | "[diffuseConstant]"
   | "[direction]"
@@ -9514,25 +9755,13 @@ export type Globals = "-moz-initial" | "inherit" | "initial" | "revert" | "rever
 export namespace Property {
   export type AccentColor = Globals | DataType.Color | "auto";
 
-  export type AlignContent =
-    | Globals
-    | DataType.ContentDistribution
-    | DataType.ContentPosition
-    | "baseline"
-    | "normal"
-    | (string & {});
+  export type AlignContent = Globals | DataType.ContentDistribution | DataType.ContentPosition | "baseline" | "normal" | (string & {});
 
   export type AlignItems = Globals | DataType.SelfPosition | "baseline" | "normal" | "stretch" | (string & {});
 
   export type AlignSelf = Globals | DataType.SelfPosition | "auto" | "baseline" | "normal" | "stretch" | (string & {});
 
-  export type AlignTracks =
-    | Globals
-    | DataType.ContentDistribution
-    | DataType.ContentPosition
-    | "baseline"
-    | "normal"
-    | (string & {});
+  export type AlignTracks = Globals | DataType.ContentDistribution | DataType.ContentPosition | "baseline" | "normal" | (string & {});
 
   export type All = Globals;
 
@@ -9553,6 +9782,12 @@ export namespace Property {
   export type AnimationName = Globals | "none" | (string & {});
 
   export type AnimationPlayState = Globals | "paused" | "running" | (string & {});
+
+  export type AnimationRange<TLength = (string & {}) | 0> = Globals | DataType.TimelineRangeName | TLength | "normal" | (string & {});
+
+  export type AnimationRangeEnd<TLength = (string & {}) | 0> = Globals | DataType.TimelineRangeName | TLength | "normal" | (string & {});
+
+  export type AnimationRangeStart<TLength = (string & {}) | 0> = Globals | DataType.TimelineRangeName | TLength | "normal" | (string & {});
 
   export type AnimationTimeline = Globals | DataType.SingleAnimationTimeline | (string & {});
 
@@ -9630,7 +9865,6 @@ export namespace Property {
     | "-moz-fit-content"
     | "-moz-max-content"
     | "-moz-min-content"
-    | "-webkit-fill-available"
     | "auto"
     | "fit-content"
     | "max-content"
@@ -9718,12 +9952,7 @@ export namespace Property {
 
   export type BorderImageSource = Globals | "none" | (string & {});
 
-  export type BorderImageWidth<TLength = (string & {}) | 0> =
-    | Globals
-    | TLength
-    | "auto"
-    | (string & {})
-    | (number & {});
+  export type BorderImageWidth<TLength = (string & {}) | 0> = Globals | TLength | "auto" | (string & {}) | (number & {});
 
   export type BorderInline<TLength = (string & {}) | 0> =
     | Globals
@@ -9924,17 +10153,7 @@ export namespace Property {
 
   export type Columns<TLength = (string & {}) | 0> = Globals | TLength | "auto" | (string & {}) | (number & {});
 
-  export type Contain =
-    | Globals
-    | "content"
-    | "inline-size"
-    | "layout"
-    | "none"
-    | "paint"
-    | "size"
-    | "strict"
-    | "style"
-    | (string & {});
+  export type Contain = Globals | "content" | "inline-size" | "layout" | "none" | "paint" | "size" | "strict" | "style" | (string & {});
 
   export type ContainIntrinsicBlockSize<TLength = (string & {}) | 0> = Globals | TLength | "none" | (string & {});
 
@@ -10049,16 +10268,7 @@ export namespace Property {
 
   export type FlexDirection = Globals | "column" | "column-reverse" | "row" | "row-reverse";
 
-  export type FlexFlow =
-    | Globals
-    | "column"
-    | "column-reverse"
-    | "nowrap"
-    | "row"
-    | "row-reverse"
-    | "wrap"
-    | "wrap-reverse"
-    | (string & {});
+  export type FlexFlow = Globals | "column" | "column-reverse" | "nowrap" | "row" | "row-reverse" | "wrap" | "wrap-reverse" | (string & {});
 
   export type FlexGrow = Globals | (number & {}) | (string & {});
 
@@ -10068,15 +10278,7 @@ export namespace Property {
 
   export type Float = Globals | "inline-end" | "inline-start" | "left" | "none" | "right";
 
-  export type Font =
-    | Globals
-    | "caption"
-    | "icon"
-    | "menu"
-    | "message-box"
-    | "small-caption"
-    | "status-bar"
-    | (string & {});
+  export type Font = Globals | "caption" | "icon" | "menu" | "message-box" | "small-caption" | "status-bar" | (string & {});
 
   export type FontFamily = Globals | DataType.GenericFamily | (string & {});
 
@@ -10090,29 +10292,25 @@ export namespace Property {
 
   export type FontPalette = Globals | "dark" | "light" | "normal" | (string & {});
 
-  export type FontSize<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.AbsoluteSize
-    | TLength
-    | "larger"
-    | "smaller"
-    | (string & {});
+  export type FontSize<TLength = (string & {}) | 0> = Globals | DataType.AbsoluteSize | TLength | "larger" | "smaller" | (string & {});
 
   export type FontSizeAdjust = Globals | "from-font" | "none" | (string & {}) | (number & {});
 
-  export type FontSmooth<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.AbsoluteSize
-    | TLength
-    | "always"
-    | "auto"
-    | "never";
+  export type FontSmooth<TLength = (string & {}) | 0> = Globals | DataType.AbsoluteSize | TLength | "always" | "auto" | "never";
 
   export type FontStretch = Globals | DataType.FontStretchAbsolute;
 
   export type FontStyle = Globals | "italic" | "normal" | "oblique" | (string & {});
 
-  export type FontSynthesis = Globals | "none" | "small-caps" | "style" | "weight" | (string & {});
+  export type FontSynthesis = Globals | "none" | "position" | "small-caps" | "style" | "weight" | (string & {});
+
+  export type FontSynthesisPosition = Globals | "auto" | "none";
+
+  export type FontSynthesisSmallCaps = Globals | "auto" | "none";
+
+  export type FontSynthesisStyle = Globals | "auto" | "none";
+
+  export type FontSynthesisWeight = Globals | "auto" | "none";
 
   export type FontVariant =
     | Globals
@@ -10246,12 +10444,7 @@ export namespace Property {
     | "subgrid"
     | (string & {});
 
-  export type GridTemplateRows<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.TrackBreadth<TLength>
-    | "none"
-    | "subgrid"
-    | (string & {});
+  export type GridTemplateRows<TLength = (string & {}) | 0> = Globals | DataType.TrackBreadth<TLength> | "none" | "subgrid" | (string & {});
 
   export type HangingPunctuation = Globals | "allow-end" | "first" | "force-end" | "last" | "none" | (string & {});
 
@@ -10275,13 +10468,7 @@ export namespace Property {
 
   export type ImageOrientation = Globals | "flip" | "from-image" | (string & {});
 
-  export type ImageRendering =
-    | Globals
-    | "-moz-crisp-edges"
-    | "-webkit-optimize-contrast"
-    | "auto"
-    | "crisp-edges"
-    | "pixelated";
+  export type ImageRendering = Globals | "-moz-crisp-edges" | "-webkit-optimize-contrast" | "auto" | "crisp-edges" | "pixelated";
 
   export type ImageResolution = Globals | "from-image" | (string & {});
 
@@ -10340,16 +10527,7 @@ export namespace Property {
     | "stretch"
     | (string & {});
 
-  export type JustifySelf =
-    | Globals
-    | DataType.SelfPosition
-    | "auto"
-    | "baseline"
-    | "left"
-    | "normal"
-    | "right"
-    | "stretch"
-    | (string & {});
+  export type JustifySelf = Globals | DataType.SelfPosition | "auto" | "baseline" | "left" | "normal" | "right" | "stretch" | (string & {});
 
   export type JustifyTracks =
     | Globals
@@ -10447,6 +10625,8 @@ export namespace Property {
   export type MaskSize<TLength = (string & {}) | 0> = Globals | DataType.BgSize<TLength> | (string & {});
 
   export type MaskType = Globals | "alpha" | "luminance";
+
+  export type MasonryAutoFlow = Globals | "definite-first" | "next" | "ordered" | "pack" | (string & {});
 
   export type MathDepth = Globals | "auto-add" | (string & {}) | (number & {});
 
@@ -10574,17 +10754,11 @@ export namespace Property {
 
   export type MixBlendMode = Globals | DataType.BlendMode | "plus-lighter";
 
-  export type Offset<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.Position<TLength>
-    | DataType.GeometryBox
-    | "auto"
-    | "none"
-    | (string & {});
+  export type Offset<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength> | "auto" | "none" | "normal" | (string & {});
 
   export type OffsetDistance<TLength = (string & {}) | 0> = Globals | TLength | (string & {});
 
-  export type OffsetPath = Globals | DataType.GeometryBox | "none" | (string & {});
+  export type OffsetPath = Globals | "none" | (string & {});
 
   export type OffsetRotate = Globals | "auto" | "reverse" | (string & {});
 
@@ -10594,7 +10768,7 @@ export namespace Property {
 
   export type OffsetAnchor<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength> | "auto";
 
-  export type OffsetPosition<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength> | "auto";
+  export type OffsetPosition<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength> | "auto" | "normal";
 
   export type Opacity = Globals | (string & {}) | (number & {});
 
@@ -10619,15 +10793,7 @@ export namespace Property {
 
   export type OutlineWidth<TLength = (string & {}) | 0> = Globals | DataType.LineWidth<TLength>;
 
-  export type Overflow =
-    | Globals
-    | "-moz-hidden-unscrollable"
-    | "auto"
-    | "clip"
-    | "hidden"
-    | "scroll"
-    | "visible"
-    | (string & {});
+  export type Overflow = Globals | "-moz-hidden-unscrollable" | "auto" | "clip" | "hidden" | "scroll" | "visible" | (string & {});
 
   export type OverflowAnchor = Globals | "auto" | "none";
 
@@ -10644,6 +10810,8 @@ export namespace Property {
   export type OverflowX = Globals | "-moz-hidden-unscrollable" | "auto" | "clip" | "hidden" | "scroll" | "visible";
 
   export type OverflowY = Globals | "-moz-hidden-unscrollable" | "auto" | "clip" | "hidden" | "scroll" | "visible";
+
+  export type Overlay = Globals | "auto" | "none";
 
   export type OverscrollBehavior = Globals | "auto" | "contain" | "none" | (string & {});
 
@@ -10691,13 +10859,7 @@ export namespace Property {
 
   export type PerspectiveOrigin<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength>;
 
-  export type PlaceContent =
-    | Globals
-    | DataType.ContentDistribution
-    | DataType.ContentPosition
-    | "baseline"
-    | "normal"
-    | (string & {});
+  export type PlaceContent = Globals | DataType.ContentDistribution | DataType.ContentPosition | "baseline" | "normal" | (string & {});
 
   export type PlaceItems = Globals | DataType.SelfPosition | "baseline" | "normal" | "stretch" | (string & {});
 
@@ -10785,11 +10947,7 @@ export namespace Property {
 
   export type ScrollSnapAlign = Globals | "center" | "end" | "none" | "start" | (string & {});
 
-  export type ScrollSnapCoordinate<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.Position<TLength>
-    | "none"
-    | (string & {});
+  export type ScrollSnapCoordinate<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength> | "none" | (string & {});
 
   export type ScrollSnapDestination<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength>;
 
@@ -10807,7 +10965,7 @@ export namespace Property {
 
   export type ScrollTimeline = Globals | "none" | (string & {});
 
-  export type ScrollTimelineAxis = Globals | "block" | "horizontal" | "inline" | "vertical" | (string & {});
+  export type ScrollTimelineAxis = Globals | "block" | "inline" | "x" | "y" | (string & {});
 
   export type ScrollTimelineName = Globals | "none" | (string & {});
 
@@ -10827,7 +10985,7 @@ export namespace Property {
 
   export type TableLayout = Globals | "auto" | "fixed";
 
-  export type TextAlign = Globals | "center" | "end" | "justify" | "left" | "match-parent" | "right" | "start";
+  export type TextAlign = Globals | "-webkit-match-parent" | "center" | "end" | "justify" | "left" | "match-parent" | "right" | "start";
 
   export type TextAlignLast = Globals | "auto" | "center" | "end" | "justify" | "left" | "right" | "start";
 
@@ -10881,12 +11039,7 @@ export namespace Property {
 
   export type TextDecorationStyle = Globals | "dashed" | "dotted" | "double" | "solid" | "wavy";
 
-  export type TextDecorationThickness<TLength = (string & {}) | 0> =
-    | Globals
-    | TLength
-    | "auto"
-    | "from-font"
-    | (string & {});
+  export type TextDecorationThickness<TLength = (string & {}) | 0> = Globals | TLength | "auto" | "from-font" | (string & {});
 
   export type TextEmphasis =
     | Globals
@@ -10931,18 +11084,15 @@ export namespace Property {
 
   export type TextSizeAdjust = Globals | "auto" | "none" | (string & {});
 
-  export type TextTransform =
-    | Globals
-    | "capitalize"
-    | "full-size-kana"
-    | "full-width"
-    | "lowercase"
-    | "none"
-    | "uppercase";
+  export type TextTransform = Globals | "capitalize" | "full-size-kana" | "full-width" | "lowercase" | "none" | "uppercase";
 
   export type TextUnderlineOffset<TLength = (string & {}) | 0> = Globals | TLength | "auto" | (string & {});
 
   export type TextUnderlinePosition = Globals | "auto" | "from-font" | "left" | "right" | "under" | (string & {});
+
+  export type TextWrap = Globals | "balance" | "nowrap" | "pretty" | "stable" | "wrap";
+
+  export type TimelineScope = Globals | "none" | (string & {});
 
   export type Top<TLength = (string & {}) | 0> = Globals | TLength | "auto" | (string & {});
 
@@ -10980,6 +11130,8 @@ export namespace Property {
   export type TransformStyle = Globals | "flat" | "preserve-3d";
 
   export type Transition<TTime = string & {}> = Globals | DataType.SingleTransition<TTime> | (string & {});
+
+  export type TransitionBehavior = Globals | "allow-discrete" | "normal" | (string & {});
 
   export type TransitionDelay<TTime = string & {}> = Globals | TTime | (string & {});
 
@@ -11021,6 +11173,14 @@ export namespace Property {
     | "top"
     | (string & {});
 
+  export type ViewTimeline = Globals | "none" | (string & {});
+
+  export type ViewTimelineAxis = Globals | "block" | "inline" | "x" | "y" | (string & {});
+
+  export type ViewTimelineInset<TLength = (string & {}) | 0> = Globals | TLength | "auto" | (string & {});
+
+  export type ViewTimelineName = Globals | "none" | (string & {});
+
   export type ViewTransitionName = Globals | "none" | (string & {});
 
   export type Visibility = Globals | "collapse" | "hidden" | "visible";
@@ -11028,12 +11188,30 @@ export namespace Property {
   export type WhiteSpace =
     | Globals
     | "-moz-pre-wrap"
+    | "balance"
     | "break-spaces"
+    | "collapse"
+    | "discard"
+    | "discard-after"
+    | "discard-before"
+    | "discard-inner"
+    | "none"
     | "normal"
     | "nowrap"
     | "pre"
     | "pre-line"
-    | "pre-wrap";
+    | "pre-wrap"
+    | "preserve"
+    | "preserve-breaks"
+    | "preserve-spaces"
+    | "pretty"
+    | "stable"
+    | "wrap"
+    | (string & {});
+
+  export type WhiteSpaceCollapse = Globals | "break-spaces" | "collapse" | "discard" | "preserve" | "preserve-breaks" | "preserve-spaces";
+
+  export type WhiteSpaceTrim = Globals | "discard-after" | "discard-before" | "discard-inner" | "none" | (string & {});
 
   export type Widows = Globals | (number & {}) | (string & {});
 
@@ -11190,14 +11368,7 @@ export namespace Property {
 
   export type MozBorderTopColors = Globals | DataType.Color | "none" | (string & {});
 
-  export type MozContextProperties =
-    | Globals
-    | "fill"
-    | "fill-opacity"
-    | "none"
-    | "stroke"
-    | "stroke-opacity"
-    | (string & {});
+  export type MozContextProperties = Globals | "fill" | "fill-opacity" | "none" | "stroke" | "stroke-opacity" | (string & {});
 
   export type MozFloatEdge = Globals | "border-box" | "content-box" | "margin-box" | "padding-box";
 
@@ -11266,17 +11437,9 @@ export namespace Property {
 
   export type MsFlowInto = Globals | "none" | (string & {});
 
-  export type MsGridColumns<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.TrackBreadth<TLength>
-    | "none"
-    | (string & {});
+  export type MsGridColumns<TLength = (string & {}) | 0> = Globals | DataType.TrackBreadth<TLength> | "none" | (string & {});
 
-  export type MsGridRows<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.TrackBreadth<TLength>
-    | "none"
-    | (string & {});
+  export type MsGridRows<TLength = (string & {}) | 0> = Globals | DataType.TrackBreadth<TLength> | "none" | (string & {});
 
   export type MsHighContrastAdjust = Globals | "auto" | "none";
 
@@ -11332,13 +11495,7 @@ export namespace Property {
 
   export type MsScrollbarTrackColor = Globals | DataType.Color;
 
-  export type MsTextAutospace =
-    | Globals
-    | "ideograph-alpha"
-    | "ideograph-numeric"
-    | "ideograph-parenthesis"
-    | "ideograph-space"
-    | "none";
+  export type MsTextAutospace = Globals | "ideograph-alpha" | "ideograph-numeric" | "ideograph-parenthesis" | "ideograph-space" | "none";
 
   export type MsTouchSelect = Globals | "grippers" | "none";
 
@@ -11413,19 +11570,9 @@ export namespace Property {
 
   export type WebkitBorderBeforeStyle = Globals | DataType.LineStyle | (string & {});
 
-  export type WebkitBorderBeforeWidth<TLength = (string & {}) | 0> =
-    | Globals
-    | DataType.LineWidth<TLength>
-    | (string & {});
+  export type WebkitBorderBeforeWidth<TLength = (string & {}) | 0> = Globals | DataType.LineWidth<TLength> | (string & {});
 
-  export type WebkitBoxReflect<TLength = (string & {}) | 0> =
-    | Globals
-    | TLength
-    | "above"
-    | "below"
-    | "left"
-    | "right"
-    | (string & {});
+  export type WebkitBoxReflect<TLength = (string & {}) | 0> = Globals | TLength | "above" | "below" | "left" | "right" | (string & {});
 
   export type WebkitLineClamp = Globals | "none" | (number & {}) | (string & {});
 
@@ -11453,21 +11600,9 @@ export namespace Property {
 
   export type WebkitMaskPosition<TLength = (string & {}) | 0> = Globals | DataType.Position<TLength> | (string & {});
 
-  export type WebkitMaskPositionX<TLength = (string & {}) | 0> =
-    | Globals
-    | TLength
-    | "center"
-    | "left"
-    | "right"
-    | (string & {});
+  export type WebkitMaskPositionX<TLength = (string & {}) | 0> = Globals | TLength | "center" | "left" | "right" | (string & {});
 
-  export type WebkitMaskPositionY<TLength = (string & {}) | 0> =
-    | Globals
-    | TLength
-    | "bottom"
-    | "center"
-    | "top"
-    | (string & {});
+  export type WebkitMaskPositionY<TLength = (string & {}) | 0> = Globals | TLength | "bottom" | "center" | "top" | (string & {});
 
   export type WebkitMaskRepeat = Globals | DataType.RepeatStyle | (string & {});
 
@@ -11508,13 +11643,7 @@ export namespace Property {
     | "text-after-edge"
     | "text-before-edge";
 
-  export type BaselineShift<TLength = (string & {}) | 0> =
-    | Globals
-    | TLength
-    | "baseline"
-    | "sub"
-    | "super"
-    | (string & {});
+  export type BaselineShift<TLength = (string & {}) | 0> = Globals | TLength | "baseline" | "sub" | "super" | (string & {});
 
   export type ClipRule = Globals | "evenodd" | "nonzero";
 
@@ -11853,16 +11982,7 @@ export namespace DataType {
     | "WindowFrame"
     | "WindowText";
 
-  type DisplayInside =
-    | "-ms-flexbox"
-    | "-ms-grid"
-    | "-webkit-flex"
-    | "flex"
-    | "flow"
-    | "flow-root"
-    | "grid"
-    | "ruby"
-    | "table";
+  type DisplayInside = "-ms-flexbox" | "-ms-grid" | "-webkit-flex" | "flex" | "flow" | "flow-root" | "grid" | "ruby" | "table";
 
   type DisplayInternal =
     | "ruby-base"
@@ -11908,7 +12028,7 @@ export namespace DataType {
     | "ultra-expanded"
     | (string & {});
 
-  type FontWeightAbsolute = "bold" | "normal" | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | (string & {});
+  type FontWeightAbsolute = "bold" | "normal" | (number & {}) | (string & {});
 
   type GenericFamily = "cursive" | "fantasy" | "monospace" | "sans-serif" | "serif";
 
@@ -11916,17 +12036,7 @@ export namespace DataType {
 
   type GridLine = "auto" | (string & {}) | (number & {});
 
-  type LineStyle =
-    | "dashed"
-    | "dotted"
-    | "double"
-    | "groove"
-    | "hidden"
-    | "inset"
-    | "none"
-    | "outset"
-    | "ridge"
-    | "solid";
+  type LineStyle = "dashed" | "dotted" | "double" | "groove" | "hidden" | "inset" | "none" | "outset" | "ridge" | "solid";
 
   type LineWidth<TLength> = TLength | "medium" | "thick" | "thin";
 
@@ -12109,6 +12219,7 @@ export namespace DataType {
     | EasingFunction
     | SingleAnimationDirection
     | SingleAnimationFillMode
+    | SingleAnimationTimeline
     | TTime
     | "infinite"
     | "none"
@@ -12125,9 +12236,11 @@ export namespace DataType {
 
   type SingleAnimationTimeline = "auto" | "none" | (string & {});
 
-  type SingleTransition<TTime> = EasingFunction | TTime | "all" | "none" | (string & {});
+  type SingleTransition<TTime> = EasingFunction | TTime | "all" | "allow-discrete" | "none" | "normal" | (string & {});
 
   type StepTimingFunction = "step-end" | "step-start" | (string & {});
+
+  type TimelineRangeName = "contain" | "cover" | "entry" | "entry-crossing" | "exit" | "exit-crossing";
 
   type TrackBreadth<TLength> = TLength | "auto" | "max-content" | "min-content" | (string & {});
 
