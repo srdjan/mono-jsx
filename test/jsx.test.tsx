@@ -12,6 +12,14 @@ Deno.test("[jsx] jsx transform", () => {
     ],
   );
   assertEquals(
+    <h1 class={["title", "h1"]} style={{ fontSize: 24, fontFamily: "serif", ":hover": {} }}>Hello world!</h1> as VNode,
+    [
+      "h1",
+      { children: "Hello world!" },
+      $vnode,
+    ],
+  );
+  assertEquals(
     <span>{1}/{false}{[<i key={1} />, <i key={2} />]}</span> as VNode,
     [
       "span",

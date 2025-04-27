@@ -105,8 +105,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         if (tag === $computed) {
           const { deps, value, fn } = props;
           write(
-            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps))
-              + ")</script>",
+            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) +
+              ")</script>",
           );
           if (value !== undefined) {
             write(escapeHTML("" + value));
@@ -430,9 +430,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           if (onMountHandler) {
             ctx.index.mf++;
             write(
-              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,'
-                + onMountHandler.toString()
-                + ',"' + fcIndex + '"))}</script>',
+              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,' +
+                onMountHandler.toString() +
+                ',"' + fcIndex + '"))}</script>',
             );
           }
         }
@@ -567,9 +567,9 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
               js += RUNTIME_COMPONENTS_JS.styleToCSS;
             }
             js += RUNTIME_STATE_JS;
-            js += "for(let[k,v]of"
-              + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
-              + ")$defineState(k,v);";
+            js += "for(let[k,v]of" +
+              JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e)) +
+              ")$defineState(k,v);";
           }
           if (ctx.index.mf > 0) {
             js += RUNTIME_COMPONENTS_JS.event;

@@ -254,7 +254,7 @@ Deno.test("[runtime] <switch> element", { sanitizeResources: false, sanitizeOps:
 Deno.test("[runtime] 'mount' handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testPageUrl = addTestPage(
     <div
-      onMount={e => {
+      onMount={(e) => {
         e.target.innerHTML = "<h1>Hello world!</h1>";
       }}
     />,
@@ -275,7 +275,7 @@ Deno.test("[runtime] 'action' handler", { sanitizeResources: false, sanitizeOps:
     <>
       <p></p>
       <form
-        action={data => {
+        action={(data) => {
           const p: HTMLElement = document.querySelector("p")!;
           p.textContent = data.get("name")! as string;
         }}

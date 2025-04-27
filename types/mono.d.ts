@@ -8,8 +8,8 @@ type Num0_100 = 0 | Num1_9 | `${Num1_9}${0 | Num1_9}` | 100;
 export interface BaseCSSProperties extends CSS.Properties<string | number> {}
 
 export interface AtRuleCSSProperties {
-  [key: `@media${" " | "("}${string}`]: BaseCSSProperties;
   [key: `@container${" " | "("}${string}`]: BaseCSSProperties;
+  [key: `@media${" " | "("}${string}`]: BaseCSSProperties;
   [key: `@supports${" " | "("}${string}`]: BaseCSSProperties;
   [key: `@keyframes ${string}`]: {
     [key in "from" | "to" | `${Num0_100}%`]?: BaseCSSProperties;

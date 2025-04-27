@@ -29,9 +29,8 @@ async function buildRuntimeComponent(name: string): Promise<string> {
   if (ret.errors.length > 0) {
     throw new Error(ret.errors[0].text);
   }
-  return "var " + name + "=(()=>{"
-    + ret.outputFiles[0].text.trim().replace(/export\{(\w+) as (\w+)\};$/, "return $1;")
-    + "})();";
+  const js = ret.outputFiles[0].text.trim().replace(/export\{(\w+) as (\w+)\};$/, "return $1;");
+  return "var " + name + "=(()=>{" + js + "})();";
 }
 
 async function buildPackageModule(name: string, format: "esm" | "cjs" = "esm") {
