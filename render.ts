@@ -3,7 +3,7 @@ import type { RenderOptions } from "./types/render.d.ts";
 import { $computed, $fragment, $html, $state, $vnode } from "./symbols.ts";
 import { createState } from "./state.ts";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "./runtime/index.ts";
-import { cx, isObject, isString, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
+import { cx, escapeCSSText, escapeHTML, isObject, isString, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
 
 interface RenderContext {
   write: (chunk: string) => void;
@@ -19,12 +19,11 @@ interface RenderContext {
 
 const encoder = new TextEncoder();
 const regexpHtmlTag = /^[a-z][\w\-$]*$/;
-const regexpHtmlSafe = /["'&<>]/;
 const selfClosingTags = new Set("area,base,br,col,embed,hr,img,input,keygen,link,meta,param,source,track,wbr".split(","));
 
-const toAttrStringLit = (str: string) => JSON.stringify(escapeHTML(str));
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
+const toAttrStringLit = (str: string) => '"' + escapeHTML(str).replaceAll('"', '\\"') + '"';
 
 async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], stripSlotProp?: boolean): Promise<void> {
   const { write, stateStore } = ctx;
@@ -87,7 +86,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           break;
         }
 
-        const fcIndex = toString36(ctx.index.fc);
+        const fcIndex = ctx.index.fc.toString(36);
 
         // state
         if (tag === $state) {
@@ -105,8 +104,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         if (tag === $computed) {
           const { deps, value, fn } = props;
           write(
-            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) +
-              ")</script>",
+            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps))
+              + ")</script>",
           );
           if (value !== undefined) {
             write(escapeHTML("" + value));
@@ -238,7 +237,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
               if (eager) {
                 await renderNode({ ...ctx, eager: true, slots: children }, await v);
               } else {
-                const chunkId = toString36(ctx.suspenses.length + 1);
+                const chunkId = (ctx.suspenses.length + 1).toString(36);
                 ctx.suspenses.push(v.then(async (c) => {
                   write('<m-chunk chunk-id="' + chunkId + '"><template>');
                   await renderNode({ ...ctx, eager, slots: children }, c);
@@ -311,11 +310,11 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             }
             switch (propName) {
               case "class":
-                buffer += " " + renderAttr(propName, cx(propValue));
+                buffer += " class=" + toAttrStringLit(cx(propValue));
                 break;
               case "style":
                 if (isString(propValue) && propValue !== "") {
-                  buffer += " " + renderAttr(propName, cx(propValue));
+                  buffer += ' style="' + escapeCSSText(propValue) + '"';
                 } else if (isObject(propValue) && !Array.isArray(propValue)) {
                   const style: [string, string | number][] = [];
                   const pseudoStyles: [string, string][] = [];
@@ -324,53 +323,51 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                   for (const [k, v] of Object.entries(propValue)) {
                     switch (k.charCodeAt(0)) {
                       case /* ':' */ 58:
-                        pseudoStyles.push([k, styleToCSS(v)]);
+                        pseudoStyles.push([escapeCSSText(k), styleToCSS(v)]);
                         break;
                       case /* '@' */ 64:
-                        atRuleStyles.push([k, styleToCSS(v)]);
+                        atRuleStyles.push([escapeCSSText(k), styleToCSS(v)]);
                         break;
                       case /* '&' */ 38:
-                        nestingStyles.push([k, styleToCSS(v)]);
+                        nestingStyles.push([escapeCSSText(k), styleToCSS(v)]);
                         break;
                       default:
                         style.push([k, v]);
                     }
                   }
                   if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
-                    let raw = "";
                     let css = "";
+                    let raw = "";
                     let styleIds: Set<string>;
                     let id: string;
                     let cssSelector: string;
-                    let key: string;
-                    let value: string;
                     if (style.length > 0) {
                       css = styleToCSS(style);
                       raw += css + "|";
                     }
                     raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
                     styleIds = ctx.styleIds ?? (ctx.styleIds = new Set());
-                    id = toString36(hashCode(raw));
+                    id = hashCode(raw).toString(36);
                     cssSelector = "[data-css-" + id + "]";
                     if (!styleIds.has(id)) {
                       styleIds.add(id);
                       if (css) {
                         css = cssSelector + "{" + css + "}";
                       }
-                      for ([key, value] of pseudoStyles) {
-                        css += cssSelector + key + "{" + value + "}";
+                      for (const [p, styles] of pseudoStyles) {
+                        css += cssSelector + p + "{" + styles + "}";
                       }
-                      for ([key, value] of atRuleStyles) {
-                        css += key + "{" + cssSelector + "{" + value + "}}";
+                      for (const [at, styles] of atRuleStyles) {
+                        css += at + "{" + cssSelector + "{" + styles + "}}";
                       }
-                      for ([key, value] of nestingStyles) {
-                        css += cssSelector + key.slice(1) + "{" + value + "}";
+                      for (const [n, styles] of nestingStyles) {
+                        css += cssSelector + n.slice(1) + "{" + styles + "}";
                       }
                       write('<style id="css-' + id + '">' + css + "</style>");
                     }
                     buffer += " data-css-" + id;
                   } else if (style.length > 0) {
-                    buffer += " " + renderAttr(propName, styleToCSS(style));
+                    buffer += ' style="' + styleToCSS(style) + '"';
                   }
                 }
                 break;
@@ -381,23 +378,23 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                 break;
               case "action":
                 if (typeof propValue === "function" && tag === "form") {
-                  const id = "$MF_" + toString36(ctx.index.mf++);
+                  const id = "$MF_" + (ctx.index.mf++).toString(36);
                   write("<script>function " + id + "(fd){(" + propValue.toString() + ")(fd)}</script>");
                   buffer += ' onsubmit="$onsubmit(event,this,' + id + ",'" + fcIndex + "')\"";
                 } else if (isString(propValue)) {
-                  buffer += " " + renderAttr(propName, propValue);
+                  buffer += " action=" + toAttrStringLit(propValue);
                 }
                 break;
               case "slot":
                 if (!stripSlotProp && isString(propValue)) {
-                  buffer += " " + renderAttr(propName, propValue);
+                  buffer += " slot=" + toAttrStringLit(propValue);
                 }
                 break;
               default:
                 if (regexpHtmlTag.test(propName) && propValue !== undefined) {
                   if (propName.startsWith("on")) {
                     if (typeof propValue === "function") {
-                      const id = "$MF_" + toString36(ctx.index.mf++);
+                      const id = "$MF_" + (ctx.index.mf++).toString(36);
                       write("<script>function " + id + "(e){(" + propValue.toString() + ")(e)}</script>");
                       buffer += " " + propName.toLowerCase() + '="$emit(event,this,' + id + ",'" + fcIndex + "')\"";
                     }
@@ -406,7 +403,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                       buffer += " " + propName;
                     }
                   } else {
-                    buffer += " " + renderAttr(propName, propValue);
+                    buffer += " "
+                      + (propValue === true ? escapeHTML(propName) : escapeHTML(propName) + "=" + toAttrStringLit("" + propValue));
                   }
                 }
             }
@@ -430,9 +428,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           if (onMountHandler) {
             ctx.index.mf++;
             write(
-              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,' +
-                onMountHandler.toString() +
-                ',"' + fcIndex + '"))}</script>',
+              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,'
+                + onMountHandler.toString()
+                + ',"' + fcIndex + '"))}</script>',
             );
           }
         }
@@ -453,70 +451,6 @@ async function renderChildren(ctx: RenderContext, children: Children, stripSlotP
   } else {
     await renderNode(ctx, children, stripSlotProp);
   }
-}
-
-function renderAttr(key: string, value: unknown): string {
-  return value === true ? key : key + "=" + toAttrStringLit("" + value);
-}
-
-function toString36(num: number): string {
-  return num.toString(36);
-}
-
-/**
- * Escapes special characters and HTML entities in a given html string.
- * Based on https://github.com/component/escape-html
- * Use `Bun.escapeHTML` preferentially if available.
- *
- * Copyright(c) 2012-2013 TJ Holowaychuk
- * Copyright(c) 2015 Andreas Lubbe
- * Copyright(c) 2015 Tiancheng "Timothy" Gu
- * MIT License
- */
-function escapeHTML(str: string): string {
-  const match = regexpHtmlSafe.exec(str);
-  if (!match) {
-    return str;
-  }
-
-  // @ts-ignore use bun's built-in `escapeHTML` function if available
-  if (typeof Bun === "object" && "escapeHTML" in Bun) return Bun.escapeHTML(str);
-
-  let escape: string;
-  let index: number;
-  let lastIndex = 0;
-  let html = "";
-
-  for (index = match.index; index < str.length; index++) {
-    switch (str.charCodeAt(index)) {
-      case 34: // "
-        escape = "&quot;";
-        break;
-      case 38: // &
-        escape = "&amp;";
-        break;
-      case 39: // '
-        escape = "&#x27;"; // modified from escape-html; used to be '&#39'
-        break;
-      case 60: // <
-        escape = "&lt;";
-        break;
-      case 62: // >
-        escape = "&gt;";
-        break;
-      default:
-        continue;
-    }
-
-    if (lastIndex !== index) {
-      html += str.slice(lastIndex, index);
-    }
-
-    lastIndex = index + 1;
-    html += escape;
-  }
-
-  return lastIndex !== index ? html + str.slice(lastIndex, index) : html;
 }
 
 /** Renders a VNode to a `Response` object. */
@@ -567,9 +501,9 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
               js += RUNTIME_COMPONENTS_JS.styleToCSS;
             }
             js += RUNTIME_STATE_JS;
-            js += "for(let[k,v]of" +
-              JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e)) +
-              ")$defineState(k,v);";
+            js += "for(let[k,v]of"
+              + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
+              + ")$defineState(k,v);";
           }
           if (ctx.index.mf > 0) {
             js += RUNTIME_COMPONENTS_JS.event;

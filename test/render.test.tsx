@@ -1,4 +1,4 @@
-// deno-lint-ignore-file jsx-key
+// deno-lint-ignore-file jsx-key jsx-curly-braces
 import { assertEquals } from "jsr:@std/assert";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
 
@@ -232,7 +232,7 @@ Deno.test("[ssr] <slot>", async () => {
     <Container>
       <Logo slot="logo" />
       <p slot="copyright">(c) 2025 All rights reserved.</p>
-      <h1>Welcome to Mono!</h1>
+      <h1>Welcome to mono-jsx!</h1>
       <p>Building user interfaces.</p>
     </Container>
   );
@@ -244,31 +244,10 @@ Deno.test("[ssr] <slot>", async () => {
       `<div id="container">`,
       `<header><img src="/logo.png"></header>`,
       `<img src="/poster.png">`,
-      `<h1>Welcome to Mono!</h1>`,
+      `<h1>Welcome to mono-jsx!</h1>`,
       `<p>Building user interfaces.</p>`,
       `<footer><p>(c) 2025 All rights reserved.</p></footer>`,
       `</div>`,
-      `</body></html>`,
-    ].join(""),
-  );
-});
-
-Deno.test("[ssr] XSS", async () => {
-  const App = () => (
-    <>
-      {html`<h1>Welcome to Mono!</h1><script>console.log("Welcomee to Mono!")</script>`}
-      <style>{css`body{font-size:"16px"}`}</style>
-      <script>{js`console.log('Welcomee to Mono!')`}</script>
-    </>
-  );
-  assertEquals(
-    await renderToString(<App />),
-    [
-      `<!DOCTYPE html>`,
-      `<html lang="en"><body>`,
-      `<h1>Welcome to Mono!</h1><script>console.log("Welcomee to Mono!")</script>`,
-      `<style>body{font-size:"16px"}</style>`,
-      `<script>console.log('Welcomee to Mono!')</script>`,
       `</body></html>`,
     ].join(""),
   );
@@ -630,6 +609,44 @@ Deno.test("[ssr] using <switch>", async () => {
       `for(let[k,v]of`,
       `[["1:select"]]`,
       `)$defineState(k,v);})()</script>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] XSS", async () => {
+  const App = () => (
+    <>
+      {html`<h1>Welcome to mono-jsx!</h1><script>console.log("Welcome to mono-jsx!")</script>`}
+      <style>{css`body{font-size:"16px"}`}</style>
+      <script>{js`console.log('Welcome to mono-jsx!')`}</script>
+    </>
+  );
+  assertEquals(
+    await renderToString(<App />),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<h1>Welcome to mono-jsx!</h1><script>console.log("Welcome to mono-jsx!")</script>`,
+      `<style>body{font-size:"16px"}</style>`,
+      `<script>console.log('Welcome to mono-jsx!')</script>`,
+      `</body></html>`,
+    ].join(""),
+  );
+
+  assertEquals(
+    await renderToString(
+      // @ts-ignore
+      <h1 title={'"><script></script>'} class={['">', "<script>", "</script>"]} style={{ "<script></script>": '"><script></script>' }}>
+        {"<script></script>"}
+      </h1>,
+    ),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<h1 title="&quot;&gt;&lt;script&gt;&lt;/script&gt;" class="&quot;&gt; &lt;script&gt; &lt;/script&gt;" style="&lt;script&gt;&lt;/script&gt;:'&gt;&lt;script&gt;&lt;/script&gt;">`,
+      `&lt;script&gt;&lt;/script&gt;`,
+      `</h1>`,
+      `</body></html>`,
     ].join(""),
   );
 });

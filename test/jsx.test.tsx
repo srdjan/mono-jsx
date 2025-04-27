@@ -12,10 +12,14 @@ Deno.test("[jsx] jsx transform", () => {
     ],
   );
   assertEquals(
-    <h1 class={["title", "h1"]} style={{ fontSize: 24, fontFamily: "serif", ":hover": {} }}>Hello world!</h1> as VNode,
+    <h1 class={["title", "h1"]} style={{ fontSize: 24, fontFamily: "serif", ":hover": { color: "purple" } }}>Hello world!</h1> as VNode,
     [
       "h1",
-      { children: "Hello world!" },
+      {
+        class: ["title", "h1"],
+        style: { fontSize: 24, fontFamily: "serif", ":hover": { color: "purple" } },
+        children: "Hello world!",
+      },
       $vnode,
     ],
   );

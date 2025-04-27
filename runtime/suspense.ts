@@ -11,6 +11,7 @@ defineCustomElement("m-chunk", (el) => {
   const id = getChunkId(el)!;
   const portal = portals[id];
   if (portal) {
+    // set a timeout to wait for the element to be fully parsed
     setTimeout(() => {
       portal.replaceWith(...(el.firstChild as HTMLTemplateElement).content.childNodes);
       delete portals[id];

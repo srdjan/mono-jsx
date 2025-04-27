@@ -126,7 +126,7 @@ customElements.define(
       if (key) {
         state.createEffect(el, mode, () => state.store[key], [key]);
       } else if (hasAttr(el, "computed")) {
-        // add a timeout to wait for the element to be fully parsed
+        // set a timeout to wait for the element to be fully parsed
         setTimeout(() => {
           const firstChild = el.firstChild;
           if (firstChild && firstChild.nodeType === 1 && (firstChild as HTMLScriptElement).type === "computed") {
