@@ -231,7 +231,7 @@ export interface Attributes {
 }
 
 // All the WAI-ARIA 1.2 role attribute values from https://www.w3.org/TR/wai-aria-1.2/#role_definitions
-type Role =
+export type Role =
   | "alert"
   | "alertdialog"
   | "application"

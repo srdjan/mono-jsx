@@ -135,7 +135,7 @@ export namespace HTML {
 
   interface FormAttributes<T extends EventTarget> extends GlobalAttributes<T> {
     "accept-charset"?: string;
-    action: string | (/* Mono specific */ (data: FormData) => void | Promise<void>);
+    action: string | (/* mono-jsx specific */ (data: FormData, event: SubmitEvent) => void | Promise<void>);
     autoComplete?: "on" | "off";
     encType?: "application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain";
     method?: "GET" | "POST" | "dialog";
@@ -820,8 +820,8 @@ export namespace HTML {
   }
 
   interface EventAttributes<T extends EventTarget> {
-    // Mono specific
-    onMount?: (e: { type: "mount"; target: T }) => void | Promise<void>;
+    // mono-jsx specific
+    onMount?: (e: { type: "mount"; currentTarget: T; target: T }) => void | Promise<void>;
 
     // Input Events
     onBeforeInput?: EventHandler<Event, T>;
