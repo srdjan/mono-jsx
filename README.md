@@ -333,9 +333,9 @@ function App(this: FC<{ input: string }>) {
 }
 ```
 
-### Limitation of State API
+### Limitation of States
 
-1. State cannot be used in arrow function components.
+1\. States cannot be used in arrow function components.
 
 ```tsx
 // ❌ Won't work - state updates won't refresh the view
@@ -361,7 +361,7 @@ function App(this: FC) {
 }
 ```
 
-2. State cannot be computed outside of the `this.computed` method.
+2\. States cannot be computed outside of the `this.computed` method.
 
 ```tsx
 // ❌ Won't work - state updates won't refresh the view
@@ -370,12 +370,8 @@ function App(this: FC<{ message: string }>) {
   return (
     <div>
       <h1 title={this.message + "!"}>{this.message + "!"}</h1>
-      <button
-        onClick={() => {
-          this.message = "Foobar";
-        }}
-      >
-        Foobar
+      <button onClick={() => this.message = "Clicked"}>
+        Click Me
       </button>
     </div>
   );
@@ -387,12 +383,8 @@ function App(this: FC) {
   return (
     <div>
       <h1 title={this.computed(() => this.message + "!")}>{this.computed(() => this.message + "!")}</h1>
-      <button
-        onClick={() => {
-          this.message = "Foobar";
-        }}
-      >
-        Foobar
+      <button onClick={() => this.message = "Clicked"}>
+        Click Me
       </button>
     </div>
   );
