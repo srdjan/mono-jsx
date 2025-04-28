@@ -606,7 +606,7 @@ export default {
 
 ## Using htmx
 
-mono-jsx integrates with [htmx](https://htmx.org/) to enable client-side interactivity. To use htmx, add the `htmx` attribute to the root `<html>` element:
+mono-jsx integrates with [htmx](https://htmx.org/) and [typed-htmx](https://github.com/Desdaemon/typed-htmx). To use htmx, add the `htmx` attribute to the root `<html>` element:
 
 ```jsx
 export default {
