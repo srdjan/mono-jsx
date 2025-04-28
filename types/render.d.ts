@@ -1,4 +1,5 @@
 export interface RenderOptions {
+  appState?: Record<string, unknown>;
   context?: Record<string, unknown>;
   request?: Request;
   status?: number;

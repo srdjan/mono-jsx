@@ -101,9 +101,10 @@ export interface Elements {
 }
 
 declare global {
-  type FC<S = Record<string, unknown>, Context = Record<string, unknown>> = {
+  type FC<S = Record<string, unknown>, AppState = Record<string, unknown>, Context = Record<string, unknown>> = {
+    readonly app: AppState;
     readonly context: Context;
     readonly request: Request;
     readonly computed: <V = unknown>(computeFn: () => V) => V;
-  } & Omit<S, "context" | "request" | "computed">;
+  } & Omit<S, "app" | "context" | "request" | "computed">;
 }

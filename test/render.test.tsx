@@ -2,9 +2,9 @@
 import { assert, assertEquals } from "jsr:@std/assert";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
 
-const renderToString = (node: JSX.Element, context?: Record<string, unknown>, request?: Request) => {
+const renderToString = (node: JSX.Element, appState?: Record<string, unknown>, context?: Record<string, unknown>, request?: Request) => {
   const res = (
-    <html lang="en" context={context} request={request} headers={{ setCookie: "foo=bar" }}>
+    <html lang="en" appState={appState} context={context} request={request} headers={{ setCookie: "foo=bar" }}>
       <body>{node}</body>
     </html>
   );
@@ -173,7 +173,7 @@ Deno.test("[ssr] event handler", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<script>function $MF_0(e){(()=>console.log("🔥"))(e)}</script>`,
-      `<button type="button" onclick="$emit(event,this,$MF_0,'0')">Click me</button>`,
+      `<button type="button" onclick="$emit(event,this,$MF_0)">Click me</button>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_COMPONENTS_JS.event,
@@ -190,7 +190,7 @@ Deno.test("[ssr] event handler", async () => {
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<script>function $MF_0(fd){((data)=>console.log(data))(fd)}</script>`,
-      `<form onsubmit="$onsubmit(event,this,$MF_0,'0')">`,
+      `<form onsubmit="$onsubmit(event,this,$MF_0)">`,
       `<input name="foo">`,
       `</form>`,
       `</body></html>`,
@@ -207,7 +207,7 @@ Deno.test("[ssr] event handler", async () => {
       `<div>Using HTML</div>`,
       `<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,`,
       `(e)=>console.log(e.target)`,
-      `,"0"))}</script>`,
+      `))}</script>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_COMPONENTS_JS.event,
@@ -379,7 +379,7 @@ Deno.test("[ssr] catch error", async () => {
   );
 });
 
-Deno.test("[ssr] using state", async () => {
+Deno.test("[ssr] use state", async () => {
   function Foo(this: FC) {
     return <span>{this.foo}</span>;
   }
@@ -424,7 +424,7 @@ Deno.test("[ssr] using state", async () => {
   );
 
   function Input(this: FC<{ value: string }>) {
-    this.value = "Hello, world!";
+    this.value = "Welcome to mono-jsx!";
     return <input value={this.value} />;
   }
   assertEquals(
@@ -432,7 +432,7 @@ Deno.test("[ssr] using state", async () => {
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
-      `<input value="Hello, world!">`,
+      `<input value="Welcome to mono-jsx!">`,
       `<m-group>`,
       `<m-state mode="[value]" fc="1" key="value"></m-state>`,
       `</m-group>`,
@@ -440,7 +440,7 @@ Deno.test("[ssr] using state", async () => {
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
       `for(let[k,v]of`,
-      `[["1:value","Hello, world!"]]`,
+      `[["1:value","Welcome to mono-jsx!"]]`,
       `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
@@ -472,43 +472,108 @@ Deno.test("[ssr] using state", async () => {
   );
 });
 
-Deno.test("[ssr] using computed", async () => {
-  function FooBar(this: FC<{ foo: string; bar: string }>) {
+Deno.test("[ssr] use app state", async () => {
+  function Header(this: FC<{}, { title: string }>) {
+    return (
+      <header>
+        <h1>{this.app.title}</h1>
+      </header>
+    );
+  }
+  function Main(this: FC<{}, { title: string }>) {
+    return (
+      <main>
+        <form
+          action={(fd) => this.app.title = fd.get("title") as string}
+        >
+          <input name="title" value={this.app.title} />
+        </form>
+      </main>
+    );
+  }
+  function Footer(this: FC<{}, { title: string }>) {
+    return (
+      <footer>
+        <p>(c)2025 {this.app.title}</p>
+      </footer>
+    );
+  }
+  assertEquals(
+    await renderToString(
+      <>
+        <Header />
+        <Main />
+        <Footer />
+      </>,
+      { title: "Welcome to mono-jsx!" },
+    ),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<header><h1>`,
+      `<m-state fc="0" key="title">Welcome to mono-jsx!</m-state>`,
+      `</h1></header>`,
+      `<main>`,
+      `<script>function $MF_0(fd){((fd)=>this.app.title = fd.get("title"))(fd)}</script>`,
+      `<form onsubmit="$onsubmit(event,this,$MF_0,2)">`,
+      `<input name="title" value="Welcome to mono-jsx!">`,
+      `<m-group><m-state mode="[value]" fc="0" key="title"></m-state></m-group>`,
+      `</form>`,
+      `</main>`,
+      `<footer><p>`,
+      `(c)2025 `,
+      `<m-state fc="0" key="title">Welcome to mono-jsx!</m-state>`,
+      `</p></footer>`,
+      `</body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_COMPONENTS_JS.event,
+      RUNTIME_STATE_JS,
+      `for(let[k,v]of`,
+      `[["0:title","Welcome to mono-jsx!"]]`,
+      `)$defineState(k,v);`,
+      `})()</script>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] use computed", async () => {
+  function FooBar(this: FC<{ foo: string; bar: string }, { tailing: string }>) {
     this.foo = "foo";
     this.bar = "bar";
     const className = this.computed(() => [this.foo, this.bar]);
-    const text = this.computed(() => this.foo + this.bar + "!");
+    const text = this.computed(() => this.foo + this.bar + this.app.tailing);
     return <span class={className} title={text}>{text}</span>;
   }
 
   assertEquals(
-    await renderToString(<FooBar />),
+    await renderToString(<FooBar />, { tailing: "!" }),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
       `<span class="foo bar" title="foobar!">`,
       `<m-state mode="[class]" fc="1" computed><script type="computed">$(${
         // @ts-ignore this
-        String(() => [this.foo, this.bar])}, ["foo","bar"])</script></m-state>`,
+        String(() => [this.foo, this.bar])}, ["1:foo","1:bar"])</script></m-state>`,
       `<m-state mode="[title]" fc="1" computed><script type="computed">$(${
         // @ts-ignore this
-        String(() => this.foo + this.bar + "!")}, ["foo","bar"])</script></m-state>`,
+        String(() => this.foo + this.bar + this.app.tailing)}, ["1:foo","1:bar","0:tailing"])</script></m-state>`,
       `<m-state fc="1" computed><script type="computed">$(${
         // @ts-ignore this
-        String(() => this.foo + this.bar + "!")}, ["foo","bar"])</script>foobar!</m-state>`,
+        String(() => this.foo + this.bar + this.app.tailing)}, ["1:foo","1:bar","0:tailing"])</script>foobar!</m-state>`,
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
       RUNTIME_COMPONENTS_JS.cx,
       RUNTIME_STATE_JS,
       `for(let[k,v]of`,
-      `[["1:foo","foo"],["1:bar","bar"]]`,
-      `)$defineState(k,v);})()</script>`,
+      `[["1:foo","foo"],["1:bar","bar"],["0:tailing","!"]]`,
+      `)$defineState(k,v);`,
+      `})()</script>`,
     ].join(""),
   );
 });
 
-Deno.test("[ssr] using request object", async () => {
+Deno.test("[ssr] use request object", async () => {
   function App(this: FC) {
     const { request } = this;
     return (
@@ -519,7 +584,7 @@ Deno.test("[ssr] using request object", async () => {
   }
   const request = new Request("https://example.com", { headers: { "x-foo": "bar" } });
   assertEquals(
-    await renderToString(<App />, undefined, request),
+    await renderToString(<App />, undefined, undefined, request),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -531,7 +596,7 @@ Deno.test("[ssr] using request object", async () => {
   );
 });
 
-Deno.test("[ssr] using context", async () => {
+Deno.test("[ssr] use context", async () => {
   function App(this: FC<{}, { foo: string }>) {
     const { context } = this;
     return (
@@ -541,7 +606,7 @@ Deno.test("[ssr] using context", async () => {
     );
   }
   assertEquals(
-    await renderToString(<App />, { foo: "bar" }),
+    await renderToString(<App />, undefined, { foo: "bar" }),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -553,7 +618,7 @@ Deno.test("[ssr] using context", async () => {
   );
 });
 
-Deno.test("[ssr] using <toggle>", async () => {
+Deno.test("[ssr] use <toggle>", async () => {
   function Toggle(this: FC<{ show: boolean }>, props: { show?: boolean }) {
     this.show = !!props.show;
     return (
@@ -598,7 +663,7 @@ Deno.test("[ssr] using <toggle>", async () => {
   );
 });
 
-Deno.test("[ssr] using <switch>", async () => {
+Deno.test("[ssr] use <switch>", async () => {
   function Switch(this: FC<{ select?: string }>, props: { defaultValue?: string }) {
     return (
       <switch value={this.select} defaultValue={props.defaultValue}>

@@ -30,7 +30,7 @@ async function buildRuntimeComponent(name: string): Promise<string> {
     throw new Error(ret.errors[0].text);
   }
   const js = ret.outputFiles[0].text.trim().replace(/export\{(\w+) as (\w+)\};$/, "return $1;");
-  return "var " + name + "=(()=>{" + js + "})();";
+  return "let " + name + "=(()=>{" + js + "})();";
 }
 
 async function buildPackageModule(name: string, format: "esm" | "cjs" = "esm") {
@@ -58,8 +58,9 @@ if (import.meta.main) {
   const runtime_component_cx = await buildRuntimeComponent("cx");
   const runtime_component_styleToCSS = await buildRuntimeComponent("styleToCSS");
   const runtime_component_event = [
-    `window.$emit=(evt,el,fn,fc)=>fn.call(window.$state?.(fc)??el,evt);`,
-    `window.$onsubmit=(evt,el,fn,fc)=>{evt.preventDefault();fn.call(window.$state?.(fc)??el,new FormData(el),evt)};`,
+    `let w=window;`,
+    `w.$emit=(evt,el,fn,fc)=>fn.call(w.$state?.(fc)??el,evt);`,
+    `w.$onsubmit=(evt,el,fn,fc)=>{evt.preventDefault();fn.call(w.$state?.(fc)??el,new FormData(el),evt)};`,
   ].join("");
 
   await Deno.writeTextFile(

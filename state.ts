@@ -1,20 +1,27 @@
 import { $computed, $state, $vnode } from "./symbols.ts";
 
-export function createState(context?: Record<string, unknown>, request?: Request): Record<string, unknown> {
-  let collectDeps: ((key: string, value: unknown) => void) | undefined;
+let collectDeps: ((fc: number, key: string, value: unknown) => void) | undefined;
 
+export function createState(
+  fc: number,
+  appState: Record<string, unknown> | null,
+  context?: Record<string, unknown>,
+  request?: Request,
+): Record<string, unknown> {
   const computed = <T = unknown>(fn: () => T): T => {
     const deps = Object.create(null) as Record<string, unknown>;
-    collectDeps = (key, value) => deps[key] = value;
+    collectDeps = (fc, key, value) => deps[fc + ":" + key] = value;
     const value = fn();
     collectDeps = undefined;
-    if (deps.size === 0) return value;
-    return [$computed, { value, deps, fn: fn.toString() }, $vnode] as unknown as T;
+    if (value instanceof Promise || deps.size === 0) return value;
+    return [$computed, { value, deps, fn: fn.toString(), fc }, $vnode] as unknown as T;
   };
 
   return new Proxy(Object.create(null), {
     get(target, key, receiver) {
       switch (key) {
+        case "app":
+          return appState;
         case "context":
           return context ?? {};
         case "request":
@@ -30,10 +37,10 @@ export function createState(context?: Record<string, unknown>, request?: Request
             return value;
           }
           if (collectDeps) {
-            collectDeps(key, value);
+            collectDeps(fc, key, value);
             return value;
           }
-          return [$state, { key, value }, $vnode];
+          return [$state, { key, value, fc }, $vnode];
         }
       }
     },

@@ -14,7 +14,7 @@ Deno.serve({
     return new Response(null, { status: 404 });
   }
   return (
-    <html request={request}>
+    <html request={request} appState={{ count: 0 }}>
       <head>
         <title>Test</title>
       </head>
@@ -34,7 +34,7 @@ function addTestPage(page: JSX.Element) {
   return `http://localhost:8687${pathname}`;
 }
 
-Deno.test("[runtime] using state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] use state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Hello(this: FC<{ text: string }>, props: { text: string }) {
     this.text = props.text;
     return (
@@ -64,13 +64,13 @@ Deno.test("[runtime] using state(text)", { sanitizeResources: false, sanitizeOps
   await page.close();
 });
 
-Deno.test("[runtime] using state(number)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] use state(number)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Counter(this: FC<{ count: number }>, props: { initialValue: number }) {
     this.count = props.initialValue;
     return (
       <div>
         <button type="button" onClick={() => this.count--} />
-        <strong>{this.count}</strong>
+        <span>{this.count}</span>
         <button type="button" onClick={() => this.count++} />
       </div>
     );
@@ -80,8 +80,59 @@ Deno.test("[runtime] using state(number)", { sanitizeResources: false, sanitizeO
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
+  const span = await page.$("div span")!;
+  assert(span);
+  assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "0");
+
+  const buttons = await page.$$("div button");
+  assertEquals(buttons.length, 2);
+
+  // Click the increment button for 3 times
+  for (let i = 0; i < 3; i++) {
+    await buttons[1].click();
+  }
+  assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "3");
+
+  // Click the decrement button for 5 times
+  for (let i = 0; i < 5; i++) {
+    await buttons[0].click();
+  }
+  assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "-2");
+
+  await page.close();
+});
+
+Deno.test("[runtime] use app state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  function Display(this: FC<{}, { count: number }>, props: { bold?: boolean }) {
+    if (props.bold) {
+      return <strong>{this.app.count}</strong>;
+    }
+    return <span>{this.app.count}</span>;
+  }
+  function Control(this: FC<{}, { count: number }>) {
+    return (
+      <>
+        <button type="button" onClick={() => this.app.count--} />
+        <button type="button" onClick={() => this.app.count++} />
+      </>
+    );
+  }
+
+  const testPageUrl = addTestPage(
+    <div>
+      <Display />
+      <Display bold />
+      <Control />
+    </div>,
+  );
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+
+  const span = await page.$("div span")!;
   const strong = await page.$("div strong")!;
+  assert(span);
   assert(strong);
+  assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "0");
   assertEquals(await strong.evaluate((el: HTMLElement) => el.textContent), "0");
 
   const buttons = await page.$$("div button");
@@ -91,25 +142,27 @@ Deno.test("[runtime] using state(number)", { sanitizeResources: false, sanitizeO
   for (let i = 0; i < 3; i++) {
     await buttons[1].click();
   }
+  assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "3");
   assertEquals(await strong.evaluate((el: HTMLElement) => el.textContent), "3");
 
   // Click the decrement button for 5 times
   for (let i = 0; i < 5; i++) {
     await buttons[0].click();
   }
+  assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "-2");
   assertEquals(await strong.evaluate((el: HTMLElement) => el.textContent), "-2");
 
   await page.close();
 });
 
-Deno.test("[runtime] using computed state", { sanitizeResources: false, sanitizeOps: false }, async () => {
-  function FooBar(this: FC<{ foo: string; bar: string }>) {
-    this.foo = "foo";
-    this.bar = "bar";
+Deno.test("[runtime] use computed state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  function FooBar(this: FC<{ count: number }, { count: number }>) {
+    this.count = 0;
     return (
       <div>
-        <h1>{this.computed(() => `${this.foo}${this.bar}!`)}</h1>
-        <button type="button" onClick={() => this.bar = "bar2000"} />
+        <h1>{this.computed(() => `1+2*${this.app.count}+3*${this.count}=` + (1 + 2 * this.app.count + 3 * this.count))}</h1>
+        <button class="bnt1" type="button" onClick={() => this.app.count++} />
+        <button class="bnt2" type="button" onClick={() => this.count++} />
       </div>
     );
   }
@@ -120,18 +173,27 @@ Deno.test("[runtime] using computed state", { sanitizeResources: false, sanitize
 
   const h1 = await page.$("div h1")!;
   assert(h1);
-  assertEquals(await h1.evaluate((el: HTMLElement) => el.innerText), "foobar!");
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.innerText), "1+2*0+3*0=1");
 
-  const button = await page.$("div button")!;
-  assert(button);
-  await button.click();
+  const bnt1 = await page.$("div button.bnt1")!;
+  const bnt2 = await page.$("div button.bnt2")!;
+  assert(bnt1);
+  assert(bnt2);
 
-  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "foobar2000!");
+  await bnt1.click();
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "1+2*1+3*0=3");
+
+  await bnt2.click();
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "1+2*1+3*1=6");
+
+  await bnt1.click();
+  await bnt2.click();
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "1+2*2+3*2=11");
 
   await page.close();
 });
 
-Deno.test("[runtime] using computed class name", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] use computed class name", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function FooBar(this: FC<{ foo: string; bar: string }>) {
     this.foo = "foo";
     this.bar = "bar";
@@ -160,7 +222,7 @@ Deno.test("[runtime] using computed class name", { sanitizeResources: false, san
   await page.close();
 });
 
-Deno.test("[runtime] using <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] use <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Toggle(this: FC<{ show: boolean }>) {
     this.show = false;
     return (
@@ -197,7 +259,7 @@ Deno.test("[runtime] using <toggle> element", { sanitizeResources: false, saniti
   await page.close();
 });
 
-Deno.test("[runtime] using <switch> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] use <switch> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Switch(this: FC<{ lang: string }>) {
     this.lang = "emoji";
     return (
@@ -270,7 +332,7 @@ Deno.test("[runtime] support 'mount' event", { sanitizeResources: false, sanitiz
   await page.close();
 });
 
-Deno.test("[runtime] using 'action' function handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] use 'action' function handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testPageUrl = addTestPage(
     <>
       <p></p>
