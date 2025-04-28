@@ -336,7 +336,7 @@ function Main(this: FC<{}, { title: string }>) {
       <h1>{this.app.title}</h1>
       <h2>Changing the title</h2>
       <input
-        onInput={(evt) => this.app.title = evt.target.value }
+        onInput={(evt) => this.app.title = evt.target.value}
         placeholder="Enter a new title"
       />
     </main>
@@ -599,6 +599,88 @@ export default {
       }}
     >
       <h1>Page Not Found</h1>
+    </html>
+  ),
+};
+```
+
+## Using htmx
+
+mono-jsx integrates with [htmx](https://htmx.org/) to enable client-side interactivity. To use htmx, add the `htmx` attribute to the root `<html>` element:
+
+```jsx
+export default {
+  fetch: (req) => {
+    const url = new URL(req.url);
+
+    if (url.pathname === "/clicked") {
+      return (
+        <html>
+          <span>Clicked!</span>
+        </html>
+      );
+    }
+
+    return (
+      <html htmx>
+        <button hx-get="/clicked" hx-swap="outerHTML">
+          Click Me
+        </button>
+      </html>
+    );
+  },
+};
+```
+
+### Adding htmx Extensions
+
+You can add htmx [extensions](https://htmx.org/docs/#extensions) by adding the `htmx-ext-*` attribute to the root `<html>` element:
+
+```jsx
+export default {
+  fetch: (req) => (
+    <html htmx htmx-ext-response-targets htmx-ext-ws>
+      <button hx-get="/clicked" hx-swap="outerHTML">
+        Click Me
+      </button>
+    </html>
+  ),
+};
+```
+
+### Specifying htmx Version
+
+You can specify the htmx version by setting the `htmx` attribute to a specific version:
+
+```jsx
+export default {
+  fetch: (req) => (
+    <html htmx="2.0.4" htmx-ext-response-targets="2.0.2" htmx-ext-ws="2.0.2">
+      <button hx-get="/clicked" hx-swap="outerHTML">
+        Click Me
+      </button>
+    </html>
+  ),
+};
+```
+
+### Installing htmx Manually
+
+By default, mono-jsx installs htmx from [esm.sh](https://esm.sh/) CDN when you set the `htmx` attribute. You can also install htmx manually with your own CDN or local copy:
+
+```jsx
+export default {
+  fetch: (req) => (
+    <html>
+      <head>
+        <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/htmx-ext-ws@2.0.2" integrity="sha384-vuKxTKv5TX/b3lLzDKP2U363sOAoRo5wSvzzc3LJsbaQRSBSS+3rKKHcOx5J8doU" crossorigin="anonymous"></script>
+      </head>
+      <body>
+        <button hx-get="/clicked" hx-swap="outerHTML">
+          Click Me
+        </button>
+      </body>
     </html>
   ),
 };
