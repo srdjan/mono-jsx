@@ -100,10 +100,10 @@ if (import.meta.main) {
     [
       `#!/usr/bin/env node`,
       ``,
-      `import { argv } from "node:process";`,
+      `import process from "node:process";`,
       `import { setup } from "../setup.mjs";`,
       ``,
-      `switch (argv[2]) {`,
+      `switch (process.argv[2]) {`,
       `  case "setup":`,
       `    setup()`,
       `    break;`,
