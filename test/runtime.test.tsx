@@ -34,7 +34,7 @@ function addTestPage(page: JSX.Element) {
   return `http://localhost:8687${pathname}`;
 }
 
-Deno.test("[run] using state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] using state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Hello(this: FC<{ text: string }>, props: { text: string }) {
     this.text = props.text;
     return (
@@ -64,7 +64,7 @@ Deno.test("[run] using state(text)", { sanitizeResources: false, sanitizeOps: fa
   await page.close();
 });
 
-Deno.test("[runtime] using state(counter)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] using state(number)", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Counter(this: FC<{ count: number }>, props: { initialValue: number }) {
     this.count = props.initialValue;
     return (
@@ -160,7 +160,7 @@ Deno.test("[runtime] using computed class name", { sanitizeResources: false, san
   await page.close();
 });
 
-Deno.test("[runtime] <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] using <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Toggle(this: FC<{ show: boolean }>) {
     this.show = false;
     return (
@@ -197,7 +197,7 @@ Deno.test("[runtime] <toggle> element", { sanitizeResources: false, sanitizeOps:
   await page.close();
 });
 
-Deno.test("[runtime] <switch> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] using <switch> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
   function Switch(this: FC<{ lang: string }>) {
     this.lang = "emoji";
     return (
@@ -251,7 +251,7 @@ Deno.test("[runtime] <switch> element", { sanitizeResources: false, sanitizeOps:
   await page.close();
 });
 
-Deno.test("[runtime] 'mount' handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] support 'mount' event", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testPageUrl = addTestPage(
     <div
       onMount={(e) => {
@@ -270,7 +270,7 @@ Deno.test("[runtime] 'mount' handler", { sanitizeResources: false, sanitizeOps: 
   await page.close();
 });
 
-Deno.test("[runtime] 'action' handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] using 'action' function handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
   const testPageUrl = addTestPage(
     <>
       <p></p>
