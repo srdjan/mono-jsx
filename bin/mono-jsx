@@ -1,34 +1,53 @@
 #!/usr/bin/env node
 
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 
 switch (process.argv[2]) {
   case "setup":
-    setup().then(() => {
-      console.log("✅ JSX runtime setup complete.");
-    });
+    setup()
     break;
   default:
     process.exit(0);
 }
 
 async function setup() {
-  let tsConfigPath = globalThis.Deno ? "deno.json" : "tsconfig.json";
+  if (globalThis.Deno && existsSync("deno.jsonc")) {
+    console.log("Please add the following options to your deno.jsonc file:");
+    console.log(
+      [
+        `{`,
+        `  "compilerOptions": {`,
+        `    %c"jsx": "react-jsx",`,
+        `    "jsxImportSource": "mono-jsx",%c`,
+        `  }`,
+        `}`,
+      ].join("\n"),
+      "color:green",
+      "",
+    );
+    return;
+  }
+  let tsConfigFilename = globalThis.Deno ? "deno.json" : "tsconfig.json";
   let tsConfig = Object.create(null);
   try {
-    const json = await readFile(tsConfigPath, "utf8");
-    tsConfig = JSON.parse(json);
+    const data = await readFile(tsConfigFilename, "utf8");
+    tsConfig = JSON.parse(data);
   } catch {
     // ignore
   }
-  tsConfig.compilerOptions = {
-    ...tsConfig.compilerOptions,
-    jsx: "react-jsx",
-    jsxImportSource: "mono-jsx",
-  };
-  if (!globalThis.Deno) {
-    tsConfig.compilerOptions.alllowJs = true
+  const compilerOptions = tsConfig.compilerOptions ?? (tsConfig.compilerOptions = {});
+  if (compilerOptions.jsx === "react-jsx" && compilerOptions.jsxImportSource === "mono-jsx") {
+    console.log("%cmono-jsx already setup.","color:grey");
+    return;
   }
-  await writeFile(tsConfigPath, JSON.stringify(tsConfig, null, 2));
+  if (!globalThis.Deno) {
+    compilerOptions.module ??= "es2022";
+    compilerOptions.moduleResolution ??= "bundler";
+  }
+  compilerOptions.jsx = "react-jsx";
+  compilerOptions.jsxImportSource = "mono-jsx";
+  await writeFile(tsConfigFilename, JSON.stringify(tsConfig, null, 2));
+  console.log("✅ mono-jsx setup complete.")
 }
