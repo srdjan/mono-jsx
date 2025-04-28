@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+/// <reference path="./htmx.d.ts" />
 
 import type * as Aria from "./aria.d.ts";
 import type * as Mono from "./mono.d.ts";
@@ -42,7 +43,7 @@ export namespace HTML {
     | "week";
 
   /** Global HTML attributes from https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes */
-  interface GlobalAttributes<T extends EventTarget> extends EventAttributes<T>, Aria.Attributes, Mono.BaseAttributes {
+  interface GlobalAttributes<T extends EventTarget> extends EventAttributes<T>, Aria.Attributes, Mono.BaseAttributes, JSX.HtmlTag {
     /** Defines a unique identifier (ID) which must be unique in the whole document. Its purpose is to identify the element when linking (using a fragment identifier), scripting, or styling (with CSS). */
     id?: string;
     /** A space-separated list of the classes of the element. Classes allow CSS and JavaScript to select and access specific elements via the [class selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/Class_selectors) or functions like the method [`Document.getElementsByClassName()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName). */

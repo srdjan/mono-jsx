@@ -2,7 +2,7 @@ import type { ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { createState } from "./state.ts";
 import { $computed, $fragment, $html, $state, $vnode } from "./symbols.ts";
-import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "./runtime/index.ts";
+import { STATE_JS, SUSPENSE_JS, UTILS_JS } from "./runtime/index.ts";
 import { cx, escapeCSSText, escapeHTML, isObject, isString, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
 
 interface RenderContext {
@@ -11,7 +11,7 @@ interface RenderContext {
   stateStore: Map<string, unknown>;
   suspenses: Promise<void>[];
   index: { fc: number; mf: number };
-  rtComponents: { cx: boolean; styleToCSS: boolean };
+  runtimeUtils: { cx: boolean; styleToCSS: boolean };
   context?: Record<string, unknown>;
   request?: Request;
   eager?: boolean;
@@ -44,7 +44,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
         const { stateStore } = rc;
 
         // fragment element
-        if (tag === $fragment) {
+        if (tag === $fragment || tag === "htmx") {
           if (props.children !== undefined) {
             await renderChildren(rc, props.children);
           }
@@ -275,9 +275,9 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
             if (isVNode(propValue) && (propValue[0] === $state || propValue[0] === $computed)) {
               const { key, value, deps, fn, fc } = propValue[1];
               if (propName === "class") {
-                rc.rtComponents.cx = true;
+                rc.runtimeUtils.cx = true;
               } else if (propName === "style") {
-                rc.rtComponents.styleToCSS = true;
+                rc.runtimeUtils.styleToCSS = true;
               }
               propEffects.push("<m-state mode=" + toAttrStringLit("[" + propName + "]") + ' fc="' + fc + '" ');
               if (key) {
@@ -460,7 +460,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
   return new Response(
     new ReadableStream<Uint8Array>({
       async start(controller) {
-        const { appState: appStateInit, context, rendering } = renderOptions;
+        const { appState: appStateInit, context, rendering, htmx } = renderOptions;
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
         const appState = createState(0, null, context, request);
         const stateStore = new Map<string, unknown>();
@@ -473,7 +473,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
           appState,
           stateStore,
           suspenses,
-          rtComponents,
+          runtimeUtils: rtComponents,
           index: { fc: 0, mf: 0 },
           eager: rendering === "eager",
         };
@@ -489,25 +489,33 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
           await renderNode(rc, node);
           let js = "";
           if (rc.index.mf > 0) {
-            js += RUNTIME_COMPONENTS_JS.event;
+            js += UTILS_JS.event;
           }
           if (stateStore.size > 0) {
             if (rtComponents.cx) {
-              js += RUNTIME_COMPONENTS_JS.cx;
+              js += UTILS_JS.cx;
             }
             if (rtComponents.styleToCSS) {
-              js += RUNTIME_COMPONENTS_JS.styleToCSS;
+              js += UTILS_JS.styleToCSS;
             }
-            js += RUNTIME_STATE_JS;
+            js += STATE_JS;
             js += "for(let[k,v]of" +
               JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e)) +
               ")$defineState(k,v);";
           }
           if (suspenses.length > 0) {
-            js += RUNTIME_SUSPENSE_JS;
+            js += SUSPENSE_JS;
           }
           if (js) {
             write("<script>(()=>{" + js + "})()</script>");
+          }
+          if (htmx) {
+            write(`<script src="https://raw.esm.sh/htmx.org${htmx === true ? "" : "@" + htmx}/dist/htmx.min.js"></script>`);
+            for (const [name, version] of Object.entries(renderOptions)) {
+              if (name.startsWith("html-ext-")) {
+                write(`<script src="https://raw.esm.sh/${name}${version === true ? "" : "@" + version}"></script>`);
+              }
+            }
           }
           if (suspenses.length > 0) {
             await Promise.all(suspenses);

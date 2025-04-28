@@ -1,8 +1,38 @@
-export interface RenderOptions {
+/**
+ * Htmx extensions.
+ * @see https://htmx.org/docs/#extensions
+ */
+type HtmxExts = {
+  [key in `html-ext-${JSX.HtmxExtensions[keyof JSX.HtmxExtensions]}`]:
+    | number
+    | string
+    | boolean;
+};
+
+/**
+ * Render options for the `render` function.
+ */
+export interface RenderOptions extends Partial<HtmxExts> {
+  /**
+   * Initial state of the application.
+   */
   appState?: Record<string, unknown>;
+  /**
+   * The context object to be passed to components.
+   */
   context?: Record<string, unknown>;
+  /**
+   * Current `Request` object to be passed to components.
+   */
   request?: Request;
+  /**
+   * The HTTP status code to be sent with the response.
+   * @defaultValue `200`
+   */
   status?: number;
+  /**
+   * The HTTP headers to be sent with the response.
+   */
   headers?: {
     [key: string]: string | undefined;
     contentSecurityPolicy?: string;
@@ -11,5 +41,15 @@ export interface RenderOptions {
     lastModified?: string;
     setCookie?: string;
   };
+  /**
+   * Rendering mode.
+   * - **eager**: Render the component immediately.
+   */
   rendering?: "eager";
+  /**
+   * Install htmx script with the given version.
+   * @see https://htmx.org/
+   * @defaultValue `false`
+   */
+  htmx?: number | string | boolean;
 }

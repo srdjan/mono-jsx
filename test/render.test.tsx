@@ -1,10 +1,11 @@
 // deno-lint-ignore-file jsx-key jsx-curly-braces
 import { assert, assertEquals } from "jsr:@std/assert";
-import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
+import { STATE_JS, SUSPENSE_JS, UTILS_JS } from "../runtime/index.ts";
+import { RenderOptions } from "../types/render.d.ts";
 
-const renderToString = (node: JSX.Element, appState?: Record<string, unknown>, context?: Record<string, unknown>, request?: Request) => {
+const renderToString = (node: JSX.Element, renderOptions?: RenderOptions) => {
   const res = (
-    <html lang="en" appState={appState} context={context} request={request} headers={{ setCookie: "foo=bar" }}>
+    <html lang="en" headers={{ setCookie: "foo=bar" }} {...renderOptions}>
       <body>{node}</body>
     </html>
   );
@@ -176,7 +177,7 @@ Deno.test("[ssr] event handler", async () => {
       `<button type="button" onclick="$emit(event,this,$MF_0)">Click me</button>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_COMPONENTS_JS.event,
+      UTILS_JS.event,
       `})()</script>`,
     ].join(""),
   );
@@ -195,7 +196,7 @@ Deno.test("[ssr] event handler", async () => {
       `</form>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_COMPONENTS_JS.event,
+      UTILS_JS.event,
       `})()</script>`,
     ].join(""),
   );
@@ -210,7 +211,7 @@ Deno.test("[ssr] event handler", async () => {
       `))}</script>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_COMPONENTS_JS.event,
+      UTILS_JS.event,
       `})()</script>`,
     ].join(""),
   );
@@ -296,7 +297,7 @@ Deno.test("[ssr] async component", async () => {
         `<m-portal chunk-id="1"></m-portal>`,
         `</body></html>`,
         `<script>(()=>{`,
-        RUNTIME_SUSPENSE_JS,
+        SUSPENSE_JS,
         `})()</script>`,
         `<m-chunk chunk-id="1"><template>`,
         `<ul>`,
@@ -320,7 +321,7 @@ Deno.test("[ssr] async component", async () => {
         `</m-portal>`,
         `</body></html>`,
         `<script>(()=>{`,
-        RUNTIME_SUSPENSE_JS,
+        SUSPENSE_JS,
         `})()</script>`,
         `<m-chunk chunk-id="1"><template>`,
         `<ul>`,
@@ -394,7 +395,7 @@ Deno.test("[ssr] use state", async () => {
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:foo"]]`,
       `)$defineState(k,v);})()</script>`,
@@ -416,7 +417,7 @@ Deno.test("[ssr] use state", async () => {
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:foo","bar"]]`,
       `)$defineState(k,v);})()</script>`,
@@ -438,7 +439,7 @@ Deno.test("[ssr] use state", async () => {
       `</m-group>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:value","Welcome to mono-jsx!"]]`,
       `)$defineState(k,v);})()</script>`,
@@ -464,7 +465,7 @@ Deno.test("[ssr] use state", async () => {
       ).join(""),
       `</div></body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       JSON.stringify([1, 2, 3].map((i) => [`${i}:value`, i])),
       `)$defineState(k,v);})()</script>`,
@@ -505,7 +506,7 @@ Deno.test("[ssr] use app state", async () => {
         <Main />
         <Footer />
       </>,
-      { title: "Welcome to mono-jsx!" },
+      { appState: { title: "Welcome to mono-jsx!" } },
     ),
     [
       `<!DOCTYPE html>`,
@@ -526,8 +527,8 @@ Deno.test("[ssr] use app state", async () => {
       `</p></footer>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_COMPONENTS_JS.event,
-      RUNTIME_STATE_JS,
+      UTILS_JS.event,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["0:title","Welcome to mono-jsx!"]]`,
       `)$defineState(k,v);`,
@@ -546,7 +547,7 @@ Deno.test("[ssr] use computed", async () => {
   }
 
   assertEquals(
-    await renderToString(<FooBar />, { tailing: "!" }),
+    await renderToString(<FooBar />, { appState: { tailing: "!" } }),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -563,8 +564,8 @@ Deno.test("[ssr] use computed", async () => {
       `</span>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_COMPONENTS_JS.cx,
-      RUNTIME_STATE_JS,
+      UTILS_JS.cx,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:foo","foo"],["1:bar","bar"],["0:tailing","!"]]`,
       `)$defineState(k,v);`,
@@ -584,7 +585,7 @@ Deno.test("[ssr] use request object", async () => {
   }
   const request = new Request("https://example.com", { headers: { "x-foo": "bar" } });
   assertEquals(
-    await renderToString(<App />, undefined, undefined, request),
+    await renderToString(<App />, { request }),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -606,7 +607,7 @@ Deno.test("[ssr] use context", async () => {
     );
   }
   assertEquals(
-    await renderToString(<App />, undefined, { foo: "bar" }),
+    await renderToString(<App />, { context: { foo: "bar" } }),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -638,7 +639,7 @@ Deno.test("[ssr] use <toggle>", async () => {
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:show",false]]`,
       `)$defineState(k,v);})()</script>`,
@@ -655,7 +656,7 @@ Deno.test("[ssr] use <toggle>", async () => {
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:show",true]]`,
       `)$defineState(k,v);})()</script>`,
@@ -686,7 +687,7 @@ Deno.test("[ssr] use <switch>", async () => {
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:select","a"]]`,
       `)$defineState(k,v);})()</script>`,
@@ -704,7 +705,7 @@ Deno.test("[ssr] use <switch>", async () => {
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:select","b"]]`,
       `)$defineState(k,v);})()</script>`,
@@ -722,7 +723,7 @@ Deno.test("[ssr] use <switch>", async () => {
       `</m-state>`,
       `</body></html>`,
       `<script>(()=>{`,
-      RUNTIME_STATE_JS,
+      STATE_JS,
       `for(let[k,v]of`,
       `[["1:select"]]`,
       `)$defineState(k,v);})()</script>`,
@@ -764,6 +765,25 @@ Deno.test("[ssr] XSS", async () => {
       `&lt;script&gt;&lt;/script&gt;`,
       `</h1>`,
       `</body></html>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] htmx", async () => {
+  assertEquals(
+    await renderToString(
+      <button type="button" hx-post="/clicked" hx-swap="outerHTML">
+        Click Me
+      </button>,
+      { htmx: 2, "html-ext-response-targets": "2.0.2" },
+    ),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<button type="button" hx-post="/clicked" hx-swap="outerHTML">Click Me</button>`,
+      `</body></html>`,
+      `<script src="https://raw.esm.sh/htmx.org@2/dist/htmx.min.js"></script>`,
+      `<script src="https://raw.esm.sh/html-ext-response-targets@2.0.2"></script>`,
     ].join(""),
   );
 });

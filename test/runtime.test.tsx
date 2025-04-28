@@ -13,8 +13,15 @@ Deno.serve({
   if (url.pathname === "/favicon.ico") {
     return new Response(null, { status: 404 });
   }
+  if (url.pathname === "/clicked") {
+    return (
+      <html>
+        <h1>Clicked!</h1>
+      </html>
+    );
+  }
   return (
-    <html request={request} appState={{ count: 0 }}>
+    <html request={request} appState={{ count: 0 }} htmx={url.searchParams.get("htmx") ?? false}>
       <head>
         <title>Test</title>
       </head>
@@ -28,10 +35,10 @@ const browser = await puppeteer.launch({
   args: ["--no-sandbox", "--disable-gpu", "--disable-extensions", "--disable-sync", "--disable-background-networking"],
 });
 
-function addTestPage(page: JSX.Element) {
-  const pathname = `/test_${routeIndex++}`;
+function addTestPage(page: JSX.Element, query?: string) {
+  let pathname = `/test_${routeIndex++}`;
   testRoutes.set(pathname, page);
-  return `http://localhost:8687${pathname}`;
+  return `http://localhost:8687${pathname}${query ? `?${query}` : ""}`;
 }
 
 Deno.test("[runtime] use state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
@@ -396,6 +403,34 @@ Deno.test("[runtime] suspense", { sanitizeResources: false, sanitizeOps: false }
   const h2 = await page.$("div > h2")!;
   assert(h2);
   assertEquals(await h2.evaluate((el: HTMLElement) => el.textContent), "Building User Interfaces.");
+
+  await page.close();
+});
+
+Deno.test("[runtime] htmx", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const testPageUrl = addTestPage(
+    <button type="button" hx-post="/clicked" hx-swap="outerHTML">
+      Click Me
+    </button>,
+    "htmx=2.0.4",
+  );
+  console.log(testPageUrl);
+
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+  await page.waitForNetworkIdle();
+
+  let button = await page.$("button")!;
+  assert(button);
+  assertEquals(await button.evaluate((el: HTMLElement) => el.textContent), "Click Me");
+  await button.click();
+  await page.waitForNetworkIdle();
+
+  button = await page.$("button")!;
+  assert(!button);
+  const h1 = await page.$("h1")!;
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Clicked!");
 
   await page.close();
 });

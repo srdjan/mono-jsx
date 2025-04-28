@@ -10,12 +10,13 @@ const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(nu
   if (key !== undefined) {
     props.key = key;
   }
-  // if the tag is `html`, render it to a `Response` object
+  // if the tag name is `html`, render it to a `Response` object
   if (tag === "html") {
     const renderOptions = Object.create(null);
-    for (const key of ["appState", "context", "request", "status", "headers", "rendering"]) {
-      if (Object.hasOwn(props, key)) {
-        renderOptions[key] = props[key];
+    const optionsKeys = new Set(["appState", "context", "request", "status", "headers", "rendering", "htmx"]);
+    for (const [key, value] of Object.entries(props)) {
+      if (optionsKeys.has(key) || key.startsWith("html-ext-")) {
+        renderOptions[key] = value;
         delete props[key];
       }
     }
