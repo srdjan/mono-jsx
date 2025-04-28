@@ -309,22 +309,63 @@ function Counter(
 }
 ```
 
-### Using Computed Properties
+### Using App State
 
-You can use `this.computed` to create computed properties based on state. The computed property will automatically update when the state changes:
+You can define app state by adding `appState` prop to the root `<html>` element. The app state is available in all components via `this.app.<stateKey>`. Changes to the app state will trigger re-renders in all components that use it:
+
+```tsx
+function Header(this: FC<{}, { title: string }>) {
+  return (
+    <header>
+      <h1>{this.app.title}</h1>
+    </header>
+  );
+}
+
+function Footer(this: FC<{}, { title: string }>) {
+  return (
+    <footer>
+      <p>(c) 2025 {this.app.title}</p>
+    </footer>
+  );
+}
+
+function Main(this: FC<{}, { title: string }>) {
+  return (
+    <main>
+      <h1>{this.app.title}</h1>
+      <h2>Changing the title</h2>
+      <input
+        onInput={(evt) => this.app.title = evt.target.value }
+        placeholder="Enter a new title"
+      />
+    </main>
+  );
+}
+
+export default {
+  fetch: (req) => (
+    <html appState={{ title: "Welcome to mono-jsx!" }}>
+      <Header />
+      <Main />
+      <Footer />
+    </html>
+  ),
+};
+```
+
+### Using Computed State
+
+You can use `this.computed` to create computed state based on state. The computed state will automatically update when the state changes:
 
 ```tsx
 function App(this: FC<{ input: string }>) {
-  this.input = 'Hello, world';
+  this.input = "Welcome to mono-jsx!";
   return (
     <div>
-      <h1>{this.computed(() = this.input + "!")}</h1>
+      <h1>{this.computed(() => this.input + "!")}</h1>
 
-      <form
-        action={(data: FormData ) => {
-          this.input = data.get("input") as string;
-        }}
-      >
+      <form action={(fd) => this.input = fd.get("input") as string}>
         <input type="text" name="input" value={this.input} />
         <button type="submit">Submit</button>
       </form>
@@ -366,7 +407,7 @@ function App(this: FC) {
 ```tsx
 // ❌ Won't work - state updates won't refresh the view
 function App(this: FC<{ message: string }>) {
-  this.message = "Hello, world";
+  this.message = "Welcome to mono-jsx!";
   return (
     <div>
       <h1 title={this.message + "!"}>{this.message + "!"}</h1>
@@ -379,7 +420,7 @@ function App(this: FC<{ message: string }>) {
 
 // ✅ Works correctly
 function App(this: FC) {
-  this.message = "Hello, world";
+  this.message = "Welcome to mono-jsx!";
   return (
     <div>
       <h1 title={this.computed(() => this.message + "!")}>{this.computed(() => this.message + "!")}</h1>
@@ -494,7 +535,7 @@ export default {
 You can use the `context` property in `this` to access context values in your components. The context is defined on the root `<html>` element:
 
 ```tsx
-function Dash(this: FC<{}, { auth: { uuid: string; name: string } }>) {
+function Dash(this: FC<{}, {}, { auth: { uuid: string; name: string } }>) {
   const { auth } = this.context;
   return (
     <div>
