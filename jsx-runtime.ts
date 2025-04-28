@@ -10,9 +10,10 @@ const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(nu
   if (key !== undefined) {
     props.key = key;
   }
+  // if the tag is `html`, render it to a `Response` object
   if (tag === "html") {
     const renderOptions = Object.create(null);
-    for (const key of ["request", "status", "headers", "rendering"]) {
+    for (const key of ["context", "request", "status", "headers", "rendering"]) {
       if (Object.hasOwn(props, key)) {
         renderOptions[key] = props[key];
         delete props[key];
@@ -33,8 +34,8 @@ const html = (raw: string, ...values: unknown[]): VNode => [
 
 // global variables
 Object.assign(globalThis, {
-  css: html,
   html,
+  css: html,
   js: html,
 });
 

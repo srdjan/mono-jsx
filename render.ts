@@ -11,6 +11,7 @@ interface RenderContext {
   suspenses: Promise<void>[];
   index: { fc: number; mf: number };
   rtComponents: { cx: boolean; styleToCSS: boolean };
+  context?: Record<string, unknown>;
   request?: Request;
   eager?: boolean;
   slots?: Children;
@@ -231,7 +232,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             eager = true;
           }
           try {
-            const v = tag.call(createState(ctx.request), fcProps);
+            const v = tag.call(createState(ctx.context, ctx.request), fcProps);
             ctx.index.fc++;
             if (v instanceof Promise) {
               if (eager) {
@@ -455,24 +456,25 @@ async function renderChildren(ctx: RenderContext, children: Children, stripSlotP
 
 /** Renders a VNode to a `Response` object. */
 export function render(node: VNode, renderOptions: RenderOptions = {}): Response {
-  const { request, status, headers: headersRaw, rendering } = renderOptions;
-  const headers: Record<string, string> = Object.create(null);
-  if (headersRaw) {
-    const { etag, lastModified } = headersRaw;
+  const { context, request, status, headers: headersInit, rendering } = renderOptions;
+  const headers = new Headers();
+  if (headersInit) {
+    for (const [key, value] of Object.entries(headersInit)) {
+      if (value) {
+        headers.set(toHyphenCase(key), value);
+      }
+    }
+    const etag = headers.get("etag");
     if (etag && request?.headers.get("if-none-match") === etag) {
       return new Response(null, { status: 304 });
     }
+    const lastModified = headers.get("last-modified");
     if (lastModified && request?.headers.get("if-modified-since") === lastModified) {
       return new Response(null, { status: 304 });
     }
-    for (const [key, value] of Object.entries(headersRaw)) {
-      if (value) {
-        headers[toHyphenCase(key)] = value;
-      }
-    }
   }
-  headers["transfer-encoding"] = "chunked";
-  headers["content-type"] = "text/html; charset=utf-8";
+  headers.set("transfer-encoding", "chunked");
+  headers.set("content-type", "text/html; charset=utf-8");
   return new Response(
     new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -482,6 +484,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
         const rtComponents = { cx: false, styleToCSS: false };
         const ctx: RenderContext = {
           write,
+          context,
           request,
           stateStore,
           suspenses,

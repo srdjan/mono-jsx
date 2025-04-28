@@ -98,8 +98,9 @@ export interface Elements {
 }
 
 declare global {
-  type FC<T = Record<string, unknown>> = {
+  type FC<T = Record<string, unknown>, Context = Record<string, unknown>> = {
+    context: Context;
     request: Request;
-    computed: <T = unknown>(fn: () => T) => T;
+    computed: <V = unknown>(fn: () => V) => V;
   } & Omit<T, "request" | "computed">;
 }

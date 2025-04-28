@@ -1,13 +1,17 @@
 // deno-lint-ignore-file jsx-key jsx-curly-braces
-import { assertEquals } from "jsr:@std/assert";
+import { assert, assertEquals } from "jsr:@std/assert";
 import { RUNTIME_COMPONENTS_JS, RUNTIME_STATE_JS, RUNTIME_SUSPENSE_JS } from "../runtime/index.ts";
 
-const renderToString = (node: JSX.Element, request?: Request) => {
+const renderToString = (node: JSX.Element, context?: Record<string, unknown>, request?: Request) => {
   const res = (
-    <html lang="en" request={request}>
+    <html lang="en" context={context} request={request} headers={{ setCookie: "foo=bar" }}>
       <body>{node}</body>
     </html>
   );
+  assert(res instanceof Response, "Response is not a Response object");
+  assertEquals(res.status, 200);
+  assertEquals(res.headers.get("content-type"), "text/html; charset=utf-8");
+  assertEquals(res.headers.get("set-cookie"), "foo=bar");
   return res.text();
 };
 
@@ -440,6 +444,32 @@ Deno.test("[ssr] using state", async () => {
       `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
+
+  function InputNumber(this: FC<{ value: number }>, props: { initialValue?: number }) {
+    this.value = props.initialValue ?? 0;
+    return <input type="number" value={this.value} />;
+  }
+  assertEquals(
+    await renderToString(<div>{[1, 2, 3].map(i => <InputNumber initialValue={i} />)}</div>),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body><div>`,
+      [1, 2, 3].map(i =>
+        [
+          `<input type="number" value="${i}">`,
+          `<m-group>`,
+          `<m-state mode="[value]" fc="${i}" key="value"></m-state>`,
+          `</m-group>`,
+        ].join("")
+      ).join(""),
+      `</div></body></html>`,
+      `<script>(()=>{`,
+      RUNTIME_STATE_JS,
+      `for(let[k,v]of`,
+      JSON.stringify([1, 2, 3].map(i => [`${i}:value`, i])),
+      `)$defineState(k,v);})()</script>`,
+    ].join(""),
+  );
 });
 
 Deno.test("[ssr] using computed", async () => {
@@ -489,7 +519,29 @@ Deno.test("[ssr] using request object", async () => {
   }
   const request = new Request("https://example.com", { headers: { "x-foo": "bar" } });
   assertEquals(
-    await renderToString(<App />, request),
+    await renderToString(<App />, undefined, request),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<div>`,
+      `<p>bar</p>`,
+      `</div>`,
+      `</body></html>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] using context", async () => {
+  function App(this: FC<{}, { foo: string }>) {
+    const { context } = this;
+    return (
+      <div>
+        <p>{context.foo}</p>
+      </div>
+    );
+  }
+  assertEquals(
+    await renderToString(<App />, { foo: "bar" }),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,

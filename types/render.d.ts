@@ -1,4 +1,5 @@
 export interface RenderOptions {
+  context?: Record<string, unknown>;
   request?: Request;
   status?: number;
   headers?: {
