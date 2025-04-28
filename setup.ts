@@ -1,18 +1,9 @@
-#!/usr/bin/env node
-
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { argv } from "node:process";
 
-switch (process.argv[2]) {
-  case "setup":
-    setup()
-    break;
-  default:
-    process.exit(0);
-}
-
-async function setup() {
+export async function setup() {
   if (globalThis.Deno && existsSync("deno.jsonc")) {
     console.log("Please add the following options to your deno.jsonc file:");
     console.log(
@@ -39,7 +30,7 @@ async function setup() {
   }
   const compilerOptions = tsConfig.compilerOptions ?? (tsConfig.compilerOptions = {});
   if (compilerOptions.jsx === "react-jsx" && compilerOptions.jsxImportSource === "mono-jsx") {
-    console.log("%cmono-jsx already setup.","color:grey");
+    console.log("%cmono-jsx already setup.", "color:grey");
     return;
   }
   if (!globalThis.Deno) {
@@ -49,5 +40,19 @@ async function setup() {
   compilerOptions.jsx = "react-jsx";
   compilerOptions.jsxImportSource = "mono-jsx";
   await writeFile(tsConfigFilename, JSON.stringify(tsConfig, null, 2));
-  console.log("✅ mono-jsx setup complete.")
+  console.log("✅ mono-jsx setup complete.");
+}
+
+function isMain() {
+  if (import.meta.main) {
+    return true;
+  }
+  if (import.meta.url.startsWith("file:")) {
+    return argv[1] === fileURLToPath(import.meta.url);
+  }
+  return false;
+}
+
+if (isMain()) {
+  setup();
 }

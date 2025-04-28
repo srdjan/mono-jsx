@@ -43,6 +43,7 @@ async function buildPackageModule(name: string, format: "esm" | "cjs" = "esm") {
     target: "esnext",
     minify: false,
     bundle: true,
+    external: ["node:*"],
   });
   return await Deno.lstat(outfile);
 }
@@ -89,12 +90,30 @@ if (import.meta.main) {
   console.log(`· STATE_JS %c(${state_js.length} bytes)`, "color:grey");
   console.log(`· SUSPENSE_JS %c(${suspense_js.length} bytes)`, "color:grey");
 
-  for (const moduleName of ["index", "jsx-runtime"]) {
-    {
-      const { size } = await buildPackageModule(moduleName, "esm");
-      console.log(`· ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");
-    }
+  for (const moduleName of ["index", "jsx-runtime", "setup"]) {
+    const { size } = await buildPackageModule(moduleName, "esm");
+    console.log(`· ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");
   }
+
+  Deno.writeTextFile(
+    "./bin/mono-jsx",
+    [
+      `#!/usr/bin/env node`,
+      ``,
+      `import { argv } from "node:process";`,
+      `import { setup } from "../setup.mjs";`,
+      ``,
+      `switch (argv[2]) {`,
+      `  case "setup":`,
+      `    setup()`,
+      `    break;`,
+      `  default:`,
+      `    process.exit(0);`,
+      `}`,
+      ``,
+    ].join("\n"),
+    { mode: 0o755 },
+  );
 
   console.log("%cBuild complete! (%d ms)", "color:grey", performance.now() - start);
   stop();
