@@ -95,6 +95,7 @@ if (import.meta.main) {
     console.log(`· ${moduleName}.mjs %c(${size.toLocaleString()} bytes)`, "color:grey");
   }
 
+  await Deno.mkdir("./bin", { recursive: true });
   Deno.writeTextFile(
     "./bin/mono-jsx",
     [
