@@ -489,9 +489,36 @@ export default {
 };
 ```
 
+## Using Context
+
+You can use the `context` property in `this` to access context values in your components. The context is defined on the root `<html>` element:
+
+```tsx
+function Dash(this: FC<{}, { auth: { uuid: string; name: string } }>) {
+  const { auth } = this.context;
+  return (
+    <div>
+      <h1>Welcome back, {auth.name}!</h1>;
+      <p>Your UUID is {auth.uuid}</p>
+    </div>
+  );
+}
+
+export default {
+  fetch: (req) => {
+    const auth = doAuth(req);
+    return (
+      <html context={{ auth }} request={req}>
+        <Dash />
+      </html>
+    );
+  },
+};
+```
+
 ## Accessing Request Info
 
-You can access request information in components via the `request` property in `this`. Pass the request to the root `<html>` element:
+You can access request information in components via the `request` property in `this` which is set on the root `<html>` element:
 
 ```tsx
 function RequestInfo(this: FC) {
@@ -517,7 +544,7 @@ export default {
 
 ## Customizing Response
 
-Add `status` or `headers` attributes to the `<html>` element to customize the response:
+Add `status` or `headers` attributes to the root `<html>` element to customize the response:
 
 ```jsx
 export default {
