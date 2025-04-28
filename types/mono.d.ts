@@ -66,7 +66,10 @@ export interface CSSProperties extends BaseCSSProperties, AtRuleCSSProperties, P
   [key: `&${" " | "." | "["}${string}`]: CSSProperties;
 }
 
+export type ChildType = JSX.Element | string | number | bigint | boolean | null;
+
 export interface BaseAttributes {
+  children?: ChildType | (ChildType)[];
   key?: string | number;
   slot?: string;
 }

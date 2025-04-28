@@ -4,22 +4,25 @@
   "description": "`<html>` as a `Response`.",
   "type": "module",
   "module": "./index.mjs",
+  "types": "./types/index.d.ts",
   "bin": {
     "mono-jsx": "./bin/mono-jsx"
   },
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
+      "node": "./index.mjs",
       "import": "./index.mjs"
     },
     "./jsx-runtime": {
       "types": "./types/jsx-runtime.d.ts",
-      "import": "./jsx-runtime.mjs",
-      "node": "./jsx-runtime.mjs"
+      "node": "./jsx-runtime.mjs",
+      "import": "./jsx-runtime.mjs"
     },
     "./jsx-dev-runtime": {
       "types": "./types/jsx-runtime.d.ts",
-      "import": "./jsx-runtime.mjs",
-      "node": "./jsx-runtime.mjs"
+      "node": "./jsx-runtime.mjs",
+      "import": "./jsx-runtime.mjs"
     }
   },
   "scripts": {

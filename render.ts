@@ -1,4 +1,4 @@
-import type { Children, ChildType, VNode } from "./types/jsx.d.ts";
+import type { ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { $computed, $fragment, $html, $state, $vnode } from "./symbols.ts";
 import { createState } from "./state.ts";
@@ -14,7 +14,7 @@ interface RenderContext {
   context?: Record<string, unknown>;
   request?: Request;
   eager?: boolean;
-  slots?: Children;
+  slots?: ChildType[];
   styleIds?: Set<string>;
 }
 
@@ -26,7 +26,7 @@ const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 &
 const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
 const toAttrStringLit = (str: string) => '"' + escapeHTML(str).replaceAll('"', '\\"') + '"';
 
-async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], stripSlotProp?: boolean): Promise<void> {
+async function renderNode(ctx: RenderContext, node: ChildType, stripSlotProp?: boolean): Promise<void> {
   const { write, stateStore } = ctx;
   switch (typeof node) {
     case "string":
@@ -39,7 +39,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
     case "object":
       if (isVNode(node)) {
         let [tag, props] = node;
-        let children: Children | undefined = props.children;
+        let children: ChildType[] | undefined = props.children;
 
         // fragment element
         if (tag === $fragment) {
@@ -60,7 +60,7 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         // `<slot>` element
         if (tag === "slot") {
           const ctxSlots = ctx.slots;
-          let slots: (ChildType | ChildType[])[] | undefined;
+          let slots: ChildType[] | undefined;
           if (ctxSlots !== undefined) {
             if (Array.isArray(ctxSlots)) {
               if (isVNode(ctxSlots)) {
@@ -105,8 +105,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
         if (tag === $computed) {
           const { deps, value, fn } = props;
           write(
-            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps))
-              + ")</script>",
+            '<m-state fc="' + fcIndex + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) +
+              ")</script>",
           );
           if (value !== undefined) {
             write(escapeHTML("" + value));
@@ -183,9 +183,9 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
             } else {
               valueOrDefault = valueProp ?? defaultValue;
             }
-            let matchedSlot: [string, ChildType | ChildType[]] | undefined;
-            let namedSlots: (ChildType | ChildType[])[] = new Array(slots.length);
-            let unnamedSlots: (ChildType | ChildType[])[] = new Array(slots.length);
+            let matchedSlot: [string, ChildType] | undefined;
+            let namedSlots: ChildType[] = new Array(slots.length);
+            let unnamedSlots: ChildType[] = new Array(slots.length);
             for (const slot of slots) {
               if (!isVNode(slot) || !slot[1].slot) {
                 unnamedSlots.push(slot);
@@ -404,8 +404,8 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
                       buffer += " " + propName;
                     }
                   } else {
-                    buffer += " "
-                      + (propValue === true ? escapeHTML(propName) : escapeHTML(propName) + "=" + toAttrStringLit("" + propValue));
+                    buffer += " " +
+                      (propValue === true ? escapeHTML(propName) : escapeHTML(propName) + "=" + toAttrStringLit("" + propValue));
                   }
                 }
             }
@@ -429,22 +429,18 @@ async function renderNode(ctx: RenderContext, node: ChildType | ChildType[], str
           if (onMountHandler) {
             ctx.index.mf++;
             write(
-              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,'
-                + onMountHandler.toString()
-                + ',"' + fcIndex + '"))}</script>',
+              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,' +
+                onMountHandler.toString() +
+                ',"' + fcIndex + '"))}</script>',
             );
           }
-        }
-      } else if (Array.isArray(node) || (node && Symbol.iterator in node)) {
-        for (const child of node) {
-          await renderNode(ctx, child);
         }
       }
       break;
   }
 }
 
-async function renderChildren(ctx: RenderContext, children: Children, stripSlotProp?: boolean) {
+async function renderChildren(ctx: RenderContext, children: ChildType[], stripSlotProp?: boolean) {
   if (Array.isArray(children) && !isVNode(children)) {
     for (const child of children) {
       await renderNode(ctx, child, stripSlotProp);
@@ -504,9 +500,9 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
               js += RUNTIME_COMPONENTS_JS.styleToCSS;
             }
             js += RUNTIME_STATE_JS;
-            js += "for(let[k,v]of"
-              + JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e))
-              + ")$defineState(k,v);";
+            js += "for(let[k,v]of" +
+              JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e)) +
+              ")$defineState(k,v);";
           }
           if (ctx.index.mf > 0) {
             js += RUNTIME_COMPONENTS_JS.event;

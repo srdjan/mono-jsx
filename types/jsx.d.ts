@@ -4,7 +4,6 @@ import type * as Mono from "./mono.d.ts";
 import type { HTML } from "./html.d.ts";
 
 export type ChildType = VNode | string | number | bigint | boolean | null;
-export type Children = ChildType | (ChildType | ChildType[])[];
 
 export type VNode = readonly [
   tag: string | symbol | FC<any>,

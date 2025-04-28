@@ -450,11 +450,11 @@ Deno.test("[ssr] using state", async () => {
     return <input type="number" value={this.value} />;
   }
   assertEquals(
-    await renderToString(<div>{[1, 2, 3].map(i => <InputNumber initialValue={i} />)}</div>),
+    await renderToString(<div>{[1, 2, 3].map((i) => <InputNumber initialValue={i} />)}</div>),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body><div>`,
-      [1, 2, 3].map(i =>
+      [1, 2, 3].map((i) =>
         [
           `<input type="number" value="${i}">`,
           `<m-group>`,
@@ -466,7 +466,7 @@ Deno.test("[ssr] using state", async () => {
       `<script>(()=>{`,
       RUNTIME_STATE_JS,
       `for(let[k,v]of`,
-      JSON.stringify([1, 2, 3].map(i => [`${i}:value`, i])),
+      JSON.stringify([1, 2, 3].map((i) => [`${i}:value`, i])),
       `)$defineState(k,v);})()</script>`,
     ].join(""),
   );
