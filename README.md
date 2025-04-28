@@ -498,18 +498,19 @@ function Dash(this: FC<{}, { auth: { uuid: string; name: string } }>) {
   const { auth } = this.context;
   return (
     <div>
-      <h1>Welcome back, {auth.name}!</h1>;
+      <h1>Welcome back, {auth.name}!</h1>
       <p>Your UUID is {auth.uuid}</p>
     </div>
   );
 }
 
 export default {
-  fetch: (req) => {
-    const auth = doAuth(req);
+  fetch: async (req) => {
+    const auth = await doAuth(req);
     return (
       <html context={{ auth }} request={req}>
-        <Dash />
+        {!auth && <p>Please Login</p>}
+        {auth && <Dash />}
       </html>
     );
   },
