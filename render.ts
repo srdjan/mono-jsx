@@ -24,10 +24,10 @@ const selfClosingTags = new Set("area,base,br,col,embed,hr,img,input,keygen,link
 
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
-const toAttrStringLit = (str: string) => '"' + escapeHTML(str).replaceAll('"', '\\"') + '"';
+const toAttrStringLit = (str: string) => '"' + escapeHTML(str) + '"';
 
 async function renderNode(ctx: RenderContext, node: ChildType, stripSlotProp?: boolean): Promise<void> {
-  const { write, stateStore } = ctx;
+  const { write } = ctx;
   switch (typeof node) {
     case "string":
       write(escapeHTML(node));
@@ -87,6 +87,7 @@ async function renderNode(ctx: RenderContext, node: ChildType, stripSlotProp?: b
           break;
         }
 
+        const stateStore = ctx.stateStore;
         const fcIndex = ctx.index.fc.toString(36);
 
         // state
@@ -420,11 +421,9 @@ async function renderNode(ctx: RenderContext, node: ChildType, stripSlotProp?: b
             } else if (children !== undefined) {
               await renderChildren(ctx, children);
             }
-            write("</" + (tag as string) + ">");
+            write("</" + tag + ">");
           } else if (propEffects.length > 0) {
-            write("<m-group>");
-            write(propEffects.join(""));
-            write("</m-group>");
+            write("<m-group>" + propEffects.join("") + "</m-group>");
           }
           if (onMountHandler) {
             ctx.index.mf++;

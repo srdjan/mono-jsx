@@ -38,9 +38,6 @@ export function createState(context?: Record<string, unknown>, request?: Request
       }
     },
     set(target, key, value, receiver) {
-      const vt = typeof value;
-      // clone the value to prevent memory leak
-      value = vt === "boolean" || vt === "number" || vt === "bigint" ? value : structuredClone(value);
       return Reflect.set(target, key, value, receiver);
     },
   });
