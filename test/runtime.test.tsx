@@ -414,7 +414,6 @@ Deno.test("[runtime] htmx", { sanitizeResources: false, sanitizeOps: false }, as
     </button>,
     "htmx=2.0.4",
   );
-  console.log(testPageUrl);
 
   const page = await browser.newPage();
   await page.goto(testPageUrl);
