@@ -533,7 +533,32 @@ export default {
 };
 ```
 
-## Using Context
+You can add the `catch` attribute to handle errors in async components. The `catch` attribute should be a function that returns a JSX element:
+
+```jsx
+async function Hello() {
+  throw new Error("BOOM!");
+  return <p>Hello world!</p>;
+}
+
+export default {
+  fetch: (req) => (
+    <html>
+      <Hello catch={err => <p>{err.messaage}</p>} />
+    </html>
+  ),
+};
+```
+
+## Using `this` in Components
+
+mono-jsx binds a special `this` object to your components when they are rendered. This object contains properties and methods that you can use to manage state, context, and other features.
+
+### Using State
+
+Check the [Using State](#using-state) section for more details on how to use state in your components.
+
+### Using Context
 
 You can use the `context` property in `this` to access context values in your components. The context is defined on the root `<html>` element:
 
@@ -561,7 +586,7 @@ export default {
 };
 ```
 
-## Accessing Request Info
+### Accessing Request Info
 
 You can access request information in components via the `request` property in `this` which is set on the root `<html>` element:
 
@@ -607,7 +632,7 @@ export default {
 };
 ```
 
-## Using htmx
+### Using htmx
 
 mono-jsx integrates with [htmx](https://htmx.org/) and [typed-htmx](https://github.com/Desdaemon/typed-htmx). To use htmx, add the `htmx` attribute to the root `<html>` element:
 
@@ -635,7 +660,7 @@ export default {
 };
 ```
 
-### Adding htmx Extensions
+#### Adding htmx Extensions
 
 You can add htmx [extensions](https://htmx.org/docs/#extensions) by adding the `htmx-ext-*` attribute to the root `<html>` element:
 
@@ -651,7 +676,7 @@ export default {
 };
 ```
 
-### Specifying htmx Version
+#### Specifying htmx Version
 
 You can specify the htmx version by setting the `htmx` attribute to a specific version:
 
@@ -667,7 +692,7 @@ export default {
 };
 ```
 
-### Installing htmx Manually
+#### Installing htmx Manually
 
 By default, mono-jsx installs htmx from [esm.sh](https://esm.sh/) CDN when you set the `htmx` attribute. You can also install htmx manually with your own CDN or local copy:
 
@@ -676,8 +701,18 @@ export default {
   fetch: (req) => (
     <html>
       <head>
-        <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
-        <script src="https://unpkg.com/htmx-ext-ws@2.0.2" integrity="sha384-vuKxTKv5TX/b3lLzDKP2U363sOAoRo5wSvzzc3LJsbaQRSBSS+3rKKHcOx5J8doU" crossorigin="anonymous"></script>
+        <script
+          src="https://unpkg.com/htmx.org@2.0.4"
+          integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+          crossorigin="anonymous"
+        >
+        </script>
+        <script
+          src="https://unpkg.com/htmx-ext-ws@2.0.2"
+          integrity="sha384-vuKxTKv5TX/b3lLzDKP2U363sOAoRo5wSvzzc3LJsbaQRSBSS+3rKKHcOx5J8doU"
+          crossorigin="anonymous"
+        >
+        </script>
       </head>
       <body>
         <button hx-get="/clicked" hx-swap="outerHTML">

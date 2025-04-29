@@ -75,28 +75,34 @@ export interface BaseAttributes {
 }
 
 export interface AsyncComponentAttributes {
-  rendering?: "eager";
-  placeholder?: JSX.Element | string;
+  /**
+   * Error handler.
+   */
   catch?: (err: any) => JSX.Element;
+  /**
+   * Loading spinner.
+   */
+  placeholder?: JSX.Element | string;
+  /**
+   * Rendering mode
+   * - `eager`: render immediately
+   */
+  rendering?: "eager";
 }
 
 export interface Elements {
+  /**
+   * The `<toggle>` element is a custom element that represents a toggle switch.
+   */
   toggle: {
     value: boolean;
   };
+  /**
+   * The `<switch>` element is a custom element that represents a switch.
+   */
   switch: {
     value?: string;
     defaultValue?: string;
-  };
-  cache: {
-    /** The cache key is used to identify the cache. */
-    key: string;
-    /** The `etag` (or **entity tag**) is an identifier for a specific version of a rendering cache. */
-    etag?: string;
-    /** The `max-age=N` prop indicates that the cache remains fresh until N seconds after the cache is generated. */
-    maxAge?: number;
-    /** The `stale-while-revalidate` prop indicates that the cache could reuse a stale rendering while it revalidates it to a cache. */
-    swr?: number;
   };
 }
 
