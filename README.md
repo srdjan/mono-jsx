@@ -157,7 +157,7 @@ mono-jsx supports [pseudo classes](https://developer.mozilla.org/en-US/docs/Web/
 </a>;
 ```
 
-### `<slot>` Element
+### Using `<slot>` Element
 
 mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) elements to render slotted content (equivalent to React's `children` property). You can also add the `name` attribute to define named slots:
 
@@ -185,7 +185,7 @@ function App() {
 }
 ```
 
-### `html` Tag Function
+### Using `html` Tag Function
 
 mono-jsx provides an `html` tag function to render raw HTML in JSX instead of React's `dangerouslySetInnerHTML`:
 
@@ -287,9 +287,9 @@ function App() {
 
 mono-jsx provides a minimal state runtime for updating the view based on client-side state changes.
 
-### Using State
+### Using Component State
 
-You can use `this` to define state in your components. The view will automatically update when the state changes:
+You can use the `this` keyword in your components to manage state. The state is bound to the component instance and can be updated directly, and will automatically re-render the view when the state changes:
 
 ```tsx
 function Counter(
@@ -427,9 +427,9 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
 }
 ```
 
-### Limitation of States
+### Limitation of State
 
-1\. States cannot be used in arrow function components.
+1\. Component state cannot be used in arrow function components.
 
 ```tsx
 // ❌ Won't work - state updates won't refresh the view
@@ -455,7 +455,7 @@ function App(this: FC) {
 }
 ```
 
-2\. States cannot be computed outside of the `this.computed` method.
+2\. Component state cannot be computed outside of the `this.computed` method.
 
 ```tsx
 // ❌ Won't work - state updates won't refresh the view
