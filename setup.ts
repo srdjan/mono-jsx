@@ -1,7 +1,5 @@
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { argv } from "node:process";
 
 export async function setup() {
   if (globalThis.Deno && existsSync("deno.jsonc")) {
@@ -41,18 +39,4 @@ export async function setup() {
   compilerOptions.jsxImportSource = "mono-jsx";
   await writeFile(tsConfigFilename, JSON.stringify(tsConfig, null, 2));
   console.log("✅ mono-jsx setup complete.");
-}
-
-function isMain() {
-  if (import.meta.main) {
-    return true;
-  }
-  if (import.meta.url.startsWith("file:")) {
-    return argv[1] === fileURLToPath(import.meta.url);
-  }
-  return false;
-}
-
-if (isMain()) {
-  setup();
 }

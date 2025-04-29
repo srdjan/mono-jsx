@@ -26,8 +26,7 @@
     }
   },
   "scripts": {
-    "prepublishOnly": "deno task build",
-    "postinstall": "node setup.mjs"
+    "prepublishOnly": "deno task build"
   },
   "files": [
     "*.mjs",
