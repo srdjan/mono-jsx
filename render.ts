@@ -305,7 +305,8 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
               if (typeof catchFC === "function") {
                 await renderNode({ ...rc, fcIndex, eager: true }, catchFC(err));
               } else {
-                write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.stack ?? err.message) + "</code></pre>");
+                write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
+                console.error(err);
               }
             }
           }
