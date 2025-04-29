@@ -1,6 +1,5 @@
 import type { ChildType, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
-import { createState } from "./state.ts";
 import { $computed, $fragment, $html, $state, $vnode } from "./symbols.ts";
 import { STATE_JS, SUSPENSE_JS, UTILS_JS } from "./runtime/index.ts";
 import { cx, escapeCSSText, escapeHTML, isObject, isString, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
@@ -27,6 +26,56 @@ const selfClosingTags = new Set("area,base,br,col,embed,hr,img,input,keygen,link
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
 const toAttrStringLit = (str: string) => '"' + escapeHTML(str) + '"';
+
+let collectDeps: ((fc: number, key: string, value: unknown) => void) | undefined;
+
+function createThis(
+  fc: number,
+  appState: Record<string, unknown> | null,
+  context?: Record<string, unknown>,
+  request?: Request,
+): Record<string, unknown> {
+  const computed = (fn: () => unknown): unknown => {
+    const deps = Object.create(null);
+    collectDeps = (fc, key, value) => deps[fc + ":" + key] = value;
+    const value = fn.call(proxy);
+    collectDeps = undefined;
+    if (value instanceof Promise || deps.size === 0) return value;
+    return [$computed, { value, deps, fn: fn.toString(), fc }, $vnode];
+  };
+  const proxy = new Proxy(Object.create(null), {
+    get(target, key, receiver) {
+      switch (key) {
+        case "app":
+          return appState;
+        case "context":
+          return context ?? {};
+        case "request":
+          if (!request) {
+            throw new Error("request is not defined");
+          }
+          return request;
+        case "computed":
+          return computed;
+        default: {
+          const value = Reflect.get(target, key, receiver);
+          if (typeof key === "symbol") {
+            return value;
+          }
+          if (collectDeps) {
+            collectDeps(fc, key, value);
+            return value;
+          }
+          return [$state, { key, value, fc }, $vnode];
+        }
+      }
+    },
+    set(target, key, value, receiver) {
+      return Reflect.set(target, key, value, receiver);
+    },
+  });
+  return proxy;
+}
 
 async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: boolean): Promise<void> {
   const { write } = rc;
@@ -214,7 +263,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
           const fcIndex = ++rc.index.fc;
           const { rendering, placeholder, catch: catchFC, ...fcProps } = props ?? Object.create(null);
           try {
-            const v = tag.call(createState(fcIndex, rc.appState, rc.context, rc.request), fcProps);
+            const v = tag.call(createThis(fcIndex, rc.appState, rc.context, rc.request), fcProps);
             const { children } = fcProps;
             const fcSlots = children !== undefined
               ? (Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children])
@@ -462,7 +511,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
       async start(controller) {
         const { appState: appStateInit, context, rendering, htmx } = renderOptions;
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
-        const appState = createState(0, null, context, request);
+        const appState = createThis(0, null, context, request);
         const stateStore = new Map<string, unknown>();
         const suspenses: Promise<void>[] = [];
         const rtComponents = { cx: false, styleToCSS: false };
