@@ -381,7 +381,7 @@ Deno.test("[ssr] catch error", async () => {
 });
 
 Deno.test("[ssr] use state", async () => {
-  function Foo(this: FC) {
+  function Foo(this: FC<{ foo: string }>) {
     return <span>{this.foo}</span>;
   }
 
@@ -598,7 +598,7 @@ Deno.test("[ssr] use request object", async () => {
 });
 
 Deno.test("[ssr] use context", async () => {
-  function App(this: FC<{}, { foo: string }>) {
+  function App(this: FC<{}, {}, { foo: string }>) {
     const { context } = this;
     return (
       <div>
