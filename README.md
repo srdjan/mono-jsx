@@ -377,6 +377,56 @@ function App(this: FC<{ input: string }>) {
 }
 ```
 
+### Using `<toggle>` Element with State
+
+The `<toggle>` element conditionally renders content based on the value of a state.
+
+```tsx
+function App(this: FC<{ show: boolean }>) {
+  this.show = false;
+
+  function toggle() {
+    this.show = !this.show;
+  }
+
+  return (
+    <div>
+      <toggle value={this.show}>
+        <h1>Welcome to mono-jsx!</h1>
+      </toggle>
+
+      <button onClick={toggle}>
+        {this.computed(() => this.show ? "Hide" : "Show")}
+      </button>
+    </div>
+  );
+}
+```
+
+### Using `<switch>` Element with State
+
+The `<switch>` element renders different content based on the value of a state. Elements with matching `slot` attributes are displayed when their value matches, otherwise default content is shown:
+
+```tsx
+function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
+  this.lang = "en";
+
+  return (
+    <div>
+      <switch value={this.lang}>
+        <h1 slot="en">Hello, world!</h1>
+        <h1 slot="zh">你好，世界！</h1>
+        <h1>✋🌎❗️</h1>
+      </switch>
+
+      <button onClick={() => this.lang = "en"}>English</button>
+      <button onClick={() => this.lang = "zh"}>中文</button>
+      <button onClick={() => this.lang = "emoji"}>Emoji</button>
+    </div>
+  );
+}
+```
+
 ### Limitation of States
 
 1\. States cannot be used in arrow function components.
@@ -433,121 +483,6 @@ function App(this: FC) {
     </div>
   );
 }
-```
-
-## Built-in Elements
-
-mono-jsx provides built-in elements to help you build reactive UIs.
-
-### `<toggle>` element
-
-The `<toggle>` element conditionally renders content based on a boolean value:
-
-```tsx
-function App(this: FC<{ show: boolean }>) {
-  this.show = false;
-
-  function toggle() {
-    this.show = !this.show;
-  }
-
-  return (
-    <div>
-      <toggle value={this.show}>
-        <h1>Welcome to mono-jsx!</h1>
-      </toggle>
-
-      <button onClick={toggle}>
-        {this.computed(() => this.show ? "Hide" : "Show")}
-      </button>
-    </div>
-  );
-}
-```
-
-### `<switch>` element
-
-The `<switch>` element renders different content based on a value. Elements with matching `slot` attributes are displayed when their value matches, otherwise default content is shown:
-
-```tsx
-function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
-  this.lang = "en";
-
-  return (
-    <div>
-      <switch value={this.lang}>
-        <h1 slot="en">Hello, world!</h1>
-        <h1 slot="zh">你好，世界！</h1>
-        <h1>✋🌎❗️</h1>
-      </switch>
-
-      <button onClick={() => this.lang = "en"}>English</button>
-      <button onClick={() => this.lang = "zh"}>中文</button>
-      <button onClick={() => this.lang = "emoji"}>Emoji</button>
-    </div>
-  );
-}
-```
-
-## Streaming Rendering
-
-mono-jsx renders your `<html>` as a readable stream, allowing async components to render asynchronously. You can use `placeholder` to display a loading state while waiting for async components to render:
-
-```jsx
-async function Sleep({ ms }) {
-  await new Promise((resolve) => setTimeout(resolve, ms));
-  return <slot />;
-}
-
-export default {
-  fetch: (req) => (
-    <html>
-      <h1>Welcome to mono-jsx!</h1>
-
-      <Sleep ms={1000} placeholder={<p>Sleeping...</p>}>
-        <p>After 1 second</p>
-      </Sleep>
-    </html>
-  ),
-};
-```
-
-You can set the `rendering` attribute to `"eager"` to force synchronous rendering (the `placeholder` will be ignored):
-
-```jsx
-async function Sleep({ ms }) {
-  await new Promise((resolve) => setTimeout(resolve, ms));
-  return <slot />;
-}
-
-export default {
-  fetch: (req) => (
-    <html>
-      <h1>Welcome to mono-jsx!</h1>
-
-      <Sleep ms={1000} rendering="eager">
-        <p>After 1 second</p>
-      </Sleep>
-    </html>
-  ),
-};
-```
-
-You can add the `catch` attribute to handle errors in async components. The `catch` attribute should be a function that returns a JSX element:
-
-```jsx
-async function Hello() {
-  throw new Error("BOOM!");
-  return <p>Hello world!</p>;
-}
-
-export default {
-  fetch: (req) => (
-    <html>
-      <Hello catch={err => <p>{err.messaage}</p>} />
-    </html>
-  ),
-};
 ```
 
 ## Using `this` in Components
@@ -628,7 +563,68 @@ export default {
 };
 ```
 
-## Customizing Response
+## Streaming Rendering
+
+mono-jsx renders your `<html>` as a readable stream, allowing async components to render asynchronously. You can use `placeholder` to display a loading state while waiting for async components to render:
+
+```jsx
+async function Sleep({ ms }) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  return <slot />;
+}
+
+export default {
+  fetch: (req) => (
+    <html>
+      <h1>Welcome to mono-jsx!</h1>
+
+      <Sleep ms={1000} placeholder={<p>Sleeping...</p>}>
+        <p>After 1 second</p>
+      </Sleep>
+    </html>
+  ),
+};
+```
+
+You can set the `rendering` attribute to `"eager"` to force synchronous rendering (the `placeholder` will be ignored):
+
+```jsx
+async function Sleep({ ms }) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  return <slot />;
+}
+
+export default {
+  fetch: (req) => (
+    <html>
+      <h1>Welcome to mono-jsx!</h1>
+
+      <Sleep ms={1000} rendering="eager">
+        <p>After 1 second</p>
+      </Sleep>
+    </html>
+  ),
+};
+```
+
+You can add the `catch` attribute to handle errors in async components. The `catch` attribute should be a function that returns a JSX element:
+
+```jsx
+async function Hello() {
+  throw new Error("BOOM!");
+  return <p>Hello world!</p>;
+}
+
+export default {
+  fetch: (req) => (
+    <html>
+      <Hello catch={err => <p>{err.messaage}</p>} />
+    </html>
+  ),
+};
+```
+
+## Customizing html Response
 
 Add `status` or `headers` attributes to the root `<html>` element to customize the response:
 
