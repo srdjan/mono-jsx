@@ -9,6 +9,7 @@ mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in 
 - 🔫 Minimal state runtime
 - 🚨 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
+- 🥷 [htmx](https://htmx.org) integration
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 ## Installation
