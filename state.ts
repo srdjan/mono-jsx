@@ -8,16 +8,15 @@ export function createState(
   context?: Record<string, unknown>,
   request?: Request,
 ): Record<string, unknown> {
-  const computed = <T = unknown>(fn: () => T): T => {
-    const deps = Object.create(null) as Record<string, unknown>;
+  const computed = (fn: () => unknown): unknown => {
+    const deps = Object.create(null);
     collectDeps = (fc, key, value) => deps[fc + ":" + key] = value;
-    const value = fn();
+    const value = fn.call(proxy);
     collectDeps = undefined;
     if (value instanceof Promise || deps.size === 0) return value;
-    return [$computed, { value, deps, fn: fn.toString(), fc }, $vnode] as unknown as T;
+    return [$computed, { value, deps, fn: fn.toString(), fc }, $vnode];
   };
-
-  return new Proxy(Object.create(null), {
+  const proxy = new Proxy(Object.create(null), {
     get(target, key, receiver) {
       switch (key) {
         case "app":
@@ -48,4 +47,5 @@ export function createState(
       return Reflect.set(target, key, value, receiver);
     },
   });
+  return proxy;
 }
