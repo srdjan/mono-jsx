@@ -107,10 +107,27 @@ export interface Elements {
 }
 
 declare global {
-  type FC<S = Record<string, unknown>, AppState = Record<string, unknown>, Context = Record<string, unknown>> = {
+  /**
+   * mono-jsx `this` object that is bound to the function component.
+   */
+  type FC<State = {}, AppState = {}, Context = {}> = {
+    /**
+     * Application state.
+     * This is the state that is shared across the entire application.
+     */
     readonly app: AppState;
+    /**
+     * Context object.
+     */
     readonly context: Context;
+    /**
+     * Current request object.
+     */
     readonly request: Request;
+    /**
+     * The `computed` function is used to create a computed property.
+     * It takes a function that returns a value and returns the value.
+     */
     readonly computed: <V = unknown>(computeFn: () => V) => V;
-  } & Omit<S, "app" | "context" | "request" | "computed">;
+  } & Omit<State, "app" | "context" | "request" | "computed">;
 }

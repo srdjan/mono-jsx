@@ -554,6 +554,22 @@ export default {
 
 mono-jsx binds a special `this` object to your components when they are rendered. This object contains properties and methods that you can use to manage state, context, and other features.
 
+The `this` object contains the following properties:
+
+- `app`: The app state defined on the root `<html>` element.
+- `context`: The context defined on the root `<html>` element.
+- `request`: The request object from the `fetch` handler.
+- `computed`: A method to create computed properties based on state.
+
+```ts
+type FC<State = {}, AppState = {}, Context = {}> = {
+  readonly app: AppState;
+  readonly context: Context;
+  readonly request: Request;
+  readonly computed: <V = unknown>(computeFn: () => V) => V;
+} & Omit<State, "app" | "context" | "request" | "computed">;
+```
+
 ### Using State
 
 Check the [Using State](#using-state) section for more details on how to use state in your components.
