@@ -109,6 +109,9 @@ You'll need [tsx](https://www.npmjs.com/package/tsx) to start the app without a 
 npx tsx app.tsx
 ```
 
+> [!NOTE]
+> Only root `<html>` element will be rendered as a `Response` object. You cannot return a `<div>` or any other element directly from the `fetch` handler. This is a limitation of the mono-jsx runtime.
+
 ## Using JSX
 
 mono-jsx uses [**JSX**](https://react.dev/learn/describing-the-ui) to describe the user interface, similar to React but with key differences.
