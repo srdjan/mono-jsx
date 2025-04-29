@@ -713,18 +713,8 @@ export default {
   fetch: (req) => (
     <html>
       <head>
-        <script
-          src="https://unpkg.com/htmx.org@2.0.4"
-          integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-          crossorigin="anonymous"
-        >
-        </script>
-        <script
-          src="https://unpkg.com/htmx-ext-ws@2.0.2"
-          integrity="sha384-vuKxTKv5TX/b3lLzDKP2U363sOAoRo5wSvzzc3LJsbaQRSBSS+3rKKHcOx5J8doU"
-          crossorigin="anonymous"
-        >
-        </script>
+        <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/htmx-ext-ws@2.0.2" integrity="sha384-vuKxTKv5TX/b3lLzDKP2U363sOAoRo5wSvzzc3LJsbaQRSBSS+3rKKHcOx5J8doU" crossorigin="anonymous"></script>
       </head>
       <body>
         <button hx-get="/clicked" hx-swap="outerHTML">
