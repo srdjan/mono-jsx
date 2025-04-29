@@ -3,7 +3,7 @@
  * @see https://htmx.org/docs/#extensions
  */
 type HtmxExts = {
-  [key in `html-ext-${JSX.HtmxExtensions[keyof JSX.HtmxExtensions]}`]:
+  [key in `htmx-ext-${JSX.HtmxExtensions[keyof JSX.HtmxExtensions]}`]:
     | number
     | string
     | boolean;

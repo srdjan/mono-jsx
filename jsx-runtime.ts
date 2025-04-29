@@ -15,7 +15,7 @@ const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(nu
     const renderOptions = Object.create(null);
     const optionsKeys = new Set(["appState", "context", "request", "status", "headers", "rendering", "htmx"]);
     for (const [key, value] of Object.entries(props)) {
-      if (optionsKeys.has(key) || key.startsWith("html-ext-")) {
+      if (optionsKeys.has(key) || key.startsWith("htmx-ext-")) {
         renderOptions[key] = value;
         delete props[key];
       }

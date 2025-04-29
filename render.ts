@@ -510,10 +510,10 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
             write("<script>(()=>{" + js + "})()</script>");
           }
           if (htmx) {
-            write(`<script src="https://raw.esm.sh/htmx.org${htmx === true ? "" : "@" + htmx}/dist/htmx.min.js"></script>`);
-            for (const [name, version] of Object.entries(renderOptions)) {
-              if (name.startsWith("html-ext-")) {
-                write(`<script src="https://raw.esm.sh/${name}${version === true ? "" : "@" + version}"></script>`);
+            write(`<script src="https://raw.esm.sh/htmx.org${htmx === true ? "" : escapeHTML("@" + htmx)}/dist/htmx.min.js"></script>`);
+            for (const [key, value] of Object.entries(renderOptions)) {
+              if (key.startsWith("htmx-ext-") && value) {
+                write(`<script src="https://raw.esm.sh/${key}${value === true ? "" : escapeHTML("@" + value)}"></script>`);
               }
             }
           }

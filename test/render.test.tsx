@@ -775,7 +775,7 @@ Deno.test("[ssr] htmx", async () => {
       <button type="button" hx-post="/clicked" hx-swap="outerHTML">
         Click Me
       </button>,
-      { htmx: 2, "html-ext-response-targets": "2.0.2" },
+      { htmx: 2, "htmx-ext-response-targets": "2.0.2" },
     ),
     [
       `<!DOCTYPE html>`,
@@ -783,7 +783,7 @@ Deno.test("[ssr] htmx", async () => {
       `<button type="button" hx-post="/clicked" hx-swap="outerHTML">Click Me</button>`,
       `</body></html>`,
       `<script src="https://raw.esm.sh/htmx.org@2/dist/htmx.min.js"></script>`,
-      `<script src="https://raw.esm.sh/html-ext-response-targets@2.0.2"></script>`,
+      `<script src="https://raw.esm.sh/htmx-ext-response-targets@2.0.2"></script>`,
     ].join(""),
   );
 });
