@@ -285,7 +285,7 @@ function App() {
 
 ## Reactive
 
-mono-jsx provides a minimal state runtime for updating the view based on client-side state changes:
+mono-jsx provides a minimal state runtime for updating the view based on client-side state changes.
 
 ### Using State
 
