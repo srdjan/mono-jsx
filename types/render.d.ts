@@ -42,11 +42,6 @@ export interface RenderOptions extends Partial<HtmxExts> {
     setCookie?: string;
   };
   /**
-   * Rendering mode.
-   * - **eager**: Render the component immediately.
-   */
-  rendering?: "eager";
-  /**
    * Install htmx script with the given version.
    * @see https://htmx.org/
    * @defaultValue `false`

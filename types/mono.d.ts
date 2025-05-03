@@ -66,10 +66,10 @@ export interface CSSProperties extends BaseCSSProperties, AtRuleCSSProperties, P
   [key: `&${" " | "." | "["}${string}`]: CSSProperties;
 }
 
-export type ChildType = JSX.Element | string | number | bigint | boolean | null;
+export type ChildType = JSX.Element | JSX.Element[] | string | number | bigint | boolean | null;
 
 export interface BaseAttributes {
-  children?: ChildType | (ChildType)[];
+  children?: ChildType | ChildType[];
   key?: string | number;
   slot?: string;
 }
@@ -94,19 +94,24 @@ export interface Elements {
   /**
    * The `<toggle>` element is a custom element that represents a toggle switch.
    */
-  toggle: {
-    value: boolean;
+  toggle: BaseAttributes & {
+    value?: boolean | string | number | null;
   };
   /**
    * The `<switch>` element is a custom element that represents a switch.
    */
-  switch: {
+  switch: BaseAttributes & {
     value?: string;
     defaultValue?: string;
   };
 }
 
 declare global {
+  /**
+   * The `html` function is used to create XSS-unsafe HTML elements.
+   */
+  var html: JSX.Raw, css: JSX.Raw, js: JSX.Raw;
+
   /**
    * mono-jsx `this` object that is bound to the function component.
    */

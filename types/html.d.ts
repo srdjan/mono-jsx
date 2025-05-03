@@ -822,7 +822,7 @@ export namespace HTML {
 
   interface EventAttributes<T extends EventTarget> {
     // mono-jsx specific
-    onMount?: (e: { type: "mount"; currentTarget: T; target: T }) => void | Promise<void>;
+    onMount?: (event: { type: "mount"; target: T }) => void | Promise<void>;
 
     // Input Events
     onBeforeInput?: EventHandler<Event, T>;
