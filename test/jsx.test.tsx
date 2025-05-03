@@ -68,9 +68,7 @@ Deno.test("[jsx] jsx transform", () => {
   assertEquals(
     (
       <div>
-        {html`
-          <h1>Hello world!</h1>
-        `}
+        {html`<h1>Hello world!</h1>`}
       </div>
     ) as VNode,
     [

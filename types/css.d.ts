@@ -6107,7 +6107,8 @@ export interface StandardShorthandProperties<TLength = (string & {}) | 0, TTime 
 }
 
 export interface StandardProperties<TLength = (string & {}) | 0, TTime = string & {}>
-  extends StandardLonghandProperties<TLength, TTime>, StandardShorthandProperties<TLength, TTime> {}
+  extends StandardLonghandProperties<TLength, TTime>, StandardShorthandProperties<TLength, TTime>
+{}
 
 export interface VendorLonghandProperties<TLength = (string & {}) | 0, TTime = string & {}> {
   /**
@@ -8018,7 +8019,8 @@ export interface VendorShorthandProperties<TLength = (string & {}) | 0, TTime = 
 }
 
 export interface VendorProperties<TLength = (string & {}) | 0, TTime = string & {}>
-  extends VendorLonghandProperties<TLength, TTime>, VendorShorthandProperties<TLength, TTime> {}
+  extends VendorLonghandProperties<TLength, TTime>, VendorShorthandProperties<TLength, TTime>
+{}
 
 export interface ObsoleteProperties<TLength = (string & {}) | 0, TTime = string & {}> {
   /**
@@ -9143,7 +9145,8 @@ export interface Properties<TLength = (string & {}) | 0, TTime = string & {}>
     StandardProperties<TLength, TTime>,
     VendorProperties<TLength, TTime>,
     ObsoleteProperties<TLength, TTime>,
-    SvgProperties<TLength, TTime> {}
+    SvgProperties<TLength, TTime>
+{}
 
 export type AtRules =
   | "@charset"
