@@ -9,21 +9,8 @@
   },
   "tasks": {
     "build": "deno run -A --no-lock build.ts",
-    "test": "deno task build && deno test -A --no-lock test/"
-  },
-  "fmt": {
-    "lineWidth": 140,
-    "indentWidth": 2,
-    "singleQuote": false,
-    "useTabs": false,
-    "semiColons": true,
-    "include": [
-      "**/*.ts",
-      "**/*.tsx"
-    ],
-    "exclude": [
-      "runtime/index.ts"
-    ]
+    "test": "deno task build && deno test -A --no-lock test/",
+    "fmt":"dprint fmt"
   },
   "lint": {
     "exclude": [
