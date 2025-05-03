@@ -430,12 +430,12 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
               case "onMount":
                 if (typeof propValue === "function") {
                   rc.status.onmount++;
-                  buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, i => "," + i) + ')"';
+                  buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, (i) => "," + i) + ')"';
                 }
                 break;
               case "action":
                 if (typeof propValue === "function" && tag === "form") {
-                  buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, i => "," + i) + ')"';
+                  buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, (i) => "," + i) + ')"';
                 } else if (isString(propValue)) {
                   buffer += " action=" + toAttrStringLit(propValue);
                 }
@@ -449,10 +449,10 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 if (regexpHtmlTag.test(propName) && propValue !== undefined) {
                   if (propName.startsWith("on")) {
                     if (typeof propValue === "function") {
-                      buffer += " " + propName.toLowerCase() + '="$emit(event,'
-                        + rc.mfs.gen(propValue)
-                        + str(rc.fcIndex, i => "," + i)
-                        + ')"';
+                      buffer += " " + propName.toLowerCase() + '="$emit(event,' +
+                        rc.mfs.gen(propValue) +
+                        str(rc.fcIndex, (i) => "," + i) +
+                        ')"';
                     }
                   } else if (typeof propValue === "boolean") {
                     if (propValue) {
@@ -595,9 +595,9 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
           if (rc.mcs.size > 0) {
             for (const [vnode, fname] of rc.mcs.entries()) {
               const { fn, deps } = vnode[1];
-              js += '$defineComputed("' + fname + '",function(){return(' + fn.toString() + ").call(this)},"
-                + JSON.stringify(Object.keys(deps))
-                + ");";
+              js += '$defineComputed("' + fname + '",function(){return(' + fn.toString() + ").call(this)}," +
+                JSON.stringify(Object.keys(deps)) +
+                ");";
             }
             rc.mcs.clear();
           }
