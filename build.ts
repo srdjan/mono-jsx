@@ -29,8 +29,7 @@ async function buildRuntimeUtils(name: string): Promise<string> {
   if (ret.errors.length > 0) {
     throw new Error(ret.errors[0].text);
   }
-  const js = ret.outputFiles[0].text.trim().replace(/export\{(\w+) as (\w+)\};$/, "return $1;");
-  return "let " + name + "=(()=>{" + js + "})();";
+  return ret.outputFiles[0].text.trim().replace(/export\{(\w+) as (\w+)\};$/, "window.$" + name + "=$1;");
 }
 
 async function buildPackageModule(name: string, format: "esm" | "cjs" = "esm") {
@@ -59,9 +58,10 @@ if (import.meta.main) {
   const cx_js = await buildRuntimeUtils("cx");
   const styleToCSS_js = await buildRuntimeUtils("styleToCSS");
   const event_js = [
-    `let w=window;`,
-    `w.$emit=(evt,el,fn,fc)=>fn.call(w.$state?.(fc)??el,evt);`,
-    `w.$onsubmit=(evt,el,fn,fc)=>{evt.preventDefault();fn.call(w.$state?.(fc)??el,new FormData(el),evt)};`,
+    `var w=window;`,
+    `w.$emit=(e,fn,fc)=>fn.call(w.$state?.(fc)??e.target,e);`,
+    `w.$onsubmit=(e,fn,fc)=>{e.preventDefault();fn.call(w.$state?.(fc)??e.target,new FormData(e.target),e)};`,
+    `w.$onstage=()=>document.querySelectorAll("[onmount]").forEach(t=>{const k="onmount",j=t.getAttribute(k);t.removeAttribute(k);new Function("event",j)({type:"mount",target:t})});`,
   ].join("");
 
   await Deno.writeTextFile(

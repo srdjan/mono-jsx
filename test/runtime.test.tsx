@@ -58,11 +58,11 @@ Deno.test("[runtime] use state(text)", { sanitizeResources: false, sanitizeOps: 
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const h1 = await page.$("div h1")!;
+  const h1 = await page.$("div h1");
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello, world!");
 
-  const button = await page.$("div button")!;
+  const button = await page.$("div button");
   assert(button);
   await button.click();
 
@@ -87,7 +87,7 @@ Deno.test("[runtime] use state(number)", { sanitizeResources: false, sanitizeOps
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const span = await page.$("div span")!;
+  const span = await page.$("div span");
   assert(span);
   assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "0");
 
@@ -135,8 +135,8 @@ Deno.test("[runtime] use app state", { sanitizeResources: false, sanitizeOps: fa
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const span = await page.$("div span")!;
-  const strong = await page.$("div strong")!;
+  const span = await page.$("div span");
+  const strong = await page.$("div strong");
   assert(span);
   assert(strong);
   assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "0");
@@ -178,12 +178,12 @@ Deno.test("[runtime] use computed state", { sanitizeResources: false, sanitizeOp
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const h1 = await page.$("div h1")!;
+  const h1 = await page.$("div h1");
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.innerText), "1+2*0+3*0=1");
 
-  const bnt1 = await page.$("div button.bnt1")!;
-  const bnt2 = await page.$("div button.bnt2")!;
+  const bnt1 = await page.$("div button.bnt1");
+  const bnt2 = await page.$("div button.bnt2");
   assert(bnt1);
   assert(bnt2);
 
@@ -216,11 +216,11 @@ Deno.test("[runtime] use computed class name", { sanitizeResources: false, sanit
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const h1 = await page.$("div h1")!;
+  const h1 = await page.$("div h1");
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.className), "foo bar");
 
-  const button = await page.$("div button")!;
+  const button = await page.$("div button");
   assert(button);
   await button.click();
 
@@ -251,11 +251,11 @@ Deno.test("[runtime] use <toggle> element", { sanitizeResources: false, sanitize
   const div = await page.$("div h1");
   assert(!div);
 
-  const button = await page.$("div button")!;
+  const button = await page.$("div button");
   assert(button);
   await button.click();
 
-  let h1 = await page.$("div h1")!;
+  let h1 = await page.$("div h1");
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
 
@@ -332,7 +332,7 @@ Deno.test("[runtime] support 'mount' event", { sanitizeResources: false, sanitiz
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const div = await page.$("div")!;
+  const div = await page.$("div");
   assert(div);
   assertEquals(await div.evaluate((el: HTMLElement) => el.innerHTML), "<h1>Hello world!</h1>");
 
@@ -345,7 +345,7 @@ Deno.test("[runtime] use 'action' function handler", { sanitizeResources: false,
       <p></p>
       <form
         action={(data) => {
-          const p: HTMLElement = document.querySelector("p")!;
+          const p = document.querySelector("p")!;
           p.textContent = data.get("name")! as string;
         }}
       >
@@ -358,11 +358,11 @@ Deno.test("[runtime] use 'action' function handler", { sanitizeResources: false,
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const p = await page.$("p")!;
+  const p = await page.$("p");
   assert(p);
   assertEquals(await p.evaluate((el: HTMLElement) => el.textContent), "");
 
-  const button = await page.$("button")!;
+  const button = await page.$("button");
   assert(button);
   await button.click();
 
@@ -389,18 +389,18 @@ Deno.test("[runtime] suspense", { sanitizeResources: false, sanitizeOps: false }
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
-  const div = await page.$("div")!;
+  const div = await page.$("div");
   assert(div);
   assertEquals(await div.evaluate((el: HTMLElement) => el.childElementCount), 2);
 
   const p = await page.$("div > p");
   assert(!p);
 
-  const h1 = await page.$("div > h1")!;
+  const h1 = await page.$("div > h1");
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
 
-  const h2 = await page.$("div > h2")!;
+  const h2 = await page.$("div > h2");
   assert(h2);
   assertEquals(await h2.evaluate((el: HTMLElement) => el.textContent), "Building User Interfaces.");
 
@@ -419,15 +419,15 @@ Deno.test("[runtime] htmx", { sanitizeResources: false, sanitizeOps: false }, as
   await page.goto(testPageUrl);
   await page.waitForNetworkIdle();
 
-  let button = await page.$("button")!;
+  let button = await page.$("button");
   assert(button);
   assertEquals(await button.evaluate((el: HTMLElement) => el.textContent), "Click Me");
   await button.click();
   await page.waitForNetworkIdle();
 
-  button = await page.$("button")!;
+  button = await page.$("button");
   assert(!button);
-  const h1 = await page.$("h1")!;
+  const h1 = await page.$("h1");
   assert(h1);
   assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Clicked!");
 

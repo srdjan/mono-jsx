@@ -6,26 +6,51 @@ import { cx, escapeCSSText, escapeHTML, isObject, isString, styleToCSS, toHyphen
 
 interface RenderContext {
   write: (chunk: string) => void;
+  suspenses: Promise<void>[];
+  mcs: IdGen<VNode>;
+  mfs: IdGen<CallableFunction>;
+  status: RenderStatus;
   appState: Record<string, unknown>;
   stateStore: Map<string, unknown>;
-  suspenses: Promise<void>[];
-  index: { fc: number; mf: number };
-  runtimeUtils: { cx: boolean; styleToCSS: boolean };
   context?: Record<string, unknown>;
   request?: Request;
-  eager?: boolean;
   fcIndex?: number;
   fcSlots?: ChildType[];
-  styleIds?: Set<string>;
+  cssIds?: Set<string>;
+}
+
+interface RenderStatus {
+  fcIndex: number;
+  chunkIndex: number;
+  onmount: number;
+  cx?: boolean;
+  styleToCSS?: boolean;
+}
+
+interface RuntimeJSMeta {
+  state?: boolean;
+  cx?: boolean;
+  styleToCSS?: boolean;
+  suspense?: boolean;
+  event?: boolean;
+}
+
+interface IdGen<K> {
+  readonly size: number;
+  entries(): Iterable<[K, string]>;
+  clear(): void;
+  gen(key: K): string;
 }
 
 const encoder = new TextEncoder();
 const regexpHtmlTag = /^[a-z][\w\-$]*$/;
 const selfClosingTags = new Set("area,base,br,col,embed,hr,img,input,keygen,link,meta,param,source,track,wbr".split(","));
+const cdn = "https://raw.esm.sh"; // the cdn for loading htmx and its extensions
 
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
 const toAttrStringLit = (str: string) => '"' + escapeHTML(str) + '"';
+const str = <T = string | number>(v: T | undefined, str: (v: T) => string) => v !== undefined ? str(v) : "";
 
 let collectDeps: ((fc: number, key: string, value: unknown) => void) | undefined;
 
@@ -38,12 +63,12 @@ function createThis(
   const computed = (fn: () => unknown): unknown => {
     const deps = Object.create(null);
     collectDeps = (fc, key, value) => deps[fc + ":" + key] = value;
-    const value = fn.call(proxy);
+    const value = fn.call(thisProxy);
     collectDeps = undefined;
-    if (value instanceof Promise || deps.size === 0) return value;
-    return [$computed, { value, deps, fn: fn.toString(), fc }, $vnode];
+    if (value instanceof Promise || Object.keys(deps).length === 0) return value;
+    return [$computed, { value, deps, fc, fn }, $vnode];
   };
-  const proxy = new Proxy(Object.create(null), {
+  const thisProxy = new Proxy(Object.create(null), {
     get(target, key, receiver) {
       switch (key) {
         case "app":
@@ -74,7 +99,7 @@ function createThis(
       return Reflect.set(target, key, value, receiver);
     },
   });
-  return proxy;
+  return thisProxy;
 }
 
 async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: boolean): Promise<void> {
@@ -93,7 +118,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
         const { stateStore } = rc;
 
         // fragment element
-        if (tag === $fragment || tag === "htmx") {
+        if (tag === $fragment) {
           if (props.children !== undefined) {
             await renderChildren(rc, props.children);
           }
@@ -122,11 +147,8 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
 
         // computed
         if (tag === $computed) {
-          const { deps, value, fn, fc } = props;
-          write(
-            '<m-state fc="' + fc + '" computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) +
-              ")</script>",
-          );
+          const { deps, value, fc } = props;
+          write('<m-state fc="' + fc + '" computed="' + rc.mcs.gen(node) + '">');
           if (value !== undefined) {
             write(escapeHTML("" + value));
           }
@@ -158,18 +180,18 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
           break;
         }
 
-        // toggle element
+        // `<toggle>` element
         if (tag === "toggle") {
           const { value: valueProp, children } = props;
           if (children !== undefined) {
-            if (isVNode(valueProp) && valueProp[0] === $state || valueProp[0] === $computed) {
-              const { key, deps, value, fn, fc } = valueProp[1];
+            if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
+              const { key, deps, value, fc } = valueProp[1];
               write('<m-state mode="toggle" fc="' + fc + '" ');
               if (key) {
                 write("key=" + toAttrStringLit(key) + ">");
                 stateStore.set(fc + ":" + key, !!value);
               } else {
-                write('computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>");
+                write('computed="' + rc.mcs.gen(valueProp) + '">');
                 for (const [key, value] of Object.entries(deps)) {
                   if (!stateStore.has(key)) {
                     stateStore.set(key, value);
@@ -191,7 +213,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
           break;
         }
 
-        // switch element
+        // `<switch>` element
         if (tag === "switch") {
           const { value: valueProp, defaultValue, children } = props;
           if (children !== undefined) {
@@ -200,14 +222,14 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
             let computed: string | undefined;
             let valueOrDefault: unknown;
             if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
-              const { key, deps, value, fn, fc } = valueProp[1];
+              const { key, deps, value, fc } = valueProp[1];
               valueOrDefault = value ?? defaultValue;
               stateful = '<m-state mode="switch" fc="' + fc + '" ';
               if (key) {
                 stateful += "key=" + toAttrStringLit(key) + ">";
                 stateStore.set(fc + ":" + key, valueOrDefault);
               } else {
-                stateful += 'computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>";
+                stateful += 'computed="' + rc.mcs.gen(valueProp) + '">';
                 for (const [key, value] of Object.entries(deps)) {
                   if (!stateStore.has(key)) {
                     stateStore.set(key, value);
@@ -260,7 +282,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
 
         // function component
         if (typeof tag === "function") {
-          const fcIndex = ++rc.index.fc;
+          const fcIndex = ++rc.status.fcIndex;
           const { rendering, placeholder, catch: catchFC, ...fcProps } = props ?? Object.create(null);
           try {
             const v = tag.call(createThis(fcIndex, rc.appState, rc.context, rc.request), fcProps);
@@ -268,42 +290,41 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
             const fcSlots = children !== undefined
               ? (Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children])
               : undefined;
-            const eager = ((rendering ?? tag.rendering) === "eager") || rc.eager;
             if (v instanceof Promise) {
-              if (eager) {
-                await renderNode({ ...rc, fcIndex, eager: true, fcSlots }, await v);
+              if ((rendering ?? tag.rendering) === "eager") {
+                await renderNode({ ...rc, fcIndex, fcSlots }, await v);
               } else {
-                const chunkId = (rc.suspenses.length + 1).toString(36);
-                rc.suspenses.push(v.then(async (c) => {
-                  write('<m-chunk chunk-id="' + chunkId + '"><template>');
-                  await renderNode({ ...rc, fcIndex, eager, fcSlots }, c);
+                const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
+                rc.suspenses.push(v.then(async (node) => {
+                  write("<m-chunk " + chunkIdAttr + "><template>");
+                  await renderNode({ ...rc, fcIndex, fcSlots }, node);
                   write("</template></m-chunk>");
                 }));
-                write('<m-portal chunk-id="' + chunkId + '">');
+                write("<m-portal " + chunkIdAttr + ">");
                 if (placeholder) {
-                  await renderNode({ ...rc, fcIndex, eager: true }, placeholder);
+                  await renderNode({ ...rc, fcIndex }, placeholder);
                 }
                 write("</m-portal>");
               }
-            } else if (isObject(v) && Symbol.iterator in v && !isVNode(v)) {
-              for (const c of v) {
-                await renderNode({ ...rc, fcIndex, eager, fcSlots }, c);
-              }
             } else if (isObject(v) && Symbol.asyncIterator in v) {
-              if (eager) {
+              if ((rendering ?? tag.rendering) === "eager") {
                 for await (const c of v) {
-                  await renderNode({ ...rc, fcIndex, eager: true, fcSlots }, c);
+                  await renderNode({ ...rc, fcIndex, fcSlots }, c);
                 }
               } else {
                 // todo: implement suspense for async generator
               }
+            } else if (isObject(v) && Symbol.iterator in v && !isVNode(v)) {
+              for (const node of v) {
+                await renderNode({ ...rc, fcIndex, fcSlots }, node);
+              }
             } else {
-              await renderNode({ ...rc, fcIndex, eager, fcSlots }, v);
+              await renderNode({ ...rc, fcIndex, fcSlots }, v);
             }
           } catch (err) {
             if (err instanceof Error) {
               if (typeof catchFC === "function") {
-                await renderNode({ ...rc, fcIndex, eager: true }, catchFC(err));
+                await renderNode({ ...rc, fcIndex }, catchFC(err));
               } else {
                 write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
                 console.error(err);
@@ -316,32 +337,31 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
         // regular html element
         if (isString(tag) && regexpHtmlTag.test(tag)) {
           let buffer = "<" + tag;
-          let propEffects: string[] = [];
-          let onMountHandler: (() => void) | undefined;
+          let stateTags = "";
           for (let [propName, propValue] of Object.entries(props)) {
             if (propName === "children") {
               continue;
             }
             if (isVNode(propValue) && (propValue[0] === $state || propValue[0] === $computed)) {
-              const { key, value, deps, fn, fc } = propValue[1];
+              const { key, value, deps, fc } = propValue[1];
               if (propName === "class") {
-                rc.runtimeUtils.cx = true;
+                rc.status.cx = true;
               } else if (propName === "style") {
-                rc.runtimeUtils.styleToCSS = true;
+                rc.status.styleToCSS = true;
               }
-              propEffects.push("<m-state mode=" + toAttrStringLit("[" + propName + "]") + ' fc="' + fc + '" ');
+              stateTags += "<m-state mode=" + toAttrStringLit("[" + propName + "]") + ' fc="' + fc + '" ';
               if (key) {
-                propEffects.push("key=" + toAttrStringLit(key) + ">");
+                stateTags += "key=" + toAttrStringLit(key) + ">";
                 stateStore.set(fc + ":" + key, value);
               } else {
-                propEffects.push('computed><script type="computed">$(' + fn + ", " + JSON.stringify(Object.keys(deps)) + ")</script>");
+                stateTags += 'computed="' + rc.mcs.gen(propValue) + '">';
                 for (const [key, value] of Object.entries(deps)) {
                   if (!stateStore.has(key)) {
                     stateStore.set(key, value);
                   }
                 }
               }
-              propEffects.push("</m-state>");
+              stateTags += "</m-state>";
               propValue = value;
             }
             switch (propName) {
@@ -374,19 +394,19 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                   if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
                     let css = "";
                     let raw = "";
-                    let styleIds: Set<string>;
                     let id: string;
                     let cssSelector: string;
+                    let cssIds: Set<string>;
                     if (style.length > 0) {
                       css = styleToCSS(style);
                       raw += css + "|";
                     }
                     raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
-                    styleIds = rc.styleIds ?? (rc.styleIds = new Set());
                     id = hashCode(raw).toString(36);
                     cssSelector = "[data-css-" + id + "]";
-                    if (!styleIds.has(id)) {
-                      styleIds.add(id);
+                    cssIds = rc.cssIds ?? (rc.cssIds = new Set());
+                    if (!cssIds.has(id)) {
+                      cssIds.add(id);
                       if (css) {
                         css = cssSelector + "{" + css + "}";
                       }
@@ -409,14 +429,13 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 break;
               case "onMount":
                 if (typeof propValue === "function") {
-                  onMountHandler = propValue;
+                  rc.status.onmount++;
+                  buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, i => "," + i) + ')"';
                 }
                 break;
               case "action":
                 if (typeof propValue === "function" && tag === "form") {
-                  const fn = "$MF_" + (rc.index.mf++).toString(36);
-                  write("<script>function " + fn + "(fd){(" + propValue.toString() + ")(fd)}</script>");
-                  buffer += ' onsubmit="$onsubmit(event,this,' + fn + (rc.fcIndex !== undefined ? "," + rc.fcIndex : "") + ')"';
+                  buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, i => "," + i) + ')"';
                 } else if (isString(propValue)) {
                   buffer += " action=" + toAttrStringLit(propValue);
                 }
@@ -430,12 +449,10 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 if (regexpHtmlTag.test(propName) && propValue !== undefined) {
                   if (propName.startsWith("on")) {
                     if (typeof propValue === "function") {
-                      const fn = "$MF_" + (rc.index.mf++).toString(36);
-                      write("<script>function " + fn + "(e){(" + propValue.toString() + ")(e)}</script>");
-                      buffer += " " + propName.toLowerCase() + '="$emit(event,this,' +
-                        fn +
-                        (rc.fcIndex !== undefined ? "," + rc.fcIndex : "") +
-                        ')"';
+                      buffer += " " + propName.toLowerCase() + '="$emit(event,'
+                        + rc.mfs.gen(propValue)
+                        + str(rc.fcIndex, i => "," + i)
+                        + ')"';
                     }
                   } else if (typeof propValue === "boolean") {
                     if (propValue) {
@@ -449,8 +466,8 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
           }
           write(buffer + ">");
           if (!selfClosingTags.has(tag)) {
-            if (propEffects.length > 0) {
-              write(propEffects.join(""));
+            if (stateTags) {
+              write(stateTags);
             }
             if (props.innerHTML) {
               write(props.innerHTML);
@@ -458,19 +475,12 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
               await renderChildren(rc, props.children);
             }
             write("</" + tag + ">");
-          } else if (propEffects.length > 0) {
-            write("<m-group>" + propEffects.join("") + "</m-group>");
-          }
-          if (onMountHandler) {
-            rc.index.mf++;
-            write(
-              '<script>{const target=document.currentScript.previousElementSibling;addEventListener("load",()=>$emit({type:"mount",currentTarget:target,target},target,' +
-                onMountHandler.toString() +
-                (rc.fcIndex !== undefined ? "," + rc.fcIndex : "") +
-                "))}</script>",
-            );
+          } else if (stateTags) {
+            write("<m-group>" + stateTags + "</m-group>");
           }
         }
+      } else if (Array.isArray(node) && node.length > 0) {
+        renderChildren(rc, node, stripSlotProp);
       }
       break;
   }
@@ -483,6 +493,21 @@ async function renderChildren(rc: RenderContext, children: ChildType | ChildType
     }
   } else {
     await renderNode(rc, children, stripSlotProp);
+  }
+}
+
+class IdGenImpl<T> extends Map<T, string> implements IdGen<T> {
+  private _id = 0;
+  constructor(private _prefix: string) {
+    super();
+  }
+  gen(v: T) {
+    let id = this.get(v);
+    if (id === undefined) {
+      id = this._prefix + (this._id++).toString(36);
+      this.set(v, id);
+    }
+    return id;
   }
 }
 
@@ -510,22 +535,83 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
   return new Response(
     new ReadableStream<Uint8Array>({
       async start(controller) {
-        const { appState: appStateInit, context, rendering, htmx } = renderOptions;
+        const { appState: appStateInit, context, htmx } = renderOptions;
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
         const appState = createThis(0, null, context, request);
         const stateStore = new Map<string, unknown>();
         const suspenses: Promise<void>[] = [];
-        const rtComponents = { cx: false, styleToCSS: false };
         const rc: RenderContext = {
           write,
+          suspenses,
           context,
           request,
           appState,
           stateStore,
-          suspenses,
-          runtimeUtils: rtComponents,
-          index: { fc: 0, mf: 0 },
-          eager: rendering === "eager",
+          mcs: new IdGenImpl<VNode>("$MC_"),
+          mfs: new IdGenImpl<CallableFunction>("$MF_"),
+          status: { fcIndex: 0, chunkIndex: 0, onmount: 0 },
+        };
+        const runtimeJS: RuntimeJSMeta = {};
+        // finalize creates runtime JS for client
+        // it may be called recursively when thare are unresolved suspenses
+        const finalize = async () => {
+          let js = "";
+          if (rc.status.cx && !runtimeJS.cx) {
+            runtimeJS.cx = true;
+            js += UTILS_JS.cx;
+          }
+          if (rc.status.styleToCSS && !runtimeJS.styleToCSS) {
+            runtimeJS.styleToCSS = true;
+            js += UTILS_JS.styleToCSS;
+          }
+          if (rc.mfs.size > 0 && !runtimeJS.event) {
+            runtimeJS.event = true;
+            js += UTILS_JS.event;
+          }
+          if (suspenses.length > 0 && !runtimeJS.suspense) {
+            runtimeJS.suspense = true;
+            js += SUSPENSE_JS;
+          }
+          if (stateStore.size > 0 && !runtimeJS.state) {
+            runtimeJS.state = true;
+            js += STATE_JS;
+          }
+          if (js) {
+            write("<script>/* runtime.js (generated by mono-jsx) */(()=>{" + js + "})()</script>");
+          }
+          js = "";
+          if (rc.mfs.size > 0) {
+            for (const [fn, fname] of rc.mfs.entries()) {
+              js += "function " + fname + "(){(" + fn.toString() + ").apply(this,arguments)};";
+            }
+            rc.mfs.clear();
+          }
+          if (stateStore.size > 0) {
+            for (const [key, value] of stateStore.entries()) {
+              js += "$defineState(" + JSON.stringify(key) + (value !== undefined ? "," + JSON.stringify(value) : "") + ");";
+            }
+            stateStore.clear();
+          }
+          if (rc.mcs.size > 0) {
+            for (const [vnode, fname] of rc.mcs.entries()) {
+              const { fn, deps } = vnode[1];
+              js += '$defineComputed("' + fname + '",function(){return(' + fn.toString() + ").call(this)},"
+                + JSON.stringify(Object.keys(deps))
+                + ");";
+            }
+            rc.mcs.clear();
+          }
+          if (rc.status.onmount > 0) {
+            rc.status.onmount = 0;
+            js += "$onstage();";
+          }
+          if (js) {
+            write("<script>/* app.js (generated by mono-jsx) */" + js + "</script>");
+          }
+          if (suspenses.length > 0) {
+            await Promise.all(suspenses.splice(0, suspenses.length));
+            await finalize();
+          }
         };
         if (appStateInit) {
           for (const [key, value] of Object.entries(appStateInit)) {
@@ -537,39 +623,16 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
         try {
           write("<!DOCTYPE html>");
           await renderNode(rc, node);
-          let js = "";
-          if (rc.index.mf > 0) {
-            js += UTILS_JS.event;
-          }
-          if (stateStore.size > 0) {
-            if (rtComponents.cx) {
-              js += UTILS_JS.cx;
-            }
-            if (rtComponents.styleToCSS) {
-              js += UTILS_JS.styleToCSS;
-            }
-            js += STATE_JS;
-            js += "for(let[k,v]of" +
-              JSON.stringify(Array.from(stateStore.entries()).map((e) => e[1] === undefined ? [e[0]] : e)) +
-              ")$defineState(k,v);";
-          }
-          if (suspenses.length > 0) {
-            js += SUSPENSE_JS;
-          }
-          if (js) {
-            write("<script>(()=>{" + js + "})()</script>");
-          }
+          // htmx integration
           if (htmx) {
-            write(`<script src="https://raw.esm.sh/htmx.org${htmx === true ? "" : escapeHTML("@" + htmx)}/dist/htmx.min.js"></script>`);
+            write(`<script src="${cdn}/htmx.org${htmx === true ? "" : escapeHTML("@" + htmx)}/dist/htmx.min.js"></script>`);
             for (const [key, value] of Object.entries(renderOptions)) {
               if (key.startsWith("htmx-ext-") && value) {
-                write(`<script src="https://raw.esm.sh/${key}${value === true ? "" : escapeHTML("@" + value)}"></script>`);
+                write(`<script src="${cdn}/${key}${value === true ? "" : escapeHTML("@" + value)}"></script>`);
               }
             }
           }
-          if (suspenses.length > 0) {
-            await Promise.all(suspenses);
-          }
+          await finalize();
         } finally {
           controller.close();
         }

@@ -39,7 +39,7 @@ const createState = (fc: number) => {
   return { store, define, watch };
 };
 
-const createEffect = (el: HTMLElement, mode: string | null, getter: () => unknown) => {
+const createEffect = (el: Element, mode: string | null, getter: () => unknown) => {
   if (mode === "toggle") {
     let slots: NodeListOf<ChildNode> | undefined;
     return () => {
@@ -104,8 +104,8 @@ const createEffect = (el: HTMLElement, mode: string | null, getter: () => unknow
       if (value === false) {
         target.removeAttribute(attrName);
       } else if ((attrName === "class" || attrName === "style") && value && typeof value === "object") {
-        // @ts-ignore - `cx` and `styleToCSS` are injected by the renderer
-        target.setAttribute(attrName, attrName === "class" ? cx(value) : styleToCSS(value));
+        // @ts-ignore - `$cx` and `$styleToCSS` are injected by the renderer
+        target.setAttribute(attrName, attrName === "class" ? $cx(value) : $styleToCSS(value));
       } else {
         target.setAttribute(attrName, value === true ? "" : "" + value);
       }
@@ -127,40 +127,31 @@ customElements.define(
   class extends HTMLElement {
     connectedCallback() {
       const el = this;
-      const state = getState(Number(attr(el, "fc")!));
-      const mode = attr(el, "mode");
       const key = attr(el, "key");
       if (key) {
-        state.watch(key, createEffect(el, mode, () => state.store[key]));
-      } else if (hasAttr(el, "computed")) {
-        // set a timeout to wait for the element to be fully parsed
-        setTimeout(() => {
-          const firstChild = el.firstChild;
-          if (firstChild && firstChild.nodeType === 1 && (firstChild as HTMLScriptElement).type === "computed") {
-            const js = (firstChild as HTMLScriptElement).textContent;
-            if (js) {
-              new Function("$", js).call(
-                state.store,
-                (getter: () => unknown, deps: string[]) => {
-                  const effect = createEffect(el, mode, getter);
-                  for (const dep of deps) {
-                    const [fc, key] = resolveStateKey(dep);
-                    getState(fc).watch(key, effect);
-                  }
-                },
-              );
-            }
-          }
-        });
+        const state = getState(Number(attr(el, "fc")!));
+        state.watch(key, createEffect(el, attr(el, "mode"), () => state.store[key]));
+        return;
       }
     }
   },
 );
 
-Object.assign(globalThis, {
+Object.assign(window, {
   $state: (fc?: number) => fc !== undefined ? getState(fc).store : undefined,
   $defineState: (id: string, value: unknown) => {
     const [fc, key] = resolveStateKey(id);
     getState(fc).define(key, value);
+  },
+  $defineComputed: (id: string, compute: Function, deps: string[]) => {
+    const el = document.querySelector("m-state[computed='" + id + "']");
+    if (el) {
+      const scope = getState(Number(attr(el, "fc")!)).store;
+      const effect = createEffect(el, attr(el, "mode"), compute.bind(scope));
+      for (const dep of deps) {
+        const [fc, key] = resolveStateKey(dep);
+        getState(fc).watch(key, effect);
+      }
+    }
   },
 });

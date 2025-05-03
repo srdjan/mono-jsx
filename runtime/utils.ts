@@ -70,10 +70,11 @@ export function styleToCSS(style: unknown): string {
   if (isObject(style)) {
     let css = "";
     for (const [k, v] of Array.isArray(style) ? style : Object.entries(style)) {
-      if (v === null || v === undefined || v === false || Number.isNaN(v) || !isString(k)) return "";
-      const cssKey = toHyphenCase(k);
-      const cssValue = typeof v === "number" ? (cssBareUnitProps.has(cssKey) ? "" + v : v + "px") : escapeCSSText("" + v);
-      css += (css !== "" ? ";" : "") + escapeCSSText(cssKey) + ":" + (cssKey === "content" ? JSON.stringify(cssValue) : cssValue);
+      if (isString(k) && (isString(v) || typeof v === "number")) {
+        const cssKey = toHyphenCase(k);
+        const cssValue = typeof v === "number" ? (cssBareUnitProps.has(cssKey) ? "" + v : v + "px") : escapeCSSText("" + v);
+        css += (css ? ";" : "") + escapeCSSText(cssKey) + ":" + (cssKey === "content" ? JSON.stringify(cssValue) : cssValue);
+      }
     }
     return css;
   }
