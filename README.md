@@ -9,7 +9,7 @@ mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in 
 - 🔫 Minimal state runtime
 - 🚨 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
-- 🥷 [htmx](https://htmx.org) integration
+- 🥷 [htmx](#using-htmx) integration
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 ## Installation
@@ -66,6 +66,7 @@ mono-jsx allows you to return an `<html>` JSX element as a `Response` object in 
 
 ```tsx
 // app.tsx
+
 export default {
   fetch: (req) => (
     <html>
@@ -92,6 +93,7 @@ npx wrangler dev app.tsx
 
 ```tsx
 // app.tsx
+
 import { serve } from "srvx";
 
 serve({
@@ -271,12 +273,7 @@ mono-jsx also accepts functions for the `action` property on `form` elements, wh
 ```tsx
 function App() {
   return (
-    <form
-      action={(data: FormData, event: SubmitEvent) => {
-        event.preventDefault(); // true
-        console.log(data.get("name"));
-      }}
-    >
+    <form action={(data: FormData, event: SubmitEvent) => console.log(data.get("name"))}>
       <input type="text" name="name" />
       <button type="submit">Submit</button>
     </form>
@@ -419,10 +416,11 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
         <h1 slot="zh">你好，世界！</h1>
         <h1>✋🌎❗️</h1>
       </switch>
-
-      <button onClick={() => this.lang = "en"}>English</button>
-      <button onClick={() => this.lang = "zh"}>中文</button>
-      <button onClick={() => this.lang = "emoji"}>Emoji</button>
+      <p>
+        <button onClick={() => this.lang = "en"}>English</button>
+        <button onClick={() => this.lang = "zh"}>中文</button>
+        <button onClick={() => this.lang = "emoji"}>Emoji</button>
+      </p>
     </div>
   );
 }
@@ -612,7 +610,7 @@ You can add the `catch` attribute to handle errors in async components. The `cat
 
 ```jsx
 async function Hello() {
-  throw new Error("BOOM!");
+  throw new Error("Something went wrong!");
   return <p>Hello world!</p>;
 }
 
