@@ -287,7 +287,7 @@ Deno.test("[ssr] async component", async () => {
   async function Dash(this: FC<{ username: string | null }>) {
     this.username = await new Promise((resolve) => setTimeout(() => resolve("me"), 50));
     return (
-      <div onMount={e => console.log("onmount", e.target, "logined as", this.username)}>
+      <div onMount={(e) => console.log("onmount", e.target, "logined as", this.username)}>
         <h1>{this.computed(() => this.username ? "Hello, " + this.username : "Please login")}!</h1>
         {this.username && <button type="button" onClick={() => this.username = null}>Logout</button>}
       </div>
@@ -980,8 +980,18 @@ Deno.test("[ssr] use <switch>", async () => {
 Deno.test("[ssr] XSS", async () => {
   const App = () => (
     <>
-      {html`<h1>Welcome to mono-jsx!</h1><script>console.log("Welcome to mono-jsx!")</script>`}
-      <style>{css`body{font-size:"16px"}`}</style>
+      {html`
+        <h1>Welcome to mono-jsx!</h1><script>
+        console.log("Welcome to mono-jsx!")
+        </script>
+      `}
+      <style>
+        {css`
+          body {
+            font-size: "16px";
+          }
+        `}
+      </style>
       <script>{js`console.log('Welcome to mono-jsx!')`}</script>
     </>
   );

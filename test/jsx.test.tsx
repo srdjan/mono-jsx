@@ -24,7 +24,7 @@ Deno.test("[jsx] jsx transform", () => {
     ],
   );
   assertEquals(
-    <span>{1}/{false}{[1, 2].map(i => <i key={i} />)}</span> as VNode,
+    <span>{1}/{false}{[1, 2].map((i) => <i key={i} />)}</span> as VNode,
     [
       "span",
       {
@@ -66,7 +66,13 @@ Deno.test("[jsx] jsx transform", () => {
     [App, { foo: "bar" }, $vnode],
   );
   assertEquals(
-    <div>{html`<h1>Hello world!</h1>`}</div> as VNode,
+    (
+      <div>
+        {html`
+          <h1>Hello world!</h1>
+        `}
+      </div>
+    ) as VNode,
     [
       "div",
       {
