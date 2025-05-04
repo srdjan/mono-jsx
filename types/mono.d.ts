@@ -66,7 +66,7 @@ export interface CSSProperties extends BaseCSSProperties, AtRuleCSSProperties, P
   [key: `&${" " | "." | "["}${string}`]: CSSProperties;
 }
 
-export type ChildType = JSX.Element | JSX.Element[] | string | number | bigint | boolean | null;
+export type ChildType = JSX.Element | (JSX.Element | string | null)[] | string | number | bigint | boolean | null;
 
 export interface BaseAttributes {
   children?: ChildType | ChildType[];
@@ -76,16 +76,16 @@ export interface BaseAttributes {
 
 export interface AsyncComponentAttributes {
   /**
-   * Error handler.
+   * Try to catch errors in the component.
    */
   catch?: (err: any) => JSX.Element;
   /**
-   * Loading spinner.
+   * The loading spinner for the async component.
    */
-  placeholder?: JSX.Element | string;
+  placeholder?: JSX.Element;
   /**
    * Rendering mode
-   * - `eager`: render immediately
+   * - `eager`: render async component eagerly
    */
   rendering?: "eager";
 }
