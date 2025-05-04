@@ -8,16 +8,16 @@ defineCustomElement("m-portal", (el) => {
 });
 
 defineCustomElement("m-chunk", (el) => {
-  const id = getChunkId(el)!;
-  const portal = portals[id];
-  if (portal) {
-    // set a timeout to wait for the element to be fully parsed
-    setTimeout(() => {
+  // set a timeout to wait for the element to be fully parsed
+  setTimeout(() => {
+    const id = getChunkId(el)!;
+    const portal = portals[id];
+    if (portal) {
       portal.replaceWith(...(el.firstChild as HTMLTemplateElement).content.childNodes);
-      delete portals[id];
       el.remove();
-    });
-  }
+      delete portals[id];
+    }
+  });
 });
 
 function defineCustomElement(tagName: string, connectedCallback: (el: HTMLElement) => void) {
