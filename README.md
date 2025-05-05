@@ -281,6 +281,35 @@ function App() {
 }
 ```
 
+## Async Components
+
+mono-jsx supports async function components using the `async` keyword. With [streaming rendering](#streaming-rendering), async components can be rendered asynchronously, allowing you to fetch data or perform other async operations before rendering the component.
+
+```jsx
+async function AsyncComponent() {
+  const data = await fetch("https://api.example.com/data").then((res) => res.json());
+  return <div>{json.message}</div>;
+}
+```
+
+mono-jsx also supports async generator function components, this is useful for streaming rendering of LLM tokens:
+
+```jsx
+async function* Chat() {
+  const stream = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [{ role: "user", content: "Tell me a story" }],
+    stream: true,
+  });
+  for await (const event of stream) {
+    const text = event.choices[0]?.delta.content
+    if (text) {
+      yield <span>{text}</span>;
+    }
+  }
+}
+```
+
 ## Reactive
 
 mono-jsx provides a minimal state runtime for updating the view based on client-side state changes.
@@ -575,9 +604,7 @@ async function Sleep({ ms }) {
 export default {
   fetch: (req) => (
     <html>
-      <h1>Welcome to mono-jsx!</h1>
-
-      <Sleep ms={1000} placeholder={<p>Sleeping...</p>}>
+      <Sleep ms={1000} placeholder={<p>Loading...</p>}>
         <p>After 1 second</p>
       </Sleep>
     </html>
@@ -588,16 +615,9 @@ export default {
 You can set the `rendering` attribute to `"eager"` to force synchronous rendering (the `placeholder` will be ignored):
 
 ```jsx
-async function Sleep({ ms }) {
-  await new Promise((resolve) => setTimeout(resolve, ms));
-  return <slot />;
-}
-
 export default {
   fetch: (req) => (
     <html>
-      <h1>Welcome to mono-jsx!</h1>
-
       <Sleep ms={1000} rendering="eager">
         <p>After 1 second</p>
       </Sleep>
@@ -606,7 +626,7 @@ export default {
 };
 ```
 
-You can add the `catch` attribute to handle errors in async components. The `catch` attribute should be a function that returns a JSX element:
+You can add the `catch` attribute to handle errors in the async component. The `catch` attribute should be a function that returns a JSX element:
 
 ```jsx
 async function Hello() {
@@ -625,7 +645,7 @@ export default {
 
 ## Customizing html Response
 
-Add `status` or `headers` attributes to the root `<html>` element to customize the response:
+You can add `status` or `headers` attributes to the root `<html>` element to customize the http response:
 
 ```jsx
 export default {
@@ -635,6 +655,7 @@ export default {
       headers={{
         cacheControl: "public, max-age=0, must-revalidate",
         setCookie: "name=value",
+        "x-foo": "bar",
       }}
     >
       <h1>Page Not Found</h1>
