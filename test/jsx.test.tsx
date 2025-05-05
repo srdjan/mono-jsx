@@ -85,7 +85,7 @@ Deno.test("[jsx] jsx transform", () => {
   );
 });
 
-Deno.test("[jsx] <html> as a `Response` object", async () => {
+Deno.test("[jsx] <html> as a `Response`", async () => {
   const res: Response = (
     <html lang="en" headers={{ cacheControl: "public" }}>
       <head />

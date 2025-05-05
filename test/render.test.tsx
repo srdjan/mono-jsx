@@ -71,9 +71,7 @@ Deno.test("[ssr] merge class names", async () => {
   );
 });
 
-Deno.test("[ssr] style", async () => {
-  const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
-
+Deno.test("[ssr] stringify `style` prop", async () => {
   assertEquals(
     await renderToString(<div style="display:block" />),
     [
@@ -93,6 +91,10 @@ Deno.test("[ssr] style", async () => {
       `</body></html>`,
     ].join(""),
   );
+});
+
+Deno.test("[ssr] style to css", async () => {
+  const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
 
   "pseudo class";
   {
@@ -167,7 +169,7 @@ Deno.test("[ssr] style", async () => {
   }
 });
 
-Deno.test("[ssr] event handler", async () => {
+Deno.test("[ssr] serialize event handler", async () => {
   assertEquals(
     await renderToString(<button type="button" onClick={() => console.log("🔥" as string)}>Click me</button>),
     [
@@ -231,7 +233,7 @@ Deno.test("[ssr] event handler", async () => {
   );
 });
 
-Deno.test("[ssr] <slot>", async () => {
+Deno.test("[ssr] <slot> element", async () => {
   const Container = () => (
     <div id="container">
       <header>
@@ -273,22 +275,11 @@ Deno.test("[ssr] <slot>", async () => {
 });
 
 Deno.test("[ssr] async component", async () => {
-  const dir = new URL("..", import.meta.url).pathname;
-  const entries = [...Deno.readDirSync(dir)];
+  const words = ["Welcome", "to", "mono-jsx", "!"];
 
-  async function ReadDir({ delay = 0 }: { delay?: number }) {
-    await new Promise((resolve) => setTimeout(resolve, 50 + delay * 10));
-    return <ul>{entries.map(({ name }) => <li>{name}</li>)}</ul>;
-  }
-
-  async function Dash(this: FC<{ username: string | null }>) {
-    this.username = await new Promise((resolve) => setTimeout(() => resolve("me"), 50));
-    return (
-      <div onMount={e => console.log("onmount", e.target, "logined as", this.username)}>
-        <h1>{this.computed(() => this.username ? "Hello, " + this.username : "Please login")}!</h1>
-        {this.username && <button type="button" onClick={() => this.username = null}>Logout</button>}
-      </div>
-    );
+  async function List({ delay = 0 }: { delay?: number }) {
+    await new Promise((resolve) => setTimeout(resolve, 50 + delay));
+    return <ul>{words.map((word) => <li>{word}</li>)}</ul>;
   }
 
   function Layout() {
@@ -311,7 +302,7 @@ Deno.test("[ssr] async component", async () => {
   "without placeholder";
   {
     assertEquals(
-      await renderToString(<ReadDir />),
+      await renderToString(<List />),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
@@ -324,7 +315,7 @@ Deno.test("[ssr] async component", async () => {
         `})()</script>`,
         `<m-chunk chunk-id="0"><template>`,
         `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
+        ...words.map((word) => `<li>${word}</li>`),
         `</ul>`,
         `</template></m-chunk>`,
       ].join(""),
@@ -334,7 +325,7 @@ Deno.test("[ssr] async component", async () => {
   "with placeholder";
   {
     assertEquals(
-      await renderToString(<ReadDir placeholder={<p>loading...</p>} />),
+      await renderToString(<List placeholder={<p>loading...</p>} />),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
@@ -349,7 +340,7 @@ Deno.test("[ssr] async component", async () => {
         `})()</script>`,
         `<m-chunk chunk-id="0"><template>`,
         `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
+        ...words.map((word) => `<li>${word}</li>`),
         `</ul>`,
         `</template></m-chunk>`,
       ].join(""),
@@ -359,24 +350,24 @@ Deno.test("[ssr] async component", async () => {
   "eager rendering";
   {
     assertEquals(
-      await renderToString(<ReadDir rendering="eager" />),
+      await renderToString(<List rendering="eager" />),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
         `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
+        ...words.map((word) => `<li>${word}</li>`),
         `</ul>`,
         `</body></html>`,
       ].join(""),
     );
   }
 
-  "nested async component #1";
+  "as solt";
   {
     assertEquals(
       await renderToString(
         <Layout>
-          <ReadDir />
+          <List />
         </Layout>,
       ),
       [
@@ -391,19 +382,19 @@ Deno.test("[ssr] async component", async () => {
         `})()</script>`,
         `<m-chunk chunk-id="0"><template>`,
         `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
+        ...words.map((word) => `<li>${word}</li>`),
         `</ul>`,
         `</template></m-chunk>`,
       ].join(""),
     );
   }
 
-  "nested async component #2";
+  "as solt in async component";
   {
     assertEquals(
       await renderToString(
         <AsyncLayout>
-          <ReadDir />
+          <List />
         </AsyncLayout>,
       ),
       [
@@ -419,20 +410,20 @@ Deno.test("[ssr] async component", async () => {
         `<m-chunk chunk-id="0"><template><div class="layout"><m-portal chunk-id="1"></m-portal></div></template></m-chunk>`,
         `<m-chunk chunk-id="1"><template>`,
         `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
+        ...words.map((word) => `<li>${word}</li>`),
         `</ul>`,
         `</template></m-chunk>`,
       ].join(""),
     );
   }
 
-  "nested async component #3";
+  "nesting";
   {
     const App = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       return (
         <AsyncLayout>
-          <ReadDir />
+          <List />
         </AsyncLayout>
       );
     };
@@ -454,7 +445,7 @@ Deno.test("[ssr] async component", async () => {
         `<m-chunk chunk-id="1"><template><div class="layout"><m-portal chunk-id="2"></m-portal></div></template></m-chunk>`,
         `<m-chunk chunk-id="2"><template>`,
         `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
+        ...words.map((word) => `<li>${word}</li>`),
         `</ul>`,
         `</template></m-chunk>`,
       ].join(""),
@@ -467,7 +458,7 @@ Deno.test("[ssr] async component", async () => {
     assertEquals(
       await renderToString(
         <>
-          {indexes.map((i) => <ReadDir key={i} delay={i * 10} />)}
+          {indexes.map((i) => <List key={i} delay={i * 50} />)}
         </>,
       ),
       [
@@ -483,81 +474,91 @@ Deno.test("[ssr] async component", async () => {
         indexes.map((i) => [
           `<m-chunk chunk-id="${i}"><template>`,
           `<ul>`,
-          ...entries.map((entry) => `<li>${entry.name}</li>`),
+          ...words.map((word) => `<li>${word}</li>`),
           `</ul>`,
           `</template></m-chunk>`,
         ]),
       ].flat(2).join(""),
     );
   }
+});
 
-  "with event handler";
+Deno.test("[ssr] async generator component", async () => {
+  const words = ["Welcome", "to", "mono-jsx", "!"];
+
+  async function* Words() {
+    for (const word of words) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      yield <span>{word}</span>;
+    }
+  }
+
+  "without placeholder";
   {
     assertEquals(
-      await renderToString(<Dash />),
+      await renderToString(
+        <h1>
+          <Words />
+        </h1>,
+      ),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<m-portal chunk-id="0">`,
-        `</m-portal>`,
+        `<h1>`,
+        `<m-portal chunk-id="0"></m-portal>`,
+        `</h1>`,
         `</body></html>`,
         `<script>`,
         `/* runtime.js (generated by mono-jsx) */`,
         `(()=>{`,
         SUSPENSE_JS,
         `})()</script>`,
-        `<m-chunk chunk-id="0"><template>`,
-        `<div onmount="$emit(event,$MF_0,1)">`,
-        `<h1>`,
-        `<m-state fc="1" computed="$MC_0">Hello, me</m-state>`,
-        `!</h1>`,
-        `<button type="button" onclick="$emit(event,$MF_1,1)">Logout</button>`,
-        `</div>`,
-        `</template></m-chunk>`,
-        `<script>`,
-        `/* runtime.js (generated by mono-jsx) */`,
-        `(()=>{`,
-        UTILS_JS.event,
-        STATE_JS,
-        `})()</script>`,
-        `<script>/* app.js (generated by mono-jsx) */`,
-        `function $MF_0(){((e)=>console.log("onmount", e.target, "logined as", this.username)).apply(this,arguments)};`,
-        `function $MF_1(){(()=>this.username = null).apply(this,arguments)};`,
-        `$defineState("1:username","me");`,
-        `$defineComputed("$MC_0",function(){return(()=>this.username ? "Hello, " + this.username : "Please login").call(this)},["1:username"]);`,
-        `$onstage();`,
-        `</script>`,
+        ...words.map((word) => `<m-chunk chunk-id="0" next><template><span>${word}</span></template></m-chunk>`),
+        `<m-chunk chunk-id="0" done></m-chunk>`,
       ].join(""),
     );
   }
-});
 
-Deno.test("[ssr] async generator component", async () => {
-  const dir = new URL("..", import.meta.url).pathname;
-  const entries = [...Deno.readDirSync(dir)];
-
-  async function* ReadDir({ path }: { path: string }) {
-    const entries = Deno.readDir(path);
-    for await (const { name } of entries) {
-      yield <li>{name}</li>;
-    }
+  "with placeholder";
+  {
+    assertEquals(
+      await renderToString(
+        <h1>
+          <Words placeholder={<span>...</span>} />
+        </h1>,
+      ),
+      [
+        `<!DOCTYPE html>`,
+        `<html lang="en"><body>`,
+        `<h1>`,
+        `<m-portal chunk-id="0"><span>...</span></m-portal>`,
+        `</h1>`,
+        `</body></html>`,
+        `<script>`,
+        `/* runtime.js (generated by mono-jsx) */`,
+        `(()=>{`,
+        SUSPENSE_JS,
+        `})()</script>`,
+        ...words.map((word) => `<m-chunk chunk-id="0" next><template><span>${word}</span></template></m-chunk>`),
+        `<m-chunk chunk-id="0" done></m-chunk>`,
+      ].join(""),
+    );
   }
 
   "eager rendering";
   {
-    const App = () => (
-      <ul>
-        <ReadDir path={dir} rendering="eager" />
-      </ul>
-    );
     assertEquals(
-      await renderToString(<App />),
+      await renderToString(
+        <h1>
+          <Words rendering="eager" />
+        </h1>,
+      ),
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<ul>`,
-        ...entries.map((entry) => `<li>${entry.name}</li>`),
-        `</ul>`,
+        `<h1>`,
+        ...words.map((word) => `<span>${word}</span>`),
+        `</h1>`,
         `</body></html>`,
       ].join(""),
     );
@@ -569,7 +570,9 @@ Deno.test("[ssr] catch error", async () => {
     throw new Error("Boom!");
   };
   assertEquals(
-    await renderToString(<Boom catch={(err: Error) => <p>error: {err.message}</p>} />),
+    await renderToString(
+      <Boom catch={(err: Error) => <p>error: {err.message}</p>} />,
+    ),
     [
       `<!DOCTYPE html>`,
       `<html lang="en"><body>`,
@@ -579,7 +582,7 @@ Deno.test("[ssr] catch error", async () => {
   );
 });
 
-Deno.test("[ssr] use state", async () => {
+Deno.test("[ssr] component state", async () => {
   function Foo(this: FC<{ foo: string }>) {
     return <span>{this.foo}</span>;
   }
@@ -684,7 +687,7 @@ Deno.test("[ssr] use state", async () => {
   );
 });
 
-Deno.test("[ssr] use app state", async () => {
+Deno.test("[ssr] app state", async () => {
   function Header(this: FC<{}, { title: string }>) {
     return (
       <header>
@@ -750,7 +753,7 @@ Deno.test("[ssr] use app state", async () => {
   );
 });
 
-Deno.test("[ssr] use computed", async () => {
+Deno.test("[ssr] computed state", async () => {
   function FooBar(this: FC<{ foo: string; bar: string }, { themeColor: string; tailing: string }>) {
     this.foo = "foo";
     this.bar = "bar";
@@ -798,7 +801,62 @@ Deno.test("[ssr] use computed", async () => {
   );
 });
 
-Deno.test("[ssr] use request object", async () => {
+Deno.test("[ssr] stateful async component", async () => {
+  async function Dash(this: FC<{ username: string | null }>) {
+    this.username = await new Promise((resolve) => setTimeout(() => resolve("me"), 50));
+    return (
+      <div onMount={(e) => console.log("onmount", e.target, "logined as", this.username)}>
+        <h1>
+          {this.computed(() => this.username ? "Hello, " + this.username : "Please login")}!
+        </h1>
+        {this.username && (
+          <button type="button" onClick={() => this.username = null}>
+            Logout
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  assertEquals(
+    await renderToString(<Dash />),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<m-portal chunk-id="0">`,
+      `</m-portal>`,
+      `</body></html>`,
+      `<script>`,
+      `/* runtime.js (generated by mono-jsx) */`,
+      `(()=>{`,
+      SUSPENSE_JS,
+      `})()</script>`,
+      `<m-chunk chunk-id="0"><template>`,
+      `<div onmount="$emit(event,$MF_0,1)">`,
+      `<h1>`,
+      `<m-state fc="1" computed="$MC_0">Hello, me</m-state>`,
+      `!</h1>`,
+      `<button type="button" onclick="$emit(event,$MF_1,1)">Logout</button>`,
+      `</div>`,
+      `</template></m-chunk>`,
+      `<script>`,
+      `/* runtime.js (generated by mono-jsx) */`,
+      `(()=>{`,
+      UTILS_JS.event,
+      STATE_JS,
+      `})()</script>`,
+      `<script>/* app.js (generated by mono-jsx) */`,
+      `function $MF_0(){((e)=>console.log("onmount", e.target, "logined as", this.username)).apply(this,arguments)};`,
+      `function $MF_1(){(()=>this.username = null).apply(this,arguments)};`,
+      `$defineState("1:username","me");`,
+      `$defineComputed("$MC_0",function(){return(()=>this.username ? "Hello, " + this.username : "Please login").call(this)},["1:username"]);`,
+      `$onstage();`,
+      `</script>`,
+    ].join(""),
+  );
+});
+
+Deno.test("[ssr] use `this.request`", async () => {
   function App(this: FC) {
     const { request } = this;
     return (
@@ -821,7 +879,7 @@ Deno.test("[ssr] use request object", async () => {
   );
 });
 
-Deno.test("[ssr] use context", async () => {
+Deno.test("[ssr] use `this.context`", async () => {
   function App(this: FC<{}, {}, { foo: string }>) {
     const { context } = this;
     return (
@@ -843,7 +901,7 @@ Deno.test("[ssr] use context", async () => {
   );
 });
 
-Deno.test("[ssr] use <toggle>", async () => {
+Deno.test("[ssr] <toggle> element", async () => {
   function Toggle(this: FC<{ show: boolean }>, props: { show?: boolean }) {
     this.show = !!props.show;
     return (
@@ -894,7 +952,7 @@ Deno.test("[ssr] use <toggle>", async () => {
   );
 });
 
-Deno.test("[ssr] use <switch>", async () => {
+Deno.test("[ssr] <switch> element", async () => {
   function Switch(this: FC<{ select?: string }>, props: { defaultValue?: string }) {
     return (
       <switch value={this.select} defaultValue={props.defaultValue}>
@@ -1008,7 +1066,7 @@ Deno.test("[ssr] XSS", async () => {
   );
 });
 
-Deno.test("[ssr] htmx", async () => {
+Deno.test("[ssr] htmx integration", async () => {
   assertEquals(
     await renderToString(
       <button type="button" hx-post="/clicked" hx-swap="outerHTML">

@@ -282,56 +282,83 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
 
         // function component
         if (typeof tag === "function") {
+          const { children } = props;
           const fcIndex = ++rc.status.fcIndex;
-          const { children, rendering, placeholder, catch: catchFC } = props;
           try {
-            const v = tag.call(createThis(fcIndex, rc.appState, rc.context, rc.request), props);
             const fcSlots = children !== undefined
               ? (Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children])
               : undefined;
-            const eager = (rendering ?? tag.rendering) === "eager";
-            if (v instanceof Promise) {
-              if (eager) {
-                await renderNode({ ...rc, fcIndex, fcSlots }, await v);
-              } else {
-                const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
-                rc.suspenses.push(v.then(async (node) => {
-                  let buf = "<m-chunk " + chunkIdAttr + "><template>";
-                  await renderNode({
-                    ...rc,
-                    fcIndex,
-                    fcSlots,
-                    write: (chunk: string) => {
-                      buf += chunk;
-                    },
-                  }, node);
-                  return buf + "</template></m-chunk>";
-                }));
-                write("<m-portal " + chunkIdAttr + ">");
-                if (placeholder) {
-                  await renderNode({ ...rc, fcIndex }, placeholder);
+            const v = tag.call(createThis(fcIndex, rc.appState, rc.context, rc.request), props);
+            if (isObject(v) && !isVNode(v)) {
+              if (v instanceof Promise) {
+                if ((props.rendering ?? tag.rendering) === "eager") {
+                  await renderNode({ ...rc, fcIndex, fcSlots }, await v);
+                } else {
+                  const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
+                  write("<m-portal " + chunkIdAttr + ">");
+                  if (props.placeholder) {
+                    await renderNode({ ...rc, fcIndex }, props.placeholder);
+                  }
+                  write("</m-portal>");
+                  rc.suspenses.push(v.then(async (node) => {
+                    let buf = "<m-chunk " + chunkIdAttr + "><template>";
+                    await renderNode({
+                      ...rc,
+                      fcIndex,
+                      fcSlots,
+                      write: (chunk: string) => {
+                        buf += chunk;
+                      },
+                    }, node);
+                    return buf + "</template></m-chunk>";
+                  }));
                 }
-                write("</m-portal>");
-              }
-            } else if (isObject(v) && Symbol.asyncIterator in v) {
-              if (eager) {
-                for await (const c of v) {
-                  await renderNode({ ...rc, fcIndex, fcSlots }, c);
+              } else if (Symbol.asyncIterator in v) {
+                if ((props.rendering ?? tag.rendering) === "eager") {
+                  for await (const c of v) {
+                    await renderNode({ ...rc, fcIndex, fcSlots }, c);
+                  }
+                } else {
+                  const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
+                  write("<m-portal " + chunkIdAttr + ">");
+                  if (props.placeholder) {
+                    await renderNode({ ...rc, fcIndex }, props.placeholder);
+                  }
+                  write("</m-portal>");
+                  const iter = () =>
+                    rc.suspenses.push(
+                      v.next().then(async ({ done, value }) => {
+                        let buf = "<m-chunk " + chunkIdAttr;
+                        if (done) {
+                          return buf + " done></m-chunk>";
+                        }
+                        buf += " next><template>";
+                        await renderNode({
+                          ...rc,
+                          fcIndex,
+                          fcSlots,
+                          write: (chunk: string) => {
+                            buf += chunk;
+                          },
+                        }, value);
+                        iter();
+                        return buf + "</template></m-chunk>";
+                      }),
+                    );
+                  iter();
                 }
-              } else {
-                // todo: implement suspense for async generator
+              } else if (Symbol.iterator in v) {
+                for (const node of v) {
+                  await renderNode({ ...rc, fcIndex, fcSlots }, node);
+                }
               }
-            } else if (isObject(v) && Symbol.iterator in v && !isVNode(v)) {
-              for (const node of v) {
-                await renderNode({ ...rc, fcIndex, fcSlots }, node);
-              }
-            } else {
+            } else if (v || v === 0) {
               await renderNode({ ...rc, fcIndex, fcSlots }, v);
             }
           } catch (err) {
             if (err instanceof Error) {
-              if (typeof catchFC === "function") {
-                await renderNode({ ...rc, fcIndex }, catchFC(err));
+              if (props.catch) {
+                await renderNode({ ...rc, fcIndex }, props.catch(err));
               } else {
                 write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
                 console.error(err);

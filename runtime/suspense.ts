@@ -1,26 +1,9 @@
 /// <reference lib="dom.iterable" />
 
-const portals: Record<string, HTMLElement> = {};
+const portals = new Map<string, HTMLElement>();
+const hasAttr = (el: HTMLElement, key: string) => el.hasAttribute(key);
 const getChunkId = (el: HTMLElement) => el.getAttribute("chunk-id");
-
-defineCustomElement("m-portal", (el) => {
-  portals[getChunkId(el)!] = el;
-});
-
-defineCustomElement("m-chunk", (el) => {
-  // set a timeout to wait for the element to be fully parsed
-  setTimeout(() => {
-    const id = getChunkId(el)!;
-    const portal = portals[id];
-    if (portal) {
-      portal.replaceWith(...(el.firstChild as HTMLTemplateElement).content.childNodes);
-      el.remove();
-      delete portals[id];
-    }
-  });
-});
-
-function defineCustomElement(tagName: string, connectedCallback: (el: HTMLElement) => void) {
+const defineCustomElement = (tagName: string, connectedCallback: (el: HTMLElement) => void) =>
   customElements.define(
     tagName,
     class extends HTMLElement {
@@ -29,4 +12,29 @@ function defineCustomElement(tagName: string, connectedCallback: (el: HTMLElemen
       }
     },
   );
-}
+
+defineCustomElement("m-portal", (el) => {
+  portals.set(getChunkId(el)!, el);
+});
+
+defineCustomElement("m-chunk", (el) => {
+  // set a timeout to wait for the element to be fully parsed
+  setTimeout(() => {
+    const chunkNodes = (el.firstChild as HTMLTemplateElement | null)?.content.childNodes;
+    const id = getChunkId(el)!;
+    const portal = portals.get(id);
+    if (portal) {
+      if (hasAttr(el, "next")) {
+        portal.before(...chunkNodes!);
+      } else {
+        portals.delete(id);
+        if (hasAttr(el, "done")) {
+          portal.remove();
+        } else {
+          portal.replaceWith(...chunkNodes!);
+        }
+      }
+      el.remove();
+    }
+  });
+});

@@ -5,10 +5,13 @@ import chrome from "npm:puppeteer-chromium-resolver@23.0.0";
 let routeIndex = 0;
 let testRoutes: Map<string, JSX.Element> = new Map();
 
-Deno.serve({
-  port: 8687,
-  onListen: () => {},
-}, (request) => {
+function addTestPage(page: JSX.Element, query?: string) {
+  let pathname = `/test_${routeIndex++}`;
+  testRoutes.set(pathname, page);
+  return `http://localhost:8687${pathname}${query ? `?${query}` : ""}`;
+}
+
+Deno.serve({ port: 8687, onListen: () => {} }, (request) => {
   const url = new URL(request.url);
   if (url.pathname === "/favicon.ico") {
     return new Response(null, { status: 404 });
@@ -34,14 +37,73 @@ const browser = await puppeteer.launch({
   executablePath: (await chrome()).executablePath,
   args: ["--no-sandbox", "--disable-gpu", "--disable-extensions", "--disable-sync", "--disable-background-networking"],
 });
+const sanitizeFalse = { sanitizeResources: false, sanitizeOps: false };
 
-function addTestPage(page: JSX.Element, query?: string) {
-  let pathname = `/test_${routeIndex++}`;
-  testRoutes.set(pathname, page);
-  return `http://localhost:8687${pathname}${query ? `?${query}` : ""}`;
-}
+Deno.test("[runtime] async component", sanitizeFalse, async () => {
+  const Blah = () => Promise.resolve(<h2>Building User Interfaces.</h2>);
+  const Sleep = async ({ ms }: { ms: number }) => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    return <slot />;
+  };
+  const testPageUrl = addTestPage(
+    <div>
+      <Sleep ms={100} placeholder={<p>Loading...</p>}>
+        <h1>Welcome to mono-jsx!</h1>
+        <Blah />
+      </Sleep>
+    </div>,
+  );
 
-Deno.test("[runtime] use state(text)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+
+  const div = await page.$("div");
+  assert(div);
+  assertEquals(await div.evaluate((el: HTMLElement) => el.childElementCount), 2);
+
+  const p = await page.$("div > p");
+  assert(!p);
+
+  const h1 = await page.$("div > h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Welcome to mono-jsx!");
+
+  const h2 = await page.$("div > h2");
+  assert(h2);
+  assertEquals(await h2.evaluate((el: HTMLElement) => el.textContent), "Building User Interfaces.");
+
+  await page.close();
+});
+
+Deno.test("[runtime] async generator component", sanitizeFalse, async () => {
+  const words = ["Welcome", " ", "to", " ", "mono-jsx", "!"];
+
+  async function* Words() {
+    for (const word of words) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      yield <span>{word}</span>;
+    }
+  }
+
+  const testPageUrl = addTestPage(
+    <h1>
+      <Words placeholder={<span>...</span>} />
+    </h1>,
+  );
+
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+
+  const h1 = await page.$("h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.childElementCount), words.length);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Welcome to mono-jsx!");
+  assert(!(await page.$("m-portal")));
+
+  await page.close();
+});
+
+Deno.test("[runtime] component state(text)", sanitizeFalse, async () => {
   function Hello(this: FC<{ text: string }>, props: { text: string }) {
     this.text = props.text;
     return (
@@ -71,7 +133,7 @@ Deno.test("[runtime] use state(text)", { sanitizeResources: false, sanitizeOps: 
   await page.close();
 });
 
-Deno.test("[runtime] use state(number)", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] component state(number)", sanitizeFalse, async () => {
   function Counter(this: FC<{ count: number }>, props: { initialValue: number }) {
     this.count = props.initialValue;
     return (
@@ -109,7 +171,7 @@ Deno.test("[runtime] use state(number)", { sanitizeResources: false, sanitizeOps
   await page.close();
 });
 
-Deno.test("[runtime] use app state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] app state", sanitizeFalse, async () => {
   function Display(this: FC<{}, { count: number }>, props: { bold?: boolean }) {
     if (props.bold) {
       return <strong>{this.app.count}</strong>;
@@ -162,7 +224,7 @@ Deno.test("[runtime] use app state", { sanitizeResources: false, sanitizeOps: fa
   await page.close();
 });
 
-Deno.test("[runtime] use computed state", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] computed state", sanitizeFalse, async () => {
   function FooBar(this: FC<{ count: number }, { count: number }>) {
     this.count = 0;
     return (
@@ -200,7 +262,7 @@ Deno.test("[runtime] use computed state", { sanitizeResources: false, sanitizeOp
   await page.close();
 });
 
-Deno.test("[runtime] use computed class name", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] computed class name", sanitizeFalse, async () => {
   function FooBar(this: FC<{ foo: string; bar: string }>) {
     this.foo = "foo";
     this.bar = "bar";
@@ -229,13 +291,13 @@ Deno.test("[runtime] use computed class name", { sanitizeResources: false, sanit
   await page.close();
 });
 
-Deno.test("[runtime] use <toggle> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] <toggle> element", sanitizeFalse, async () => {
   function Toggle(this: FC<{ show: boolean }>) {
     this.show = false;
     return (
       <div>
         <toggle value={this.show}>
-          <h1>Hello world!</h1>
+          <h1>Welcome to mono-jsx!</h1>
         </toggle>
         <button type="button" onClick={() => this.show = !this.show}>
           Show
@@ -257,7 +319,7 @@ Deno.test("[runtime] use <toggle> element", { sanitizeResources: false, sanitize
 
   let h1 = await page.$("div h1");
   assert(h1);
-  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Welcome to mono-jsx!");
 
   await button.click();
   h1 = await page.$("div h1");
@@ -266,7 +328,7 @@ Deno.test("[runtime] use <toggle> element", { sanitizeResources: false, sanitize
   await page.close();
 });
 
-Deno.test("[runtime] use <switch> element", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] <switch> element", sanitizeFalse, async () => {
   function Switch(this: FC<{ lang: string }>) {
     this.lang = "emoji";
     return (
@@ -320,26 +382,7 @@ Deno.test("[runtime] use <switch> element", { sanitizeResources: false, sanitize
   await page.close();
 });
 
-Deno.test("[runtime] support 'mount' event", { sanitizeResources: false, sanitizeOps: false }, async () => {
-  const testPageUrl = addTestPage(
-    <div
-      onMount={(e) => {
-        e.target.innerHTML = "<h1>Hello world!</h1>";
-      }}
-    />,
-  );
-
-  const page = await browser.newPage();
-  await page.goto(testPageUrl);
-
-  const div = await page.$("div");
-  assert(div);
-  assertEquals(await div.evaluate((el: HTMLElement) => el.innerHTML), "<h1>Hello world!</h1>");
-
-  await page.close();
-});
-
-Deno.test("[runtime] use 'action' function handler", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] 'action' function prop", sanitizeFalse, async () => {
   const testPageUrl = addTestPage(
     <>
       <p></p>
@@ -349,7 +392,7 @@ Deno.test("[runtime] use 'action' function handler", { sanitizeResources: false,
           p.textContent = data.get("name")! as string;
         }}
       >
-        <input type="hidden" name="name" value="Hello world!" />
+        <input type="hidden" name="name" value="Welcome to mono-jsx!" />
         <button type="submit">Submit</button>
       </form>
     </>,
@@ -366,24 +409,18 @@ Deno.test("[runtime] use 'action' function handler", { sanitizeResources: false,
   assert(button);
   await button.click();
 
-  assertEquals(await p.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
+  assertEquals(await p.evaluate((el: HTMLElement) => el.textContent), "Welcome to mono-jsx!");
 
   await page.close();
 });
 
-Deno.test("[runtime] suspense", { sanitizeResources: false, sanitizeOps: false }, async () => {
-  const Sleep = async ({ ms }: { ms: number }) => {
-    await new Promise((resolve) => setTimeout(resolve, ms));
-    return <slot />;
-  };
-  const Slogan = () => Promise.resolve(<h2>Building User Interfaces.</h2>);
+Deno.test("[runtime] 'onMount' event handler", sanitizeFalse, async () => {
   const testPageUrl = addTestPage(
-    <div>
-      <Sleep ms={100} placeholder={<p>Loading...</p>}>
-        <h1>Hello world!</h1>
-        <Slogan />
-      </Sleep>
-    </div>,
+    <div
+      onMount={(e) => {
+        e.target.innerHTML = "<h1>Welcome to mono-jsx!</h1>";
+      }}
+    />,
   );
 
   const page = await browser.newPage();
@@ -391,23 +428,12 @@ Deno.test("[runtime] suspense", { sanitizeResources: false, sanitizeOps: false }
 
   const div = await page.$("div");
   assert(div);
-  assertEquals(await div.evaluate((el: HTMLElement) => el.childElementCount), 2);
-
-  const p = await page.$("div > p");
-  assert(!p);
-
-  const h1 = await page.$("div > h1");
-  assert(h1);
-  assertEquals(await h1.evaluate((el: HTMLElement) => el.textContent), "Hello world!");
-
-  const h2 = await page.$("div > h2");
-  assert(h2);
-  assertEquals(await h2.evaluate((el: HTMLElement) => el.textContent), "Building User Interfaces.");
+  assertEquals(await div.evaluate((el: HTMLElement) => el.innerHTML), "<h1>Welcome to mono-jsx!</h1>");
 
   await page.close();
 });
 
-Deno.test("[runtime] htmx", { sanitizeResources: false, sanitizeOps: false }, async () => {
+Deno.test("[runtime] htmx", sanitizeFalse, async () => {
   const testPageUrl = addTestPage(
     <button type="button" hx-post="/clicked" hx-swap="outerHTML">
       Click Me
