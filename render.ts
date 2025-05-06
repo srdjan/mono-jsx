@@ -283,28 +283,28 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
         // function component
         if (typeof tag === "function") {
           const { children } = props;
-          const fcIndex = ++rc.status.fcIndex;
+          const fcId = ++rc.status.fcIndex;
           try {
             const fcSlots = children !== undefined
               ? (Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children])
               : undefined;
-            const v = tag.call(createThis(fcIndex, rc.appState, rc.context, rc.request), props);
+            const v = tag.call(createThis(fcId, rc.appState, rc.context, rc.request), props);
             if (isObject(v) && !isVNode(v)) {
               if (v instanceof Promise) {
                 if ((props.rendering ?? tag.rendering) === "eager") {
-                  await renderNode({ ...rc, fcId: fcIndex, fcSlots }, await v);
+                  await renderNode({ ...rc, fcId, fcSlots }, await v);
                 } else {
                   const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
                   write("<m-portal " + chunkIdAttr + ">");
                   if (props.placeholder) {
-                    await renderNode({ ...rc, fcId: fcIndex }, props.placeholder);
+                    await renderNode({ ...rc, fcId }, props.placeholder);
                   }
                   write("</m-portal>");
                   rc.suspenses.push(v.then(async (node) => {
                     let buf = "<m-chunk " + chunkIdAttr + "><template>";
                     await renderNode({
                       ...rc,
-                      fcId: fcIndex,
+                      fcId,
                       fcSlots,
                       write: (chunk: string) => {
                         buf += chunk;
@@ -316,13 +316,13 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
               } else if (Symbol.asyncIterator in v) {
                 if ((props.rendering ?? tag.rendering) === "eager") {
                   for await (const c of v) {
-                    await renderNode({ ...rc, fcId: fcIndex, fcSlots }, c);
+                    await renderNode({ ...rc, fcId, fcSlots }, c);
                   }
                 } else {
                   const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
                   write("<m-portal " + chunkIdAttr + ">");
                   if (props.placeholder) {
-                    await renderNode({ ...rc, fcId: fcIndex }, props.placeholder);
+                    await renderNode({ ...rc, fcId }, props.placeholder);
                   }
                   write("</m-portal>");
                   const iter = () =>
@@ -335,7 +335,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                         buf += " next><template>";
                         await renderNode({
                           ...rc,
-                          fcId: fcIndex,
+                          fcId,
                           fcSlots,
                           write: (chunk: string) => {
                             buf += chunk;
@@ -349,16 +349,16 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 }
               } else if (Symbol.iterator in v) {
                 for (const node of v) {
-                  await renderNode({ ...rc, fcId: fcIndex, fcSlots }, node);
+                  await renderNode({ ...rc, fcId, fcSlots }, node);
                 }
               }
             } else if (v || v === 0) {
-              await renderNode({ ...rc, fcId: fcIndex, fcSlots }, v);
+              await renderNode({ ...rc, fcId, fcSlots }, v);
             }
           } catch (err) {
             if (err instanceof Error) {
               if (props.catch) {
-                await renderNode({ ...rc, fcId: fcIndex }, props.catch(err));
+                await renderNode({ ...rc, fcId }, props.catch(err));
               } else {
                 write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
                 console.error(err);
