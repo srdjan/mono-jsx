@@ -14,7 +14,7 @@ interface RenderContext {
   stateStore: Map<string, unknown>;
   context?: Record<string, unknown>;
   request?: Request;
-  fcIndex?: number;
+  fcId?: number;
   fcSlots?: ChildType[];
   cssIds?: Set<string>;
 }
@@ -292,19 +292,19 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
             if (isObject(v) && !isVNode(v)) {
               if (v instanceof Promise) {
                 if ((props.rendering ?? tag.rendering) === "eager") {
-                  await renderNode({ ...rc, fcIndex, fcSlots }, await v);
+                  await renderNode({ ...rc, fcId: fcIndex, fcSlots }, await v);
                 } else {
                   const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
                   write("<m-portal " + chunkIdAttr + ">");
                   if (props.placeholder) {
-                    await renderNode({ ...rc, fcIndex }, props.placeholder);
+                    await renderNode({ ...rc, fcId: fcIndex }, props.placeholder);
                   }
                   write("</m-portal>");
                   rc.suspenses.push(v.then(async (node) => {
                     let buf = "<m-chunk " + chunkIdAttr + "><template>";
                     await renderNode({
                       ...rc,
-                      fcIndex,
+                      fcId: fcIndex,
                       fcSlots,
                       write: (chunk: string) => {
                         buf += chunk;
@@ -316,13 +316,13 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
               } else if (Symbol.asyncIterator in v) {
                 if ((props.rendering ?? tag.rendering) === "eager") {
                   for await (const c of v) {
-                    await renderNode({ ...rc, fcIndex, fcSlots }, c);
+                    await renderNode({ ...rc, fcId: fcIndex, fcSlots }, c);
                   }
                 } else {
                   const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
                   write("<m-portal " + chunkIdAttr + ">");
                   if (props.placeholder) {
-                    await renderNode({ ...rc, fcIndex }, props.placeholder);
+                    await renderNode({ ...rc, fcId: fcIndex }, props.placeholder);
                   }
                   write("</m-portal>");
                   const iter = () =>
@@ -335,7 +335,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                         buf += " next><template>";
                         await renderNode({
                           ...rc,
-                          fcIndex,
+                          fcId: fcIndex,
                           fcSlots,
                           write: (chunk: string) => {
                             buf += chunk;
@@ -349,16 +349,16 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 }
               } else if (Symbol.iterator in v) {
                 for (const node of v) {
-                  await renderNode({ ...rc, fcIndex, fcSlots }, node);
+                  await renderNode({ ...rc, fcId: fcIndex, fcSlots }, node);
                 }
               }
             } else if (v || v === 0) {
-              await renderNode({ ...rc, fcIndex, fcSlots }, v);
+              await renderNode({ ...rc, fcId: fcIndex, fcSlots }, v);
             }
           } catch (err) {
             if (err instanceof Error) {
               if (props.catch) {
-                await renderNode({ ...rc, fcIndex }, props.catch(err));
+                await renderNode({ ...rc, fcId: fcIndex }, props.catch(err));
               } else {
                 write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
                 console.error(err);
@@ -464,12 +464,12 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
               case "onMount":
                 if (typeof propValue === "function") {
                   rc.status.onmount++;
-                  buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, (i) => "," + i) + ')"';
+                  buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
                 }
                 break;
               case "action":
                 if (typeof propValue === "function" && tag === "form") {
-                  buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcIndex, (i) => "," + i) + ')"';
+                  buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
                 } else if (isString(propValue)) {
                   buffer += " action=" + toAttrStringLit(propValue);
                 }
@@ -485,7 +485,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                     if (typeof propValue === "function") {
                       buffer += " " + propName.toLowerCase() + '="$emit(event,'
                         + rc.mfs.gen(propValue)
-                        + str(rc.fcIndex, (i) => "," + i)
+                        + str(rc.fcId, (i) => "," + i)
                         + ')"';
                     }
                   } else if (typeof propValue === "boolean") {

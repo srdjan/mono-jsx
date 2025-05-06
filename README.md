@@ -318,7 +318,6 @@ async function* Chat(props: { prompt: string }) {
   }
 }
 
-
 export default {
   fetch: (req) => (
     <html>
