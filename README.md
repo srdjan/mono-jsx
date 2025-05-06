@@ -72,8 +72,8 @@ export default {
     <html>
       <h1>Welcome to mono-jsx!</h1>
     </html>
-  ),
-};
+  )
+}
 ```
 
 For Deno/Bun users, you can run the `app.tsx` directly:
@@ -173,7 +173,7 @@ function Container() {
       {/* Named slot */}
       <slot name="desc" />
     </div>
-  );
+  )
 }
 
 function App() {
@@ -184,7 +184,7 @@ function App() {
       {/* This goes to the default slot */}
       <h1>Hello world!</h1>
     </Container>
-  );
+  )
 }
 ```
 
@@ -207,7 +207,7 @@ function App() {
       <style>{css`h1 { font-size: 3rem; }`}</style>
       <script>{js`console.log("Hello world!")`}</script>
     </head>
-  );
+  )
 }
 ```
 
@@ -224,7 +224,7 @@ function Button() {
     <button onClick={(evt) => alert("BOOM!")}>
       Click Me
     </button>
-  );
+  )
 }
 ```
 
@@ -252,7 +252,7 @@ function Button(this: FC, props: { role: string }) {
     >
       Click Me
     </button>
-  );
+  )
 }
 ```
 
@@ -264,7 +264,7 @@ function App() {
     <div onMount={(evt) => console.log(evt.target, "Mounted!")}>
       <h1>Welcome to mono-jsx!</h1>
     </div>
-  );
+  )
 }
 ```
 
@@ -277,7 +277,7 @@ function App() {
       <input type="text" name="name" />
       <button type="submit">Submit</button>
     </form>
-  );
+  )
 }
 ```
 
@@ -296,8 +296,8 @@ export default {
     <html>
       <Loader url="https://api.example.com/data" placeholder={<p>Loading...</p>} />
     </html>
-  ),
-};
+  )
+}
 ```
 
 You can also use async generators to yield multiple elements over time. This is useful for streaming rendering of LLM tokens:
@@ -323,8 +323,8 @@ export default {
     <html>
       <Chat prompt="Tell me a story" placeholder={<span style="color:grey">●</span>} />
     </html>
-  ),
-};
+  )
+}
 ```
 
 ## Reactive
@@ -352,7 +352,7 @@ function Counter(
       <button onClick={() => this.count--}>-</button>
       <button onClick={() => this.count++}>+</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -361,44 +361,46 @@ function Counter(
 You can define app state by adding `appState` prop to the root `<html>` element. The app state is available in all components via `this.app.<stateKey>`. Changes to the app state will trigger re-renders in all components that use it:
 
 ```tsx
-function Header(this: FC<{}, { title: string }>) {
+interface AppState {
+  themeColor: string;
+}
+
+function Header(this: FC<{}, AppState>) {
   return (
     <header>
-      <h1>{this.app.title}</h1>
+      <h1 style={{ color: this.app.themeColor }}>Welcome to mono-jsx.</h1>
     </header>
-  );
+  )
 }
 
-function Footer(this: FC<{}, { title: string }>) {
+function Footer(this: FC<{}, AppState>) {
   return (
     <footer>
-      <p>(c) 2025 {this.app.title}</p>
+      <p style={{ color: this.app.themeColor }}>(c) 2025 mono-jsx.</p>
     </footer>
-  );
+  )
 }
 
-function Main(this: FC<{}, { title: string }>) {
+function Main(this: FC<{}, AppState>) {
   return (
     <main>
-      <h1>{this.app.title}</h1>
-      <h2>Changing the title</h2>
-      <input
-        onInput={(evt) => this.app.title = evt.target.value}
-        placeholder="Enter a new title"
-      />
+      <p>
+        <label>Theme Color: </label>
+        <input type="color" onInput={({ target }) => this.app.themeColor = target.value}/>
+      </p>
     </main>
-  );
+  )
 }
 
 export default {
   fetch: (req) => (
-    <html appState={{ title: "Welcome to mono-jsx!" }}>
+    <html appState={{ themeColor: "#232323" }}>
       <Header />
       <Main />
       <Footer />
     </html>
-  ),
-};
+  )
+}
 ```
 
 ### Using Computed State
@@ -417,7 +419,7 @@ function App(this: FC<{ input: string }>) {
         <button type="submit">Submit</button>
       </form>
     </div>
-  );
+  )
 }
 ```
 
@@ -443,7 +445,7 @@ function App(this: FC<{ show: boolean }>) {
         {this.computed(() => this.show ? "Hide" : "Show")}
       </button>
     </div>
-  );
+  )
 }
 ```
 
@@ -468,7 +470,7 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
         <button onClick={() => this.lang = "emoji"}>Emoji</button>
       </p>
     </div>
-  );
+  )
 }
 ```
 
@@ -485,7 +487,7 @@ const App = () => {
       <span>{this.count}</span>
       <button onClick={() => this.count++}>+</button>
     </div>
-  );
+  )
 };
 
 // ✅ Works correctly
@@ -496,7 +498,7 @@ function App(this: FC) {
       <span>{this.count}</span>
       <button onClick={() => this.count++}>+</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -513,7 +515,7 @@ function App(this: FC<{ message: string }>) {
         Click Me
       </button>
     </div>
-  );
+  )
 }
 
 // ✅ Works correctly
@@ -526,7 +528,38 @@ function App(this: FC) {
         Click Me
       </button>
     </div>
-  );
+  )
+}
+```
+
+3\. Calling server-side functions or using server-side variables in compute functions will is not allowed. This is because the compute function is executed on both server and client-side.
+
+```tsx
+// ❌ Won't work - using server-side variable in compute function
+function App(this: FC<{ message: string }>) {
+  this.message = "Welcome to mono-jsx";
+  return (
+    <div>
+      <h1>{this.computed(() => this.message + "! (Deno " + Deno.version.deno + ")")}</h1>
+      <button onClick={() => this.message = "Clicked"}>
+        Click Me
+      </button>
+    </div>
+  )
+}
+
+// ✅ Works correctly
+function App(this: FC<{ message: string, denoVersion: string }>) {
+  this.message = "Welcome to mono-jsx";
+  this.denoVersion = Deno.version.deno;
+  return (
+    <div>
+      <h1>{this.computed(() => this.message + "! (Deno " + this.denoVersion + ")")}</h1>
+      <button onClick={() => this.message = "Clicked"}>
+        Click Me
+      </button>
+    </div>
+  )
 }
 ```
 
@@ -552,7 +585,7 @@ type FC<State = {}, AppState = {}, Context = {}> = {
 
 ### Using State
 
-Check the [Using State](#using-state) section for more details on how to use state in your components.
+Check the [Reactive](#reactive) section for more details on how to use state in your components.
 
 ### Using Context
 
@@ -566,7 +599,7 @@ function Dash(this: FC<{}, {}, { auth: { uuid: string; name: string } }>) {
       <h1>Welcome back, {auth.name}!</h1>
       <p>Your UUID is {auth.uuid}</p>
     </div>
-  );
+  )
 }
 
 export default {
@@ -577,9 +610,9 @@ export default {
         {!auth && <p>Please Login</p>}
         {auth && <Dash />}
       </html>
-    );
-  },
-};
+    )
+  }
+}
 ```
 
 ### Accessing Request Info
@@ -596,7 +629,7 @@ function RequestInfo(this: FC) {
       <p>{request.url}</p>
       <p>{request.headers.get("user-agent")}</p>
     </div>
-  );
+  )
 }
 
 export default {
@@ -604,8 +637,8 @@ export default {
     <html request={req}>
       <RequestInfo />
     </html>
-  ),
-};
+  )
+}
 ```
 
 ## Streaming Rendering
@@ -625,8 +658,8 @@ export default {
         <p>After 1 second</p>
       </Sleep>
     </html>
-  ),
-};
+  )
+}
 ```
 
 You can set the `rendering` attribute to `"eager"` to force synchronous rendering (the `placeholder` will be ignored):
@@ -639,8 +672,8 @@ export default {
         <p>After 1 second</p>
       </Sleep>
     </html>
-  ),
-};
+  )
+}
 ```
 
 You can add the `catch` attribute to handle errors in the async component. The `catch` attribute should be a function that returns a JSX element:
@@ -656,8 +689,8 @@ export default {
     <html>
       <Hello catch={err => <p>{err.message}</p>} />
     </html>
-  ),
-};
+  )
+}
 ```
 
 ## Customizing html Response
@@ -677,8 +710,8 @@ export default {
     >
       <h1>Page Not Found</h1>
     </html>
-  ),
-};
+  )
+}
 ```
 
 ### Using htmx
@@ -704,9 +737,9 @@ export default {
           Click Me
         </button>
       </html>
-    );
-  },
-};
+    )
+  }
+}
 ```
 
 #### Adding htmx Extensions
@@ -721,8 +754,8 @@ export default {
         Click Me
       </button>
     </html>
-  ),
-};
+  )
+}
 ```
 
 #### Specifying htmx Version
@@ -737,8 +770,8 @@ export default {
         Click Me
       </button>
     </html>
-  ),
-};
+  )
+}
 ```
 
 #### Installing htmx Manually
@@ -759,8 +792,8 @@ export default {
         </button>
       </body>
     </html>
-  ),
-};
+  )
+}
 ```
 
 ## License
