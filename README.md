@@ -291,7 +291,7 @@ async function Loader(props: { url: string }) {
   return <JsonViewer data={data} />;
 }
 
-default {
+export default {
   fetch: (req) => (
     <html>
       <Loader url="https://api.example.com/data" placeholder={<p>Loading...</p>} />
@@ -319,7 +319,7 @@ async function* Chat(props: { prompt: string }) {
 }
 
 
-default {
+export default {
   fetch: (req) => (
     <html>
       <Chat prompt="Tell me a story" placeholder={<span style="color:grey">●</span>} />
