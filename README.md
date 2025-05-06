@@ -283,31 +283,49 @@ function App() {
 
 ## Async Components
 
-mono-jsx supports async function components using the `async` keyword. With [streaming rendering](#streaming-rendering), async components can be rendered asynchronously, allowing you to fetch data or perform other async operations before rendering the component.
+mono-jsx supports async components that return a `Promise` or an async function. With [streaming rendering](#streaming-rendering), async components are rendered asynchronously, allowing you to fetch data or perform other async operations before rendering the component.
 
-```jsx
-async function AsyncComponent() {
-  const data = await fetch("https://api.example.com/data").then((res) => res.json());
-  return <div>{json.message}</div>;
+```tsx
+async function Loader(props: { url: string }) {
+  const data = await fetch(url).then((res) => res.json());
+  return <JsonViewer data={data} />;
 }
+
+default {
+  fetch: (req) => (
+    <html>
+      <Loader url="https://api.example.com/data" placeholder={<p>Loading...</p>} />
+    </html>
+  ),
+};
 ```
 
-mono-jsx also supports async generator function components, this is useful for streaming rendering of LLM tokens:
+You can also use async generators to yield multiple elements over time. This is useful for streaming rendering of LLM tokens:
 
 ```jsx
-async function* Chat() {
+async function* Chat(props: { prompt: string }) {
   const stream = await openai.chat.completions.create({
     model: "gpt-4",
-    messages: [{ role: "user", content: "Tell me a story" }],
+    messages: [{ role: "user", content: prompt }],
     stream: true,
   });
+
   for await (const event of stream) {
-    const text = event.choices[0]?.delta.content
+    const text = event.choices[0]?.delta.content;
     if (text) {
       yield <span>{text}</span>;
     }
   }
 }
+
+
+default {
+  fetch: (req) => (
+    <html>
+      <Chat prompt="Tell me a story" placeholder={<span style="color:grey">●</span>} />
+    </html>
+  ),
+};
 ```
 
 ## Reactive
@@ -637,7 +655,7 @@ async function Hello() {
 export default {
   fetch: (req) => (
     <html>
-      <Hello catch={err => <p>{err.messaage}</p>} />
+      <Hello catch={err => <p>{err.message}</p>} />
     </html>
   ),
 };
