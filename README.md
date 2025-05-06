@@ -409,7 +409,7 @@ You can use `this.computed` to create computed state based on state. The compute
 
 ```tsx
 function App(this: FC<{ input: string }>) {
-  this.input = "Welcome to mono-jsx!";
+  this.input = "Welcome to mono-jsx";
   return (
     <div>
       <h1>{this.computed(() => this.input + "!")}</h1>
@@ -476,10 +476,10 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
 
 ### Limitation of State
 
-1\. Component state cannot be used in arrow function components.
+1\. Arrow function are non-stateful components.
 
 ```tsx
-// ❌ Won't work - state updates won't refresh the view
+// ❌ Won't work - use `this` in a non-stateful component
 const App = () => {
   this.count = 0;
   return (
@@ -502,12 +502,12 @@ function App(this: FC) {
 }
 ```
 
-2\. Component state cannot be computed outside of the `this.computed` method.
+2\. State cannot be computed outside of the `this.computed` method.
 
 ```tsx
 // ❌ Won't work - state updates won't refresh the view
 function App(this: FC<{ message: string }>) {
-  this.message = "Welcome to mono-jsx!";
+  this.message = "Welcome to mono-jsx";
   return (
     <div>
       <h1 title={this.message + "!"}>{this.message + "!"}</h1>
@@ -520,7 +520,7 @@ function App(this: FC<{ message: string }>) {
 
 // ✅ Works correctly
 function App(this: FC) {
-  this.message = "Welcome to mono-jsx!";
+  this.message = "Welcome to mono-jsx";
   return (
     <div>
       <h1 title={this.computed(() => this.message + "!")}>{this.computed(() => this.message + "!")}</h1>
@@ -532,10 +532,10 @@ function App(this: FC) {
 }
 ```
 
-3\. Calling server-side functions or using server-side variables in compute functions will is not allowed. This is because the compute function is executed on both server and client-side.
+3\. Calling server-side functions or using server-side variables in compute functions is not allowed.
 
 ```tsx
-// ❌ Won't work - using server-side variable in compute function
+// ❌ Won't work - throws `Deno is not defined` when the button is clicked
 function App(this: FC<{ message: string }>) {
   this.message = "Welcome to mono-jsx";
   return (
