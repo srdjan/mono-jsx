@@ -32,6 +32,7 @@ export async function setup() {
     return;
   }
   if (!globalThis.Deno) {
+    compilerOptions.lib ??= ["dom", "es2022"];
     compilerOptions.module ??= "es2022";
     compilerOptions.moduleResolution ??= "bundler";
   }
