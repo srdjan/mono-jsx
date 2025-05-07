@@ -1,9 +1,9 @@
 const stateMap = new Map<number, ReturnType<typeof createState>>();
-const getState = (fc: number) => stateMap.get(fc) ?? stateMap.set(fc, createState(fc)).get(fc)!;
+const getState = (id: number) => stateMap.get(id) ?? stateMap.set(id, createState(id)).get(id)!;
 const attr = (el: Element, name: string) => el.getAttribute(name);
 const hasAttr = (el: Element, name: string) => el.hasAttribute(name);
 
-const createState = (fc: number) => {
+const createState = (id: number) => {
   const store = Object.create(null);
   const effectMap = new Map<string, (() => void)[]>();
 
@@ -32,7 +32,7 @@ const createState = (fc: number) => {
     effects.push(effect);
   };
 
-  if (fc > 0) {
+  if (id > 0) {
     Object.defineProperty(store, "app", { get: () => getState(0).store, enumerable: false, configurable: false });
   }
 
@@ -114,7 +114,7 @@ const createEffect = (el: Element, mode: string | null, getter: () => unknown) =
   return () => el.textContent = "" + getter();
 };
 
-const resolveStateKey = (key: string): [fc: number, key: string] => {
+const resolveStateKey = (key: string): [id: number, key: string] => {
   const i = key.indexOf(":");
   if (i > 0) {
     return [Number(key.slice(0, i)), key.slice(i + 1)];
@@ -138,10 +138,10 @@ customElements.define(
 );
 
 Object.assign(window, {
-  $state: (fc?: number) => fc !== undefined ? getState(fc).store : undefined,
-  $defineState: (id: string, value: unknown) => {
-    const [fc, key] = resolveStateKey(id);
-    getState(fc).define(key, value);
+  $state: (id?: number) => id !== undefined ? getState(id).store : undefined,
+  $defineState: (stateKey: string, value: unknown) => {
+    const [id, key] = resolveStateKey(stateKey);
+    getState(id).define(key, value);
   },
   $defineComputed: (id: string, compute: Function, deps: string[]) => {
     const el = document.querySelector("m-state[computed='" + id + "']");
@@ -149,8 +149,8 @@ Object.assign(window, {
       const scope = getState(Number(attr(el, "fc")!)).store;
       const effect = createEffect(el, attr(el, "mode"), compute.bind(scope));
       for (const dep of deps) {
-        const [fc, key] = resolveStateKey(dep);
-        getState(fc).watch(key, effect);
+        const [id, key] = resolveStateKey(dep);
+        getState(id).watch(key, effect);
       }
     }
   },
