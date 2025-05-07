@@ -1098,7 +1098,7 @@ export namespace HTML {
 
   type CustomElements =
     & {
-      [K in keyof JSX.CustomElements as K extends `${string}-${string}` ? K : never]:
+      [K in keyof JSX.CustomElements]:
         & JSX.CustomElements[K]
         & Mono.BaseAttributes
         & Mono.AsyncComponentAttributes;
