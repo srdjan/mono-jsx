@@ -102,13 +102,13 @@ export function escapeCSSText(str: string): string {
  */
 const regexpHtmlSafe = /["'&<>]/;
 export function escapeHTML(str: string): string {
-  // @ts-ignore use bun's built-in `escapeHTML` function if available
-  if (typeof Bun === "object" && "escapeHTML" in Bun) return Bun.escapeHTML(str);
-
   const match = regexpHtmlSafe.exec(str);
   if (!match) {
     return str;
   }
+
+  // @ts-ignore use bun's built-in `escapeHTML` function if available
+  if (typeof Bun === "object" && "escapeHTML" in Bun) return Bun.escapeHTML(str);
 
   let escape: string;
   let index: number;

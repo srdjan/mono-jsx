@@ -1,6 +1,6 @@
 import type { FC, VNode } from "./types/jsx.d.ts";
 import { $fragment, $html, $vnode } from "./symbols.ts";
-import { render } from "./render.ts";
+import { JSX, render } from "./render.ts";
 
 const jsx = (tag: string | FC, props: Record<string, unknown> = Object.create(null), key?: string | number): VNode => {
   const vnode = new Array(3).fill(null);
@@ -35,6 +35,7 @@ const html = (raw: string, ...values: unknown[]): VNode => [
 
 // global variables
 Object.assign(globalThis, {
+  JSX,
   html,
   css: html,
   js: html,

@@ -1,4 +1,5 @@
-import type { ChildType, VNode } from "./types/jsx.d.ts";
+import type { ChildType } from "./types/mono.d.ts";
+import type { FC, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
 import { $computed, $fragment, $html, $state, $vnode } from "./symbols.ts";
 import { STATE_JS, SUSPENSE_JS, UTILS_JS } from "./runtime/index.ts";
@@ -42,10 +43,10 @@ interface IdGen<K> {
   gen(key: K): string;
 }
 
-const encoder = new TextEncoder();
-const regexpHtmlTag = /^[a-z][\w\-$]*$/;
-const selfClosingTags = new Set("area,base,br,col,embed,hr,img,input,keygen,link,meta,param,source,track,wbr".split(","));
 const cdn = "https://raw.esm.sh"; // the cdn for loading htmx and its extensions
+const customElements = new Map<string, FC>();
+const encoder = new TextEncoder();
+const selfClosingTags = new Set("area,base,br,col,embed,hr,img,input,keygen,link,meta,param,source,track,wbr".split(","));
 
 const isVNode = (v: unknown): v is VNode => Array.isArray(v) && v.length === 3 && v[2] === $vnode;
 const hashCode = (s: string) => [...s].reduce((hash, c) => (Math.imul(31, hash) + c.charCodeAt(0)) | 0, 0);
@@ -110,413 +111,430 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
       break;
     case "number":
     case "bigint":
-      write("" + node);
+      write(String(node));
       break;
     case "object":
       if (isVNode(node)) {
         const [tag, props] = node;
-        const { stateStore } = rc;
 
-        // fragment element
-        if (tag === $fragment) {
-          if (props.children !== undefined) {
-            await renderChildren(rc, props.children);
-          }
-          break;
-        }
-
-        // XSS!
-        if (tag === $html) {
-          if (props.innerHTML) {
-            write(props.innerHTML);
-          }
-          break;
-        }
-
-        // state
-        if (tag === $state) {
-          const { key, value, fc } = props;
-          write('<m-state fc="' + fc + '" key=' + toAttrStringLit(key) + ">");
-          if (value !== undefined && value !== null) {
-            write(escapeHTML("" + value));
-          }
-          write("</m-state>");
-          stateStore.set(fc + ":" + key, value);
-          break;
-        }
-
-        // computed
-        if (tag === $computed) {
-          const { deps, value, fc } = props;
-          write('<m-state fc="' + fc + '" computed="' + rc.mcs.gen(node) + '">');
-          if (value !== undefined) {
-            write(escapeHTML("" + value));
-          }
-          write("</m-state>");
-          for (const [key, value] of Object.entries(deps)) {
-            if (!stateStore.has(key)) {
-              stateStore.set(key, value);
-            }
-          }
-          break;
-        }
-
-        // `<slot>` element
-        if (tag === "slot") {
-          const { fcSlots } = rc;
-          if (fcSlots) {
-            let slots: ChildType[];
-            if (props.name) {
-              slots = fcSlots.filter((v) => isVNode(v) && v[1].slot === props.name);
-            } else {
-              slots = fcSlots.filter((v) => !isVNode(v) || !v[1].slot);
-            }
-            // use the children of the slot as fallback if nothing is slotted
-            if (slots.length === 0) {
-              slots = props.children;
-            }
-            await renderChildren(rc, slots, true);
-          }
-          break;
-        }
-
-        // `<toggle>` element
-        if (tag === "toggle") {
-          const { value: valueProp, children } = props;
-          if (children !== undefined) {
-            if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
-              const { key, deps, value, fc } = valueProp[1];
-              write('<m-state mode="toggle" fc="' + fc + '" ');
-              if (key) {
-                write("key=" + toAttrStringLit(key) + ">");
-                stateStore.set(fc + ":" + key, !!value);
-              } else {
-                write('computed="' + rc.mcs.gen(valueProp) + '">');
-                for (const [key, value] of Object.entries(deps)) {
-                  if (!stateStore.has(key)) {
-                    stateStore.set(key, value);
-                  }
-                }
-              }
-              if (!value) {
-                write("<template m-slot>");
-              }
-              await renderChildren(rc, children);
-              if (!value) {
-                write("</template>");
-              }
-              write("</m-state>");
-            } else if (valueProp) {
-              await renderChildren(rc, children);
-            }
-          }
-          break;
-        }
-
-        // `<switch>` element
-        if (tag === "switch") {
-          const { value: valueProp, defaultValue, children } = props;
-          if (children !== undefined) {
-            let slots = Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children];
-            let stateful: string | undefined;
-            let computed: string | undefined;
-            let valueOrDefault: unknown;
-            if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
-              const { key, deps, value, fc } = valueProp[1];
-              valueOrDefault = value ?? defaultValue;
-              stateful = '<m-state mode="switch" fc="' + fc + '" ';
-              if (key) {
-                stateful += "key=" + toAttrStringLit(key) + ">";
-                stateStore.set(fc + ":" + key, valueOrDefault);
-              } else {
-                stateful += 'computed="' + rc.mcs.gen(valueProp) + '">';
-                for (const [key, value] of Object.entries(deps)) {
-                  if (!stateStore.has(key)) {
-                    stateStore.set(key, value);
-                  }
-                }
-              }
-            } else {
-              valueOrDefault = valueProp ?? defaultValue;
-            }
-            let matchedSlot: [string, ChildType] | undefined;
-            let namedSlots: ChildType[] = new Array(slots.length);
-            let unnamedSlots: ChildType[] = new Array(slots.length);
-            for (const slot of slots) {
-              if (!isVNode(slot) || !slot[1].slot) {
-                unnamedSlots.push(slot);
-                continue;
-              }
-              const slotName = slot[1].slot;
-              if (slotName === valueOrDefault) {
-                matchedSlot = [slotName, slot];
-              } else {
-                namedSlots.push(slot);
-              }
-            }
-            if (stateful) {
-              write(matchedSlot ? stateful.slice(0, -1) + " match=" + toAttrStringLit(matchedSlot[0]) + ">" : stateful);
-              if (computed) {
-                write(computed);
-              }
-            }
-            if (matchedSlot) {
-              await renderNode(rc, matchedSlot[1], true);
-            } else if (unnamedSlots.length > 0) {
-              await renderChildren(rc, unnamedSlots);
-            }
-            if (stateful) {
-              if (namedSlots.length > 0 || (matchedSlot && unnamedSlots.length > 0)) {
-                write("<template m-slot>");
-                await renderChildren(rc, namedSlots);
-                if (matchedSlot && unnamedSlots.length > 0) {
-                  await renderChildren(rc, unnamedSlots);
-                }
-                write("</template>");
-              }
-              write("</m-state>");
-            }
-          }
-          break;
-        }
-
-        // function component
-        if (typeof tag === "function") {
-          const { children } = props;
-          const fcId = ++rc.status.fcIndex;
-          try {
-            const fcSlots = children !== undefined
-              ? (Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children])
-              : undefined;
-            const v = tag.call(createThis(fcId, rc.appState, rc.context, rc.request), props);
-            if (isObject(v) && !isVNode(v)) {
-              if (v instanceof Promise) {
-                if ((props.rendering ?? tag.rendering) === "eager") {
-                  await renderNode({ ...rc, fcId, fcSlots }, await v);
-                } else {
-                  const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
-                  write("<m-portal " + chunkIdAttr + ">");
-                  if (props.placeholder) {
-                    await renderNode({ ...rc, fcId }, props.placeholder);
-                  }
-                  write("</m-portal>");
-                  rc.suspenses.push(v.then(async (node) => {
-                    let buf = "<m-chunk " + chunkIdAttr + "><template>";
-                    await renderNode({
-                      ...rc,
-                      fcId,
-                      fcSlots,
-                      write: (chunk: string) => {
-                        buf += chunk;
-                      },
-                    }, node);
-                    return buf + "</template></m-chunk>";
-                  }));
-                }
-              } else if (Symbol.asyncIterator in v) {
-                if ((props.rendering ?? tag.rendering) === "eager") {
-                  for await (const c of v) {
-                    await renderNode({ ...rc, fcId, fcSlots }, c);
-                  }
-                } else {
-                  const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
-                  write("<m-portal " + chunkIdAttr + ">");
-                  if (props.placeholder) {
-                    await renderNode({ ...rc, fcId }, props.placeholder);
-                  }
-                  write("</m-portal>");
-                  const iter = () =>
-                    rc.suspenses.push(
-                      v.next().then(async ({ done, value }) => {
-                        let buf = "<m-chunk " + chunkIdAttr;
-                        if (done) {
-                          return buf + " done></m-chunk>";
-                        }
-                        buf += " next><template>";
-                        await renderNode({
-                          ...rc,
-                          fcId,
-                          fcSlots,
-                          write: (chunk: string) => {
-                            buf += chunk;
-                          },
-                        }, value);
-                        iter();
-                        return buf + "</template></m-chunk>";
-                      }),
-                    );
-                  iter();
-                }
-              } else if (Symbol.iterator in v) {
-                for (const node of v) {
-                  await renderNode({ ...rc, fcId, fcSlots }, node);
-                }
-              }
-            } else if (v || v === 0) {
-              await renderNode({ ...rc, fcId, fcSlots }, v);
-            }
-          } catch (err) {
-            if (err instanceof Error) {
-              if (props.catch) {
-                await renderNode({ ...rc, fcId }, props.catch(err));
-              } else {
-                write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
-                console.error(err);
-              }
-            }
-          }
-          break;
-        }
-
-        // regular html element
-        if (isString(tag) && regexpHtmlTag.test(tag)) {
-          let buffer = "<" + tag;
-          let stateTags = "";
-          for (let [propName, propValue] of Object.entries(props)) {
-            if (propName === "children") {
-              continue;
-            }
-            if (isVNode(propValue) && (propValue[0] === $state || propValue[0] === $computed)) {
-              const { key, value, deps, fc } = propValue[1];
-              if (propName === "class") {
-                rc.status.cx = true;
-              } else if (propName === "style") {
-                rc.status.styleToCSS = true;
-              }
-              stateTags += "<m-state mode=" + toAttrStringLit("[" + propName + "]") + ' fc="' + fc + '" ';
-              if (key) {
-                stateTags += "key=" + toAttrStringLit(key) + ">";
-                stateStore.set(fc + ":" + key, value);
-              } else {
-                stateTags += 'computed="' + rc.mcs.gen(propValue) + '">';
-                for (const [key, value] of Object.entries(deps)) {
-                  if (!stateStore.has(key)) {
-                    stateStore.set(key, value);
-                  }
-                }
-              }
-              stateTags += "</m-state>";
-              propValue = value;
-            }
-            switch (propName) {
-              case "class":
-                buffer += " class=" + toAttrStringLit(cx(propValue));
-                break;
-              case "style":
-                if (isString(propValue) && propValue !== "") {
-                  buffer += ' style="' + escapeCSSText(propValue) + '"';
-                } else if (isObject(propValue) && !Array.isArray(propValue)) {
-                  const style: [string, string | number][] = [];
-                  const pseudoStyles: [string, string][] = [];
-                  const atRuleStyles: [string, string][] = [];
-                  const nestingStyles: [string, string][] = [];
-                  for (const [k, v] of Object.entries(propValue)) {
-                    switch (k.charCodeAt(0)) {
-                      case /* ':' */ 58:
-                        pseudoStyles.push([escapeCSSText(k), styleToCSS(v)]);
-                        break;
-                      case /* '@' */ 64:
-                        atRuleStyles.push([escapeCSSText(k), styleToCSS(v)]);
-                        break;
-                      case /* '&' */ 38:
-                        nestingStyles.push([escapeCSSText(k), styleToCSS(v)]);
-                        break;
-                      default:
-                        style.push([k, v]);
-                    }
-                  }
-                  if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
-                    let css = "";
-                    let raw = "";
-                    let id: string;
-                    let cssSelector: string;
-                    let cssIds: Set<string>;
-                    if (style.length > 0) {
-                      css = styleToCSS(style);
-                      raw += css + "|";
-                    }
-                    raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
-                    id = hashCode(raw).toString(36);
-                    cssSelector = "[data-css-" + id + "]";
-                    cssIds = rc.cssIds ?? (rc.cssIds = new Set());
-                    if (!cssIds.has(id)) {
-                      cssIds.add(id);
-                      if (css) {
-                        css = cssSelector + "{" + css + "}";
-                      }
-                      for (const [p, styles] of pseudoStyles) {
-                        css += cssSelector + p + "{" + styles + "}";
-                      }
-                      for (const [at, styles] of atRuleStyles) {
-                        css += at + "{" + cssSelector + "{" + styles + "}}";
-                      }
-                      for (const [n, styles] of nestingStyles) {
-                        css += cssSelector + n.slice(1) + "{" + styles + "}";
-                      }
-                      write('<style id="css-' + id + '">' + css + "</style>");
-                    }
-                    buffer += " data-css-" + id;
-                  } else if (style.length > 0) {
-                    buffer += ' style="' + styleToCSS(style) + '"';
-                  }
-                }
-                break;
-              case "onMount":
-                if (typeof propValue === "function") {
-                  rc.status.onmount++;
-                  buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
-                }
-                break;
-              case "action":
-                if (typeof propValue === "function" && tag === "form") {
-                  buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
-                } else if (isString(propValue)) {
-                  buffer += " action=" + toAttrStringLit(propValue);
-                }
-                break;
-              case "slot":
-                if (!stripSlotProp && isString(propValue)) {
-                  buffer += " slot=" + toAttrStringLit(propValue);
-                }
-                break;
-              default:
-                if (regexpHtmlTag.test(propName) && propValue !== undefined) {
-                  if (propName.startsWith("on")) {
-                    if (typeof propValue === "function") {
-                      buffer += " " + propName.toLowerCase() + '="$emit(event,'
-                        + rc.mfs.gen(propValue)
-                        + str(rc.fcId, (i) => "," + i)
-                        + ')"';
-                    }
-                  } else if (typeof propValue === "boolean") {
-                    if (propValue) {
-                      buffer += " " + propName;
-                    }
-                  } else {
-                    buffer += " " + escapeHTML(propName) + (propValue === true ? "" : "=" + toAttrStringLit("" + propValue));
-                  }
-                }
-            }
-          }
-          write(buffer + ">");
-          if (!selfClosingTags.has(tag)) {
-            if (stateTags) {
-              write(stateTags);
-            }
-            if (props.innerHTML) {
-              write(props.innerHTML);
-            } else if (props.children !== undefined) {
+        switch (tag) {
+          // fragment element
+          case $fragment: {
+            if (props.children !== undefined) {
               await renderChildren(rc, props.children);
             }
-            write("</" + tag + ">");
-          } else if (stateTags) {
-            write("<m-group>" + stateTags + "</m-group>");
+            break;
+          }
+
+          // XSS!
+          case $html: {
+            if (props.innerHTML) {
+              write(props.innerHTML);
+            }
+            break;
+          }
+
+          // state
+          case $state: {
+            const { stateStore } = rc;
+            const { key, value, fc } = props;
+            write('<m-state fc="' + fc + '" key=' + toAttrStringLit(key) + ">");
+            if (value !== undefined && value !== null) {
+              write(escapeHTML(String(value)));
+            }
+            write("</m-state>");
+            stateStore.set(fc + ":" + key, value);
+            break;
+          }
+
+          // computed
+          case $computed: {
+            const { stateStore } = rc;
+            const { deps, value, fc } = props;
+            write('<m-state fc="' + fc + '" computed="' + rc.mcs.gen(node) + '">');
+            if (value !== undefined) {
+              write(escapeHTML(String(value)));
+            }
+            write("</m-state>");
+            for (const [key, value] of Object.entries(deps)) {
+              if (!stateStore.has(key)) {
+                stateStore.set(key, value);
+              }
+            }
+            break;
+          }
+
+          // `<slot>` element
+          case "slot": {
+            const { fcSlots } = rc;
+            if (fcSlots) {
+              let slots: ChildType[];
+              if (props.name) {
+                slots = fcSlots.filter((v) => isVNode(v) && v[1].slot === props.name);
+              } else {
+                slots = fcSlots.filter((v) => !isVNode(v) || !v[1].slot);
+              }
+              // use the children of the slot as fallback if nothing is slotted
+              if (slots.length === 0) {
+                slots = props.children;
+              }
+              await renderChildren(rc, slots, true);
+            }
+            break;
+          }
+
+          // `<toggle>` element
+          case "toggle": {
+            const { stateStore } = rc;
+            const { value: valueProp, children } = props;
+            if (children !== undefined) {
+              if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
+                const { key, deps, value, fc } = valueProp[1];
+                write('<m-state mode="toggle" fc="' + fc + '" ');
+                if (key) {
+                  write("key=" + toAttrStringLit(key) + ">");
+                  stateStore.set(fc + ":" + key, !!value);
+                } else {
+                  write('computed="' + rc.mcs.gen(valueProp) + '">');
+                  for (const [key, value] of Object.entries(deps)) {
+                    if (!stateStore.has(key)) {
+                      stateStore.set(key, value);
+                    }
+                  }
+                }
+                if (!value) {
+                  write("<template m-slot>");
+                }
+                await renderChildren(rc, children);
+                if (!value) {
+                  write("</template>");
+                }
+                write("</m-state>");
+              } else if (valueProp) {
+                await renderChildren(rc, children);
+              }
+            }
+            break;
+          }
+
+          // `<switch>` element
+          case "switch": {
+            const { value: valueProp, defaultValue, children } = props;
+            if (children !== undefined) {
+              let slots = Array.isArray(children) ? (isVNode(children) ? [children] : children) : [children];
+              let stateful: string | undefined;
+              let computed: string | undefined;
+              let valueOrDefault: unknown;
+              if (isVNode(valueProp) && (valueProp[0] === $state || valueProp[0] === $computed)) {
+                const { stateStore } = rc;
+                const { key, deps, value, fc } = valueProp[1];
+                valueOrDefault = value ?? defaultValue;
+                stateful = '<m-state mode="switch" fc="' + fc + '" ';
+                if (key) {
+                  stateful += "key=" + toAttrStringLit(key) + ">";
+                  stateStore.set(fc + ":" + key, valueOrDefault);
+                } else {
+                  stateful += 'computed="' + rc.mcs.gen(valueProp) + '">';
+                  for (const [key, value] of Object.entries(deps)) {
+                    if (!stateStore.has(key)) {
+                      stateStore.set(key, value);
+                    }
+                  }
+                }
+              } else {
+                valueOrDefault = valueProp ?? defaultValue;
+              }
+              let matchedSlot: [string, ChildType] | undefined;
+              let namedSlots: ChildType[] = new Array(slots.length);
+              let unnamedSlots: ChildType[] = new Array(slots.length);
+              for (const slot of slots) {
+                if (!isVNode(slot) || !slot[1].slot) {
+                  unnamedSlots.push(slot);
+                  continue;
+                }
+                const slotName = slot[1].slot;
+                if (slotName === valueOrDefault) {
+                  matchedSlot = [slotName, slot as ChildType];
+                } else {
+                  namedSlots.push(slot as ChildType);
+                }
+              }
+              if (stateful) {
+                write(matchedSlot ? stateful.slice(0, -1) + " match=" + toAttrStringLit(matchedSlot[0]) + ">" : stateful);
+                if (computed) {
+                  write(computed);
+                }
+              }
+              if (matchedSlot) {
+                await renderNode(rc, matchedSlot[1], true);
+              } else if (unnamedSlots.length > 0) {
+                await renderChildren(rc, unnamedSlots);
+              }
+              if (stateful) {
+                if (namedSlots.length > 0 || (matchedSlot && unnamedSlots.length > 0)) {
+                  write("<template m-slot>");
+                  await renderChildren(rc, namedSlots);
+                  if (matchedSlot && unnamedSlots.length > 0) {
+                    await renderChildren(rc, unnamedSlots);
+                  }
+                  write("</template>");
+                }
+                write("</m-state>");
+              }
+            }
+            break;
+          }
+
+          default: {
+            // function component
+            if (typeof tag === "function") {
+              await renderComponent(rc, tag as FC, props);
+              break;
+            }
+
+            // regular html element
+            if (isString(tag)) {
+              // check if the tag is a custom element
+              if (customElements.has(tag)) {
+                await renderComponent(rc, customElements.get(tag)!, props);
+                break;
+              }
+              let buffer = "<" + tag;
+              let stateTags = "";
+              for (let [propName, propValue] of Object.entries(props)) {
+                if (propName === "children") {
+                  continue;
+                }
+                if (isVNode(propValue) && (propValue[0] === $state || propValue[0] === $computed)) {
+                  const { stateStore } = rc;
+                  const { key, value, deps, fc } = propValue[1];
+                  if (propName === "class") {
+                    rc.status.cx = true;
+                  } else if (propName === "style") {
+                    rc.status.styleToCSS = true;
+                  }
+                  stateTags += "<m-state mode=" + toAttrStringLit("[" + propName + "]") + ' fc="' + fc + '" ';
+                  if (key) {
+                    stateTags += "key=" + toAttrStringLit(key) + ">";
+                    stateStore.set(fc + ":" + key, value);
+                  } else {
+                    stateTags += 'computed="' + rc.mcs.gen(propValue) + '">';
+                    for (const [key, value] of Object.entries(deps)) {
+                      if (!stateStore.has(key)) {
+                        stateStore.set(key, value);
+                      }
+                    }
+                  }
+                  stateTags += "</m-state>";
+                  propValue = value;
+                }
+                switch (propName) {
+                  case "class":
+                    buffer += " class=" + toAttrStringLit(cx(propValue));
+                    break;
+                  case "style":
+                    if (isString(propValue) && propValue !== "") {
+                      buffer += ' style="' + escapeCSSText(propValue) + '"';
+                    } else if (isObject(propValue) && !Array.isArray(propValue)) {
+                      const style: [string, string | number][] = [];
+                      const pseudoStyles: [string, string][] = [];
+                      const atRuleStyles: [string, string][] = [];
+                      const nestingStyles: [string, string][] = [];
+                      for (const [k, v] of Object.entries(propValue)) {
+                        switch (k.charCodeAt(0)) {
+                          case /* ':' */ 58:
+                            pseudoStyles.push([escapeCSSText(k), styleToCSS(v)]);
+                            break;
+                          case /* '@' */ 64:
+                            atRuleStyles.push([escapeCSSText(k), styleToCSS(v)]);
+                            break;
+                          case /* '&' */ 38:
+                            nestingStyles.push([escapeCSSText(k), styleToCSS(v)]);
+                            break;
+                          default:
+                            style.push([k, v]);
+                        }
+                      }
+                      if (pseudoStyles.length > 0 || atRuleStyles.length > 0 || nestingStyles.length > 0) {
+                        let css = "";
+                        let raw = "";
+                        let id: string;
+                        let cssSelector: string;
+                        let cssIds: Set<string>;
+                        if (style.length > 0) {
+                          css = styleToCSS(style);
+                          raw += css + "|";
+                        }
+                        raw += [pseudoStyles, atRuleStyles, nestingStyles].flat(1).map(([k, v]) => k + ">" + v).join("|");
+                        id = hashCode(raw).toString(36);
+                        cssSelector = "[data-css-" + id + "]";
+                        cssIds = rc.cssIds ?? (rc.cssIds = new Set());
+                        if (!cssIds.has(id)) {
+                          cssIds.add(id);
+                          if (css) {
+                            css = cssSelector + "{" + css + "}";
+                          }
+                          for (const [p, styles] of pseudoStyles) {
+                            css += cssSelector + p + "{" + styles + "}";
+                          }
+                          for (const [at, styles] of atRuleStyles) {
+                            css += at + "{" + cssSelector + "{" + styles + "}}";
+                          }
+                          for (const [n, styles] of nestingStyles) {
+                            css += cssSelector + n.slice(1) + "{" + styles + "}";
+                          }
+                          write('<style id="css-' + id + '">' + css + "</style>");
+                        }
+                        buffer += " data-css-" + id;
+                      } else if (style.length > 0) {
+                        buffer += ' style="' + styleToCSS(style) + '"';
+                      }
+                    }
+                    break;
+                  case "onMount":
+                    if (typeof propValue === "function") {
+                      rc.status.onmount++;
+                      buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
+                    }
+                    break;
+                  case "action":
+                    if (typeof propValue === "function" && tag === "form") {
+                      buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
+                    } else if (isString(propValue)) {
+                      buffer += " action=" + toAttrStringLit(propValue);
+                    }
+                    break;
+                  case "slot":
+                    if (!stripSlotProp && isString(propValue)) {
+                      buffer += " slot=" + toAttrStringLit(propValue);
+                    }
+                    break;
+                  default:
+                    if (propValue !== undefined && propValue !== null && propValue !== false) {
+                      if (propName.startsWith("on")) {
+                        if (typeof propValue === "function") {
+                          buffer += " " + escapeHTML(propName.toLowerCase()) + '="$emit(event,'
+                            + rc.mfs.gen(propValue)
+                            + str(rc.fcId, (i) => "," + i)
+                            + ')"';
+                        }
+                      } else {
+                        buffer += " " + escapeHTML(propName);
+                        if (propValue !== "" && propValue !== true) {
+                          buffer += "=" + toAttrStringLit(String(propValue));
+                        }
+                      }
+                    }
+                }
+              }
+              write(buffer + ">");
+              if (!selfClosingTags.has(tag)) {
+                if (stateTags) {
+                  write(stateTags);
+                }
+                if (props.innerHTML) {
+                  write(props.innerHTML);
+                } else if (props.children !== undefined) {
+                  await renderChildren(rc, props.children);
+                }
+                write("</" + tag + ">");
+              } else if (stateTags) {
+                write("<m-group>" + stateTags + "</m-group>");
+              }
+            }
           }
         }
       } else if (Array.isArray(node) && node.length > 0) {
-        renderChildren(rc, node, stripSlotProp);
+        await renderChildren(rc, node, stripSlotProp);
       }
       break;
+  }
+}
+
+async function renderComponent(rc: RenderContext, fc: FC, props: JSX.IntrinsicAttributes) {
+  const { write } = rc;
+  const { children } = props;
+  const fcId = ++rc.status.fcIndex;
+  try {
+    const fcSlots: ChildType[] | undefined = children !== undefined
+      ? (Array.isArray(children) ? (isVNode(children) ? [children as ChildType] : children) : [children])
+      : undefined;
+    const v = fc.call(createThis(fcId, rc.appState, rc.context, rc.request), props);
+    if (isObject(v) && !isVNode(v)) {
+      if (v instanceof Promise) {
+        if ((props.rendering ?? fc.rendering) === "eager") {
+          await renderNode({ ...rc, fcId, fcSlots }, (await v) as ChildType);
+        } else {
+          const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
+          write("<m-portal " + chunkIdAttr + ">");
+          if (props.placeholder) {
+            await renderNode({ ...rc, fcId }, props.placeholder);
+          }
+          write("</m-portal>");
+          rc.suspenses.push(v.then(async (node) => {
+            let buf = "<m-chunk " + chunkIdAttr + "><template>";
+            await renderNode({
+              ...rc,
+              fcId,
+              fcSlots,
+              write: (chunk: string) => {
+                buf += chunk;
+              },
+            }, node as ChildType);
+            return buf + "</template></m-chunk>";
+          }));
+        }
+      } else if (Symbol.asyncIterator in v) {
+        if ((props.rendering ?? fc.rendering) === "eager") {
+          for await (const c of v) {
+            await renderNode({ ...rc, fcId, fcSlots }, c as ChildType);
+          }
+        } else {
+          const chunkIdAttr = 'chunk-id="' + (rc.status.chunkIndex++).toString(36) + '"';
+          write("<m-portal " + chunkIdAttr + ">");
+          if (props.placeholder) {
+            await renderNode({ ...rc, fcId }, props.placeholder);
+          }
+          write("</m-portal>");
+          const iter = () =>
+            rc.suspenses.push(
+              v.next().then(async ({ done, value }) => {
+                let buf = "<m-chunk " + chunkIdAttr;
+                if (done) {
+                  return buf + " done></m-chunk>";
+                }
+                buf += " next><template>";
+                await renderNode({
+                  ...rc,
+                  fcId,
+                  fcSlots,
+                  write: (chunk: string) => {
+                    buf += chunk;
+                  },
+                }, value as ChildType);
+                iter();
+                return buf + "</template></m-chunk>";
+              }),
+            );
+          iter();
+        }
+      } else if (Symbol.iterator in v) {
+        for (const node of v) {
+          await renderNode({ ...rc, fcId, fcSlots }, node as ChildType);
+        }
+      }
+    } else if (v) {
+      await renderNode({ ...rc, fcId, fcSlots }, v as ChildType);
+    }
+  } catch (err) {
+    if (err instanceof Error) {
+      if (props.catch) {
+        await renderNode({ ...rc, fcId }, props.catch(err));
+      } else {
+        write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
+        console.error(err);
+      }
+    }
   }
 }
 
@@ -526,7 +544,7 @@ async function renderChildren(rc: RenderContext, children: ChildType | ChildType
       await renderNode(rc, child, stripSlotProp);
     }
   } else {
-    await renderNode(rc, children, stripSlotProp);
+    await renderNode(rc, children as ChildType, stripSlotProp);
   }
 }
 
@@ -656,7 +674,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
         }
         try {
           write("<!DOCTYPE html>");
-          await renderNode(rc, node);
+          await renderNode(rc, node as ChildType);
           // htmx integration
           if (htmx) {
             write(`<script src="${cdn}/htmx.org${htmx === true ? "" : escapeHTML("@" + htmx)}/dist/htmx.min.js"></script>`);
@@ -675,3 +693,11 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
     { headers, status },
   );
 }
+
+export const JSX = {
+  customElements: {
+    define(tagName: string, fc: FC) {
+      customElements.set(tagName, fc);
+    },
+  },
+};

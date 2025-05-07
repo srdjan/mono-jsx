@@ -1066,6 +1066,27 @@ Deno.test("[ssr] XSS", async () => {
   );
 });
 
+declare global {
+  namespace JSX {
+    interface CustomElements {
+      "hello-world": { message: string };
+    }
+  }
+}
+
+Deno.test("[ssr] custom element", async () => {
+  JSX.customElements.define("hello-world", ({ message }: { message: string }) => <h1>{message}</h1>);
+  assertEquals(
+    await renderToString(<hello-world message={"Hello, world!"} />),
+    [
+      `<!DOCTYPE html>`,
+      `<html lang="en"><body>`,
+      `<h1>Hello, world!</h1>`,
+      `</body></html>`,
+    ].join(""),
+  );
+});
+
 Deno.test("[ssr] htmx integration", async () => {
   assertEquals(
     await renderToString(

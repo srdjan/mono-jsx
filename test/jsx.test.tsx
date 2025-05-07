@@ -57,8 +57,8 @@ Deno.test("[jsx] jsx transform", () => {
     ],
   );
   assertEquals(
-    <foo-bar /> as VNode,
-    ["foo-bar", {}, $vnode],
+    <foo-bar id="2000" /> as VNode,
+    ["foo-bar", { id: "2000" }, $vnode],
   );
   const App = (_props: { foo: "bar" }) => null;
   assertEquals(

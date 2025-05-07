@@ -915,9 +915,7 @@ export namespace HTML {
     onResize?: EventHandler<PictureInPictureEvent, T>;
   }
 
-  export interface Elements {
-    // custom elements
-    [key: `${string}-${string}`]: GlobalAttributes<HTMLElement>;
+  interface Elements {
     a: AnchorAttributes<HTMLAnchorElement>;
     abbr: GlobalAttributes<HTMLElement>;
     address: GlobalAttributes<HTMLElement>;
@@ -1036,7 +1034,7 @@ export namespace HTML {
     wbr: GlobalAttributes<HTMLElement>;
   }
 
-  export interface SVGElements {
+  interface SVGElements {
     svg: SVGAttributes<SVGSVGElement>;
     animate: SVGAttributes<SVGAnimateElement>;
     circle: SVGAttributes<SVGCircleElement>;
@@ -1097,4 +1095,15 @@ export namespace HTML {
     use: SVGAttributes<SVGUseElement>;
     view: SVGAttributes<SVGViewElement>;
   }
+
+  type CustomElements =
+    & {
+      [K in keyof JSX.CustomElements as K extends `${string}-${string}` ? K : never]:
+        & JSX.CustomElements[K]
+        & Mono.BaseAttributes
+        & Mono.AsyncComponentAttributes;
+    }
+    & {
+      [K in `${string}-${string}`]?: HTML.GlobalAttributes<HTMLElement>;
+    };
 }
