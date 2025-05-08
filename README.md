@@ -6,8 +6,8 @@ mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in 
 
 - 🚀 No build step needed
 - 🦋 Lightweight (8KB gzipped), zero dependencies
-- 🔫 Minimal state runtime
-- 🚨 Complete Web API TypeScript definitions
+- 🔫 Reactive with minimal state runtime
+- 🛟 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
 - 🥷 [htmx](#using-htmx) integration
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
@@ -368,7 +368,7 @@ interface AppState {
 function Header(this: FC<{}, AppState>) {
   return (
     <header>
-      <h1 style={{ color: this.app.themeColor }}>Welcome to mono-jsx.</h1>
+      <h1 style={this.computed(() => ({ color: this.app.themeColor }))}>Welcome to mono-jsx!</h1>
     </header>
   )
 }
@@ -376,7 +376,7 @@ function Header(this: FC<{}, AppState>) {
 function Footer(this: FC<{}, AppState>) {
   return (
     <footer>
-      <p style={{ color: this.app.themeColor }}>(c) 2025 mono-jsx.</p>
+      <p style={this.computed(() => ({ color: this.app.themeColor }))}>(c) 2025 mono-jsx.</p>
     </footer>
   )
 }
@@ -415,7 +415,7 @@ function App(this: FC<{ input: string }>) {
       <h1>{this.computed(() => this.input + "!")}</h1>
 
       <form action={(fd) => this.input = fd.get("input") as string}>
-        <input type="text" name="input" value={this.input} />
+        <input type="text" name="input" value={"" + this.input} />
         <button type="submit">Submit</button>
       </form>
     </div>
