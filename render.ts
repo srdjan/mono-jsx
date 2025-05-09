@@ -38,9 +38,9 @@ interface RuntimeJSMeta {
 
 interface IdGen<K> {
   readonly size: number;
-  entries(): Iterable<[K, string]>;
+  entries(): Iterable<[K, number]>;
   clear(): void;
-  gen(key: K): string;
+  gen(key: K): number;
 }
 
 const cdn = "https://raw.esm.sh"; // the cdn for loading htmx and its extensions
@@ -394,12 +394,12 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                   case "onMount":
                     if (typeof propValue === "function") {
                       rc.status.onmount++;
-                      buffer += ' onmount="$emit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
+                      buffer += ' onmount="$emit(event,$MF_' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
                     }
                     break;
                   case "action":
                     if (typeof propValue === "function" && tag === "form") {
-                      buffer += ' onsubmit="$onsubmit(event,' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
+                      buffer += ' onsubmit="$onsubmit(event,$MF_' + rc.mfs.gen(propValue) + str(rc.fcId, (i) => "," + i) + ')"';
                     } else if (isString(propValue)) {
                       buffer += " action=" + toAttrStringLit(propValue);
                     }
@@ -413,7 +413,7 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                     if (propValue !== undefined && propValue !== null && propValue !== false) {
                       if (propName.startsWith("on")) {
                         if (typeof propValue === "function") {
-                          buffer += " " + escapeHTML(propName.toLowerCase()) + '="$emit(event,'
+                          buffer += " " + escapeHTML(propName.toLowerCase()) + '="$emit(event,$MF_'
                             + rc.mfs.gen(propValue)
                             + str(rc.fcId, (i) => "," + i)
                             + ')"';
@@ -548,15 +548,15 @@ async function renderChildren(rc: RenderContext, children: ChildType | ChildType
   }
 }
 
-class IdGenImpl<T> extends Map<T, string> implements IdGen<T> {
+class IdGenImpl<T> extends Map<T, number> implements IdGen<T> {
   private _id = 0;
-  constructor(private _prefix: string) {
+  constructor(private _prefix?: string) {
     super();
   }
   gen(v: T) {
     let id = this.get(v);
     if (id === undefined) {
-      id = this._prefix + (this._id++).toString(36);
+      id = this._id++;
       this.set(v, id);
     }
     return id;
@@ -633,21 +633,21 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
           }
           js = "";
           if (rc.mfs.size > 0) {
-            for (const [fn, fname] of rc.mfs.entries()) {
-              js += "function " + fname + "(){(" + fn.toString() + ").apply(this,arguments)};";
+            for (const [fn, i] of rc.mfs.entries()) {
+              js += "function $MF_" + i + "(){(" + fn.toString() + ").apply(this,arguments)};";
             }
             rc.mfs.clear();
           }
           if (stateStore.size > 0) {
             for (const [key, value] of stateStore.entries()) {
-              js += "$defineState(" + JSON.stringify(key) + (value !== undefined ? "," + JSON.stringify(value) : "") + ");";
+              js += "$MS(" + JSON.stringify(key) + (value !== undefined ? "," + JSON.stringify(value) : "") + ");";
             }
             stateStore.clear();
           }
           if (rc.mcs.size > 0) {
-            for (const [vnode, fname] of rc.mcs.entries()) {
+            for (const [vnode, i] of rc.mcs.entries()) {
               const { fn, deps } = vnode[1];
-              js += '$defineComputed("' + fname + '",function(){return(' + fn.toString() + ").call(this)},"
+              js += "$MC(" + i + ",function(){return(" + fn.toString() + ").call(this)},"
                 + JSON.stringify(Object.keys(deps))
                 + ");";
             }

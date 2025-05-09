@@ -131,19 +131,17 @@ customElements.define(
       if (key) {
         const state = getState(Number(attr(el, "fc")!));
         state.watch(key, createEffect(el, attr(el, "mode"), () => state.store[key]));
-        return;
       }
     }
   },
 );
 
 Object.assign(window, {
-  $state: (id?: number) => id !== undefined ? getState(id).store : undefined,
-  $defineState: (stateKey: string, value: unknown) => {
+  $MS: (stateKey: string, value: unknown) => {
     const [id, key] = resolveStateKey(stateKey);
     getState(id).define(key, value);
   },
-  $defineComputed: (id: string, compute: Function, deps: string[]) => {
+  $MC: (id: number, compute: Function, deps: string[]) => {
     const el = document.querySelector("m-state[computed='" + id + "']");
     if (el) {
       const scope = getState(Number(attr(el, "fc")!)).store;
@@ -154,4 +152,5 @@ Object.assign(window, {
       }
     }
   },
+  $this: (id?: number) => id !== undefined ? getState(id).store : undefined,
 });
