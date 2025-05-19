@@ -125,7 +125,7 @@ export namespace HTML {
     decoding?: "async" | "auto" | "sync";
     height?: number | string;
     isMap?: boolean;
-    loading?: "eager" | "lazy";
+    loading?: "lazy";
     referRerpolicy?: ReferrerPolicy;
     sizes?: string;
     src?: string;
@@ -136,7 +136,7 @@ export namespace HTML {
 
   interface FormAttributes<T extends EventTarget> extends GlobalAttributes<T> {
     "accept-charset"?: string;
-    action: string | (/* mono-jsx specific */ (data: FormData, event: SubmitEvent) => unknown | Promise<unknown>);
+    action: string | (/* @mono-jsx */ (data: FormData, event: SubmitEvent) => unknown | Promise<unknown>);
     autoComplete?: "on" | "off";
     encType?: "application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain";
     method?: "GET" | "POST" | "dialog";
@@ -325,7 +325,7 @@ export namespace HTML {
     allowFullScreen?: boolean;
     allowTransparency?: boolean;
     height?: number | string;
-    loading?: "eager" | "lazy";
+    loading?: "lazy";
     name?: string;
     referrerPolicy?: ReferrerPolicy;
     sandbox?: string;
@@ -350,8 +350,8 @@ export namespace HTML {
   }
 
   interface LabelAttributes<T extends EventTarget> extends GlobalAttributes<T> {
-    form?: string;
     for?: string;
+    form?: string;
   }
 
   interface LiAttributes<T extends EventTarget> extends GlobalAttributes<T> {
@@ -461,8 +461,8 @@ export namespace HTML {
   }
 
   interface OutputAttributes<T extends EventTarget> extends GlobalAttributes<T> {
-    form?: string;
     for?: string;
+    form?: string;
     name?: string;
   }
 
@@ -821,8 +821,8 @@ export namespace HTML {
   }
 
   interface EventAttributes<T extends EventTarget> {
-    // mono-jsx specific
-    onMount?: (event: { type: "mount"; target: T }) => void | Promise<void>;
+    // @mono-jsx
+    ref?: ((el: T) => unknown) | HTMLElement | null;
 
     // Input Events
     onBeforeInput?: EventHandler<Event, T>;

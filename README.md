@@ -6,8 +6,8 @@ mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in 
 
 - 🚀 No build step needed
 - 🦋 Lightweight (8KB gzipped), zero dependencies
-- 🔫 Reactive with minimal state runtime
-- 🛟 Complete Web API TypeScript definitions
+- 🚦 Signals as reactive primitives
+- 🗂️ Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
 - 🥷 [htmx](#using-htmx) integration
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
@@ -234,9 +234,10 @@ function Button() {
 ```tsx
 import { doSomething } from "some-library";
 
-function Button(this: FC, props: { role: string }) {
-  let message = "BOOM!";
-  console.log(message); // only executes on server-side
+function Button(this: FC<{ count: 0 }>, props: { role: string }) {
+  const message = "BOOM!";        // server-side variable
+  this.count = 0;                 // initialize a signal
+  console.log(message);           // only prints on server-side
   return (
     <button
       role={props.role}
@@ -247,33 +248,23 @@ function Button(this: FC, props: { role: string }) {
         Deno.exit(0);             // ❌ `Deno` is unavailable in the browser
         document.title = "BOOM!"; // ✅ `document` is a browser API
         console.log(evt.target);  // ✅ `evt` is the event object
-        this.count++;             // ✅ update the state `count`
+        this.count++;             // ✅ update the `count` signal
       }}
     >
-      Click Me
+      <slot />
     </button>
   )
 }
 ```
 
-Additionally, mono-jsx supports the `mount` event for when elements are mounted in the client-side DOM:
+### Using `<form>` Element
 
-```jsx
-function App() {
-  return (
-    <div onMount={(evt) => console.log(evt.target, "Mounted!")}>
-      <h1>Welcome to mono-jsx!</h1>
-    </div>
-  )
-}
-```
-
-mono-jsx also accepts functions for the `action` property on `form` elements, which will be called on form submission:
+mono-jsx supports `<form>` elements with the `action` attribute. The `action` attribute can be a string URL or a function that accepts a `FormData` object. The function will be called on form submission, and the `FormData` object will contain the form data.
 
 ```tsx
 function App() {
   return (
-    <form action={(data: FormData, event: SubmitEvent) => console.log(data.get("name"))}>
+    <form action={(data: FormData) => console.log(data.get("name"))}>
       <input type="text" name="name" />
       <button type="submit">Submit</button>
     </form>
@@ -327,28 +318,28 @@ export default {
 }
 ```
 
-## Reactive
+## Using Signals
 
-mono-jsx provides a minimal state runtime for updating the view based on client-side state changes.
+mono-jsx uses signals for updating the view when a signal changes. Signals are similar to React's state, but they are more lightweight and efficient. You can use signals to manage state in your components.
 
-### Using Component State
+### Using Component Signals
 
-You can use the `this` keyword in your components to manage state. The state is bound to the component instance and can be updated directly, and will automatically re-render the view when the state changes:
+You can use the `this` keyword in your components to manage signals. The signals is bound to the component instance and can be updated directly, and will automatically re-render the view when a signal changes:
 
 ```tsx
 function Counter(
   this: FC<{ count: number }>,
   props: { initialCount?: number },
 ) {
-  // Initialize state
+  // Initialize a singal
   this.count = props.initialCount ?? 0;
 
   return (
     <div>
-      {/* render state */}
+      {/* render singal */}
       <span>{this.count}</span>
 
-      {/* Update state to trigger re-render */}
+      {/* Update singal to trigger re-render */}
       <button onClick={() => this.count--}>-</button>
       <button onClick={() => this.count++}>+</button>
     </div>
@@ -356,16 +347,16 @@ function Counter(
 }
 ```
 
-### Using App State
+### Using App Signals
 
-You can define app state by adding `appState` prop to the root `<html>` element. The app state is available in all components via `this.app.<stateKey>`. Changes to the app state will trigger re-renders in all components that use it:
+You can define app signals by adding `app` prop to the root `<html>` element. The app signals is available in all components via `this.app.<SignalName>`. Changes to the app signals will trigger re-renders in all components that use it:
 
 ```tsx
-interface AppState {
+interface AppSignals {
   themeColor: string;
 }
 
-function Header(this: FC<{}, AppState>) {
+function Header(this: FC<{}, AppSignals>) {
   return (
     <header>
       <h1 style={this.computed(() => ({ color: this.app.themeColor }))}>Welcome to mono-jsx!</h1>
@@ -373,7 +364,7 @@ function Header(this: FC<{}, AppState>) {
   )
 }
 
-function Footer(this: FC<{}, AppState>) {
+function Footer(this: FC<{}, AppSignals>) {
   return (
     <footer>
       <p style={this.computed(() => ({ color: this.app.themeColor }))}>(c) 2025 mono-jsx.</p>
@@ -381,7 +372,7 @@ function Footer(this: FC<{}, AppState>) {
   )
 }
 
-function Main(this: FC<{}, AppState>) {
+function Main(this: FC<{}, AppSignals>) {
   return (
     <main>
       <p>
@@ -394,7 +385,7 @@ function Main(this: FC<{}, AppState>) {
 
 export default {
   fetch: (req) => (
-    <html appState={{ themeColor: "#232323" }}>
+    <html app={{ themeColor: "#232323" }}>
       <Header />
       <Main />
       <Footer />
@@ -403,9 +394,9 @@ export default {
 }
 ```
 
-### Using Computed State
+### Using Computed Signals
 
-You can use `this.computed` to create computed state based on state. The computed state will automatically update when the state changes:
+You can use `this.computed` to create a derived signal based on other signals:
 
 ```tsx
 function App(this: FC<{ input: string }>) {
@@ -423,9 +414,64 @@ function App(this: FC<{ input: string }>) {
 }
 ```
 
-### Using `<toggle>` Element with State
+### Using Effects
 
-The `<toggle>` element conditionally renders content based on the value of a state.
+You can use `this.effect` to create side effects based on signals. The effect will run whenever the signal changes:
+
+```tsx
+function App(this: FC<{ count: number }>) {
+  this.count = 0;
+
+  this.effect(() => {
+    console.log("Count changed:", this.count);
+  });
+
+  return (
+    <div>
+      <span>{this.count}</span>
+      <button onClick={() => this.count++}>+</button>
+    </div>
+  )
+}
+```
+
+The callback function of `this.effect` can return a cleanup function that gets run once the component element has been removed via `<toggle>` or `<switch>` condition rendering:
+
+```tsx
+function Counter(this: FC<{ count: number }>) {
+  this.count = 0;
+
+  this.effect(() => {
+    const interval = setInterval(() => {
+      this.count++;
+    }, 1000);
+
+    return () => clearInterval(interval);
+  });
+
+  return (
+    <div>
+      <span>{this.count}</span>
+    </div>
+  )
+}
+
+function App(this: FC<{ show: boolean }>) {
+  this.show = true
+  return (
+    <div>
+      <toggle show={this.show}>
+        <Foo />
+      </toggle>
+      <button onClick={e => this.show = !this.show }>{this.computed(() => this.show ? 'Hide': 'Show')}</button>
+    </div>
+  )
+}
+```
+
+### Using `<toggle>` Element with Signals
+
+The `<toggle>` element conditionally renders content based on the `show` prop:
 
 ```tsx
 function App(this: FC<{ show: boolean }>) {
@@ -437,7 +483,7 @@ function App(this: FC<{ show: boolean }>) {
 
   return (
     <div>
-      <toggle value={this.show}>
+      <toggle show={this.show}>
         <h1>Welcome to mono-jsx!</h1>
       </toggle>
 
@@ -449,12 +495,12 @@ function App(this: FC<{ show: boolean }>) {
 }
 ```
 
-### Using `<switch>` Element with State
+### Using `<switch>` Element with Signals
 
-The `<switch>` element renders different content based on the value of a state. Elements with matching `slot` attributes are displayed when their value matches, otherwise default content is shown:
+The `<switch>` element renders different content based on the value of a signal. Elements with matching `slot` attributes are displayed when their value matches, otherwise default slots are shown:
 
 ```tsx
-function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
+function App(this: FC<{ lang: "en" | "zh" | "🙂" }>) {
   this.lang = "en";
 
   return (
@@ -467,14 +513,14 @@ function App(this: FC<{ lang: "en" | "zh" | "emoji" }>) {
       <p>
         <button onClick={() => this.lang = "en"}>English</button>
         <button onClick={() => this.lang = "zh"}>中文</button>
-        <button onClick={() => this.lang = "emoji"}>Emoji</button>
+        <button onClick={() => this.lang = "🙂"}>🙂</button>
       </p>
     </div>
   )
 }
 ```
 
-### Limitation of State
+### Limitation of Signals
 
 1\. Arrow function are non-stateful components.
 
@@ -502,10 +548,10 @@ function App(this: FC) {
 }
 ```
 
-2\. State cannot be computed outside of the `this.computed` method.
+2\. Signals cannot be computed outside of the `this.computed` method.
 
 ```tsx
-// ❌ Won't work - state updates won't refresh the view
+// ❌ Won't work - updates of a signal won't refresh the view
 function App(this: FC<{ message: string }>) {
   this.message = "Welcome to mono-jsx";
   return (
@@ -532,7 +578,7 @@ function App(this: FC) {
 }
 ```
 
-3\. Calling server-side functions or using server-side variables in compute functions is not allowed.
+3\. The callback function of `this.computed` must be a pure function. That means it should not create side effects or access any non-stateful variables. For example, you cannot use `Deno` or `document` in the callback function:
 
 ```tsx
 // ❌ Won't work - throws `Deno is not defined` when the button is clicked
@@ -550,8 +596,8 @@ function App(this: FC<{ message: string }>) {
 
 // ✅ Works correctly
 function App(this: FC<{ message: string, denoVersion: string }>) {
-  this.message = "Welcome to mono-jsx";
   this.denoVersion = Deno.version.deno;
+  this.message = "Welcome to mono-jsx";
   return (
     <div>
       <h1>{this.computed(() => this.message + "! (Deno " + this.denoVersion + ")")}</h1>
@@ -565,27 +611,52 @@ function App(this: FC<{ message: string, denoVersion: string }>) {
 
 ## Using `this` in Components
 
-mono-jsx binds a special `this` object to your components when they are rendered. This object contains properties and methods that you can use to manage state, context, and other features.
+mono-jsx binds a scoped signals object to `this` of your component functions. This allows you to access signals, context, and request information directly in your components.
 
-The `this` object contains the following properties:
+The `this` object has the following built-in properties:
 
-- `app`: The app state defined on the root `<html>` element.
+- `app`: The app signals defined on the root `<html>` element.
 - `context`: The context defined on the root `<html>` element.
 - `request`: The request object from the `fetch` handler.
-- `computed`: A method to create computed properties based on state.
+- `refs`: A map of refs defined in the component.
+- `computed`: A method to create a computed signal.
+- `effect`: A method to create side effects.
 
 ```ts
-type FC<State = {}, AppState = {}, Context = {}> = {
-  readonly app: AppState;
+type FC<Signals = {}, AppSignals = {}, Context = {}> = {
+  readonly app: AppSignals;
   readonly context: Context;
   readonly request: Request;
-  readonly computed: <V = unknown>(computeFn: () => V) => V;
-} & Omit<State, "app" | "context" | "request" | "computed">;
+  readonly refs: Record<string, HTMLElement | null>;
+  readonly computed: <T = unknown>(fn: () => T) => T;
+  readonly effect: (fn: () => void | (() => void)) => void;
+} & Omit<Signals, "app" | "context" | "request" | "computed" | "effect">;
 ```
 
-### Using State
+### Using Signals
 
-Check the [Reactive](#reactive) section for more details on how to use state in your components.
+See the [Using Signals](#using-signals) section for more details on how to use signals in your components.
+
+### Using Refs
+
+You can use `this.refs` to access refs in your components. Define refs in your component using the `ref` attribute:
+
+```tsx
+function App(this: FC) {
+  this.effect(() => {
+    this.refs.input?.addEventListener("input", (evt) => {
+      console.log("Input changed:", evt.target.value);
+    });
+  });
+
+  return (
+    <div>
+      <input ref={this.refs.input} type="text" />
+      <button onClick={() => this.refs.input?.focus()}>Focus</button>
+    </div>
+  )
+}
+```
 
 ### Using Context
 
