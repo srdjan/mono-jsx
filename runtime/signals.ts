@@ -129,10 +129,10 @@ const createDomEffect = (el: Element, mode: string | null, getter: () => unknown
         target.removeAttribute(attrName);
       } else if ((attrName === "class" || attrName === "style") && typeof value === "object" && value !== null) {
         if (attrName === "class") {
-          // @ts-ignore - `$cx` is injected by the renderer
+          // @ts-ignore - `$cx` is injected at ssr time
           setAttr(target, attrName, $cx(value));
         } else {
-          // @ts-ignore - `$styleToCSS` is injected by the renderer
+          // @ts-ignore - `$styleToCSS` is injected at ssr time
           const { inline } = $styleToCSS(value);
           if (inline) {
             setAttr(target, attrName, inline);
@@ -159,7 +159,6 @@ const defer = async <T>(getter: () => T | undefined) => {
   if (v !== undefined) {
     return v;
   }
-  // try to get the value again in the next tick
   await new Promise((resolve) => setTimeout(resolve, 0));
   return defer(getter);
 };
@@ -228,7 +227,7 @@ defineElement("m-effect", (el) => {
 // get the signals
 global.$signals = (scope?: number) => scope !== undefined ? Signals(scope) : undefined;
 
-// define a signal
+// initialize a signal with the given value
 global.$MS = (id: string, value: unknown) => {
   const [scope, key] = resolveSignalID(id);
   Signals(scope).$init(key, value);
