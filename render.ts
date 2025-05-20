@@ -1,9 +1,9 @@
 import type { ChildType } from "./types/mono.d.ts";
 import type { FC, VNode } from "./types/jsx.d.ts";
 import type { RenderOptions } from "./types/render.d.ts";
-import { $effects, $fragment, $html, $vnode } from "./symbols.ts";
 import { SIGNALS_JS, SUSPENSE_JS, UTILS_JS } from "./runtime/index.ts";
-import { cx, escapeHTML, isObject, isString, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
+import { $effects, $fragment, $html, $vnode } from "./symbols.ts";
+import { cx, escapeHTML, isObject, isString, NullProtoObj, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
 
 interface RenderContext {
   write: (chunk: string) => void;
@@ -12,7 +12,7 @@ interface RenderContext {
   mfs: IdGen<CallableFunction>;
   status: RenderStatus;
   appSignals: Record<string, unknown>;
-  signals: Map<string, unknown>;
+  signalMarks: Map<string, unknown>;
   effects: string[];
   scope?: number;
   context?: Record<string, unknown>;
@@ -37,7 +37,7 @@ interface IdGen<K> {
 
 interface ComputedSignal {
   compute: () => unknown;
-  deps: string[];
+  deps: Record<string, unknown>;
 }
 
 // runtime JS flags
@@ -124,7 +124,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
       async start(controller) {
         const { app, context, htmx } = renderOptions;
         const appSignals = createSignals(0, null, context, request);
-        const signals = new Map<string, unknown>();
+        const signalMarks = new Map<string, unknown>();
         const effects = [] as string[];
         const suspenses: Promise<string>[] = [];
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
@@ -134,7 +134,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
           context,
           request,
           appSignals,
-          signals,
+          signalMarks,
           effects,
           mcs: new IdGenImpl<Signal>(),
           mfs: new IdGenImpl<CallableFunction>(),
@@ -157,7 +157,7 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
             runtimeJSFlags |= RUNTIME_EVENT;
             js += UTILS_JS.event;
           }
-          if ((signals.size + effects.length > 0) && !(runtimeJSFlags & RUNTIME_SIGNALS)) {
+          if ((signalMarks.size + effects.length > 0) && !(runtimeJSFlags & RUNTIME_SIGNALS)) {
             runtimeJSFlags |= RUNTIME_SIGNALS;
             js += SIGNALS_JS;
           }
@@ -178,11 +178,11 @@ export function render(node: VNode, renderOptions: RenderOptions = {}): Response
           if (rc.effects.length > 0) {
             js += rc.effects.splice(0, rc.effects.length).join("");
           }
-          if (signals.size > 0) {
-            for (const [key, value] of signals.entries()) {
+          if (signalMarks.size > 0) {
+            for (const [key, value] of signalMarks.entries()) {
               js += "$MS(" + JSON.stringify(key) + (value !== undefined ? "," + JSON.stringify(value) : "") + ");";
             }
-            signals.clear();
+            signalMarks.clear();
           }
           if (rc.mcs.size > 0) {
             for (const [vnode, i] of rc.mcs.entries()) {
@@ -643,19 +643,19 @@ function createSignals(
 ): Record<string, unknown> {
   const effects = [] as string[];
   const computed = (compute: () => unknown): unknown => {
-    const deps = Object.create(null);
+    const deps = new NullProtoObj();
     collectDeps = (fc, key, value) => deps[fc + ":" + key] = value;
     const value = compute.call(thisProxy);
     collectDeps = undefined;
     if (value instanceof Promise || Object.keys(deps).length === 0) return value;
     return new Signal(scope, { compute, deps }, value);
   };
-  const refs = new Proxy(Object.create(null), {
-    get(_target, key) {
+  const refs = new Proxy(new NullProtoObj(), {
+    get(_, key) {
       return new Ref(scope, key as string);
     },
   });
-  const thisProxy = new Proxy(Object.create(null), {
+  const thisProxy = new Proxy(new NullProtoObj(), {
     get(target, key, receiver) {
       switch (key) {
         case "app":
@@ -696,13 +696,13 @@ function createSignals(
 }
 
 // @internal
-function markSignal({ signals }: RenderContext, { scope, key, value }: Signal) {
+function markSignal({ signalMarks }: RenderContext, { scope, key, value }: Signal) {
   if (isString(key)) {
-    signals.set(scope + ":" + key, value);
+    signalMarks.set(scope + ":" + key, value);
   } else {
     for (const [id, value] of Object.entries(key.deps)) {
-      if (!signals.has(id)) {
-        signals.set(id, value);
+      if (!signalMarks.has(id)) {
+        signalMarks.set(id, value);
       }
     }
   }

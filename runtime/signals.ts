@@ -3,6 +3,8 @@ interface Signals {
   readonly $watch: (key: string, effect: () => void) => () => void;
 }
 
+let collectDeps: ((scope: number, key: string) => void) | undefined;
+
 // deno-lint-ignore no-explicit-any
 const global = globalThis as any;
 const mcs = new Map<number, [Function, string[]]>();
@@ -13,9 +15,10 @@ const getAttr = (el: Element, name: string) => el.getAttribute(name);
 const hasAttr = (el: Element, name: string) => el.hasAttribute(name);
 const setAttr = (el: Element, name: string, value: string) => el.setAttribute(name, value);
 const replaceChildren = (el: Element, children: Node[]) => el.replaceChildren(...children);
+const createNullObject = () => Object.create(null);
 
 const createSignals = (scope: number): Signals => {
-  const store = Object.create(null);
+  const store = createNullObject();
   const init = (key: string, value: unknown) => {
     store[key] = value;
   };
@@ -36,7 +39,7 @@ const createSignals = (scope: number): Signals => {
     };
   };
 
-  const refs = new Proxy(Object.create(null), {
+  const refs = new Proxy(createNullObject(), {
     get: (_target, prop: string) => document.querySelector("[data-ref='" + scope + ":" + prop + "']"),
   });
 
@@ -66,7 +69,7 @@ const createSignals = (scope: number): Signals => {
       }
       return false;
     },
-  });
+  }) as Signals;
 };
 
 const createDomEffect = (el: Element, mode: string | null, getter: () => unknown) => {
@@ -146,12 +149,9 @@ const createDomEffect = (el: Element, mode: string | null, getter: () => unknown
   return () => el.textContent = "" + getter();
 };
 
-const resolveSignalID = (id: string): [scope: number, key: string] => {
+const resolveSignalID = (id: string): [scope: number, key: string] | null => {
   const i = id.indexOf(":");
-  if (i > 0) {
-    return [Number(id.slice(0, i)), id.slice(i + 1)];
-  }
-  throw new Error("Invalid  Singal ID");
+  return i > 0 ? [Number(id.slice(0, i)), id.slice(i + 1)] : null;
 };
 
 const defer = async <T>(getter: () => T | undefined) => {
@@ -188,14 +188,12 @@ defineElement("m-signal", (el) => {
     defer(() => mcs.get(id)).then(([compute, deps]) => {
       const effect = createDomEffect(el, getAttr(el, "mode"), compute.bind(signals));
       deps.forEach((dep) => {
-        const [scope, key] = resolveSignalID(dep);
+        const [scope, key] = resolveSignalID(dep)!;
         el.disposes.push(Signals(scope).$watch(key, effect));
       });
     });
   }
 });
-
-let collectDeps: ((scope: number, key: string) => void) | undefined;
 
 defineElement("m-effect", (el) => {
   const { disposes } = el;
@@ -229,7 +227,7 @@ global.$signals = (scope?: number) => scope !== undefined ? Signals(scope) : und
 
 // initialize a signal with the given value
 global.$MS = (id: string, value: unknown) => {
-  const [scope, key] = resolveSignalID(id);
+  const [scope, key] = resolveSignalID(id)!;
   Signals(scope).$init(key, value);
 };
 

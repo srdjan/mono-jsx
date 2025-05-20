@@ -107,6 +107,18 @@ const renderStyle = (style: unknown): string => {
   return "";
 };
 
+// Fastest way for creating null-prototype objects in JavaScript
+// copyied from https://github.com/h3js/rou3/blob/main/src/_utils.ts
+// by @pi0
+export const NullProtoObj = /* @__PURE__ */ (() => {
+  function e() {}
+  e.prototype = Object.freeze(Object.create(null));
+  return e;
+})() as unknown as {
+  // deno-lint-ignore no-explicit-any
+  new(): Record<string, any>;
+};
+
 /**
  * Escapes special characters and HTML entities in a given html string.
  * Based on https://github.com/component/escape-html

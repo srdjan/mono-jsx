@@ -9,10 +9,10 @@ export type VNode = readonly [
   $vnode: symbol,
 ];
 
-export type FCReturnType<T> = T | Promise<T> | Generator<T> | AsyncGenerator<T>;
+export type MaybePromiseOrGenerator<T> = T | Promise<T> | Generator<T> | AsyncGenerator<T>;
 
 export interface FC<P = {}> {
-  (props: P): FCReturnType<VNode | string | null>;
+  (props: P): MaybePromiseOrGenerator<VNode | string | null>;
   rendering?: string;
 }
 
