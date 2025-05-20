@@ -99,7 +99,7 @@ export const JSX = {
 };
 
 /** Renders a VNode to a `Response` object. */
-export function render(node: VNode, renderOptions: RenderOptions = {}): Response {
+export function render(node: VNode, renderOptions: RenderOptions = new NullProtoObj()): Response {
   const { request, status, headers: headersInit } = renderOptions;
   const headers = new Headers();
   if (headersInit) {
@@ -638,7 +638,7 @@ let collectDeps: ((fc: number, key: string, value: unknown) => void) | undefined
 function createSignals(
   scope: number,
   appSignals: Record<string, unknown> | null,
-  context: Record<string, unknown> = {},
+  context: Record<string, unknown> = new NullProtoObj(),
   request?: Request,
 ): Record<string, unknown> {
   const effects = [] as string[];
