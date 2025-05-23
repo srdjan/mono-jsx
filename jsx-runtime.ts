@@ -1,6 +1,6 @@
 import type { FC, VNode } from "./types/jsx.d.ts";
 import { JSX, render } from "./render.ts";
-import { escapeHTML, NullProtoObj } from "./runtime/utils.ts";
+import { escapeHTML, isString, NullProtoObj } from "./runtime/utils.ts";
 import { $fragment, $html, $vnode } from "./symbols.ts";
 
 const Fragment = $fragment as unknown as FC;
@@ -38,9 +38,9 @@ const jsxEscape = (value: unknown): string => {
   return escapeHTML(String(value));
 };
 
-const html = (raw: string, ...values: unknown[]): VNode => [
+const html = (template: string | TemplateStringsArray, ...values: unknown[]): VNode => [
   $html,
-  { innerHTML: String.raw({ raw }, ...values.map(jsxEscape)) },
+  { innerHTML: isString(template) ? template : String.raw(template, ...values.map(jsxEscape)) },
   $vnode,
 ];
 

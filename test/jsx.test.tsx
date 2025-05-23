@@ -121,6 +121,24 @@ Deno.test("[jsx] jsx transform", () => {
       $vnode,
     ],
   );
+  assertEquals(
+    (
+      <div>
+        {html(`<h1>Welcome to mono-jsx!</h1>`)}
+      </div>
+    ) as VNode,
+    [
+      "div",
+      {
+        children: [
+          $html,
+          { innerHTML: "<h1>Welcome to mono-jsx!</h1>" },
+          $vnode,
+        ],
+      },
+      $vnode,
+    ],
+  );
 });
 
 Deno.test("[jsx] <html> as a `Response`", async () => {

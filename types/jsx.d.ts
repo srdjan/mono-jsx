@@ -23,7 +23,7 @@ declare global {
         [K in keyof IntrinsicElements]: P extends IntrinsicElements[K] ? K : never;
       }[keyof IntrinsicElements]
       | FC<P>;
-    type Raw = (strings: TemplateStringsArray, ...values: unknown[]) => Element;
+    type Raw = (template: string | TemplateStringsArray, ...values: unknown[]) => Element;
     interface CustomElements {}
     interface Element extends VNode, Response {}
     interface IntrinsicAttributes extends Mono.BaseAttributes, Mono.AsyncComponentAttributes {}
