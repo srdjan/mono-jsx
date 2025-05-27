@@ -6,15 +6,13 @@ import { cx, escapeHTML, isObject, isString, NullProtoObj, styleToCSS, toHyphenC
 import { $fragment, $html, $signal, $vnode } from "./symbols.ts";
 
 interface RenderContext {
-  eager: boolean;
   write: (chunk: string) => void;
+  suspenses: Array<Promise<string>>;
+  signals: SignalsContext;
+  flags: Flags;
   mcs: IdGen<Signal>;
   mfs: IdGen<CallableFunction>;
-  flags: Flags;
-  appSignals: Record<string, unknown>;
-  signalEntries: Map<string, unknown>;
-  signalEffects: string[];
-  suspenses: Promise<string>[];
+  eager?: boolean;
   context?: Record<string, unknown>;
   request?: Request;
   fcCtx?: FCContext;
@@ -23,7 +21,7 @@ interface RenderContext {
 interface FCContext {
   scopeId: number;
   signals: Record<symbol | string, unknown>;
-  slots: ChildType[] | undefined;
+  slots: Array<ChildType> | undefined;
 }
 
 interface Flags {
@@ -31,6 +29,12 @@ interface Flags {
   chunk: number;
   refs: number;
   runtimeJS: number;
+}
+
+interface SignalsContext {
+  app: Record<string, unknown>;
+  store: Map<string, unknown>;
+  effects: Array<string>;
 }
 
 interface IdGen<K> {
@@ -195,25 +199,25 @@ async function render(
   renderOptions: RenderOptions,
   write: (chunk: string) => void,
   writeJS: (chunk: string) => void,
-  componentMode = false,
+  componentMode?: boolean,
 ) {
   const { request, app, context } = renderOptions;
-  const appSignals = Object.assign(createSignals(0, null, context, request), app);
-  const signalMarks = new Map<string, unknown>();
-  const effects = [] as string[];
   const suspenses: Promise<string>[] = [];
+  const signals: SignalsContext = {
+    app: Object.assign(createSignals(0, null, context, request), app),
+    store: new Map(),
+    effects: [],
+  };
   const rc: RenderContext = {
     write,
     suspenses,
     context,
     request,
-    appSignals,
-    signalEntries: signalMarks,
-    signalEffects: effects,
+    signals,
     eager: componentMode,
+    flags: { scope: 0, chunk: 0, refs: 0, runtimeJS: 0 },
     mcs: new IdGenImpl<Signal>(),
     mfs: new IdGenImpl<CallableFunction>(),
-    flags: { scope: 0, chunk: 0, refs: 0, runtimeJS: 0 },
   };
   // finalize creates runtime JS for client
   // it may be called recursively when thare are unresolved suspenses
@@ -235,7 +239,7 @@ async function render(
       runtimeJSFlag |= RUNTIME_EVENT;
       js += EVENT_JS;
     }
-    if ((signalMarks.size + effects.length > 0) && !(runtimeJSFlag & RUNTIME_SIGNALS)) {
+    if ((signals.store.size + signals.effects.length > 0) && !(runtimeJSFlag & RUNTIME_SIGNALS)) {
       runtimeJSFlag |= RUNTIME_SIGNALS;
       js += SIGNALS_JS;
     }
@@ -253,14 +257,14 @@ async function render(
       }
       rc.mfs.clear();
     }
-    if (rc.signalEffects.length > 0) {
-      js += rc.signalEffects.splice(0, rc.signalEffects.length).join("");
+    if (signals.effects.length > 0) {
+      js += signals.effects.splice(0, signals.effects.length).join("");
     }
-    if (signalMarks.size > 0) {
-      for (const [key, value] of signalMarks.entries()) {
+    if (signals.store.size > 0) {
+      for (const [key, value] of signals.store.entries()) {
         js += "$MS(" + JSON.stringify(key) + (value !== undefined ? "," + JSON.stringify(value) : "") + ");";
       }
-      signalMarks.clear();
+      signals.store.clear();
     }
     if (rc.mcs.size > 0) {
       for (const [mc, i] of rc.mcs.entries()) {
@@ -289,7 +293,7 @@ async function render(
   }
   await renderNode(rc, node as ChildType);
   if (rc.flags.scope > 0 && !componentMode) {
-    markSignals(rc, appSignals);
+    markSignals(rc, signals.app);
   }
   await finalize();
 }
@@ -311,17 +315,19 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
       } else if (isSignal(node)) {
         const { scope, key, value } = node[$signal];
         if (isString(key)) {
-          write('<m-signal scope="' + scope + '" key=' + toAttrStringLit(key as string) + ">");
+          let buf = '<m-signal scope="' + scope + '" key=' + toAttrStringLit(key as string) + ">";
           if (value !== undefined && value !== null) {
-            write(escapeHTML(String(value)));
+            buf += escapeHTML(String(value));
           }
-          write("</m-signal>");
+          buf += "</m-signal>";
+          write(buf);
         } else {
-          write('<m-signal scope="' + scope + '" computed="' + rc.mcs.gen(node) + '">');
+          let buf = '<m-signal scope="' + scope + '" computed="' + rc.mcs.gen(node) + '">';
           if (value !== undefined) {
-            write(escapeHTML(String(value)));
+            buf += escapeHTML(String(value));
           }
-          write("</m-signal>");
+          buf += "</m-signal>";
+          write(buf);
         }
       } else if (isVNode(node)) {
         const [tag, props] = node;
@@ -367,20 +373,18 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
             if (children !== undefined) {
               if (isSignal(show)) {
                 const { scope, key, value } = show[$signal];
-                write('<m-signal mode="toggle" scope="' + scope + '" ');
+                let buf = '<m-signal mode="toggle" scope="' + scope + '" ';
                 if (isString(key)) {
-                  write("key=" + toAttrStringLit(key) + ">");
+                  buf += "key=" + toAttrStringLit(key) + ">";
                 } else {
-                  write('computed="' + rc.mcs.gen(show) + '">');
+                  buf += 'computed="' + rc.mcs.gen(show) + '">';
                 }
                 if (!value) {
-                  write("<template m-slot>");
+                  buf += "<template m-slot>";
                 }
+                write(buf);
                 await renderChildren(rc, children);
-                if (!value) {
-                  write("</template>");
-                }
-                write("</m-signal>");
+                write((!value ? "</template>" : "") + "</m-signal>");
               } else if (show) {
                 await renderChildren(rc, children);
               }
@@ -471,17 +475,19 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 attrs += attr;
               }
             }
-            write("<m-component" + attrs + ">");
+            let buf = "<m-component" + attrs + ">";
             if (isObject(lazyProps)) {
-              write("<template data-props>" + escapeCSSText(JSON.stringify(lazyProps)) + "</template>");
+              buf += "<template data-props>" + escapeCSSText(JSON.stringify(lazyProps)) + "</template>";
             }
+            write(buf);
             if (placeholder) {
               await renderChildren(rc, placeholder);
             }
-            write("</m-component>");
+            buf = "</m-component>";
             if (attrModifiers) {
-              write("<m-group>" + attrModifiers + "</m-group>");
+              buf += "<m-group>" + attrModifiers + "</m-group>";
             }
+            write(buf);
             rc.flags.runtimeJS |= RUNTIME_LAZY;
             break;
           }
@@ -643,7 +649,7 @@ async function renderFC(rc: RenderContext, fc: FC, props: JSX.IntrinsicAttribute
   const { write } = rc;
   const { children } = props;
   const scopeId = ++rc.flags.scope;
-  const signals = createSignals(scopeId, rc.appSignals, rc.context, rc.request);
+  const signals = createSignals(scopeId, rc.signals.app, rc.context, rc.request);
   const slots: ChildType[] | undefined = children !== undefined
     ? (Array.isArray(children) ? (isVNode(children) ? [children as ChildType] : children) : [children])
     : undefined;
@@ -793,7 +799,7 @@ function createSignals(
       return new Ref(scopeId, key as string);
     },
   });
-  const mark = ({ signalEntries, signalEffects, write }: RenderContext) => {
+  const mark = ({ signals, write }: RenderContext) => {
     if (effects.length > 0) {
       const n = effects.length;
       if (n > 0) {
@@ -802,11 +808,11 @@ function createSignals(
           js[i] = "function $ME_" + scopeId + "_" + i + "(){return(" + effects[i] + ").call(this)};";
         }
         write('<m-effect scope="' + scopeId + '" n="' + n + '"></m-effect>');
-        signalEffects.push(js.join(""));
+        signals.effects.push(js.join(""));
       }
     }
     for (const [key, value] of Object.entries(store)) {
-      signalEntries.set(scopeId + ":" + key, value);
+      signals.store.set(scopeId + ":" + key, value);
     }
   };
   const thisProxy = new Proxy(store, {
