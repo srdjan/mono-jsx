@@ -160,13 +160,10 @@ export function renderHtml(node: VNode, options: RenderOptions): Response {
   }
 
   if (component) {
-    headers.delete("etag");
-    headers.delete("last-modified");
     headers.set("content-type", "application/json; charset=utf-8");
     return new Response(
       new ReadableStream<Uint8Array>({
         async start(controller) {
-          const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
           try {
             const propsHeader = reqHeaders?.get("x-props");
             const props = propsHeader ? JSON.parse(propsHeader) : {};
@@ -175,21 +172,15 @@ export function renderHtml(node: VNode, options: RenderOptions): Response {
             await render(
               [component instanceof Promise ? (await component).default : component, props, $vnode],
               options,
-              (chunk) => {
-                html += chunk;
-              },
-              (chunk) => {
-                js += chunk;
-              },
+              (chunk) => html += chunk,
+              (chunk) => js += chunk,
               true,
             );
-            write("[");
-            write(JSON.stringify(html));
+            let json = "[" + JSON.stringify(html);
             if (js) {
-              write(",");
-              write(JSON.stringify(js));
+              json += "," + JSON.stringify(js);
             }
-            write("]");
+            controller.enqueue(encoder.encode(json + "]"));
           } finally {
             controller.close();
           }
@@ -201,14 +192,6 @@ export function renderHtml(node: VNode, options: RenderOptions): Response {
     return new Response("Component not found: " + component, { status: 404 });
   }
 
-  const etag = headers.get("etag");
-  if (etag && reqHeaders?.get("if-none-match") === etag) {
-    return new Response(null, { status: 304 });
-  }
-  const lastModified = headers.get("last-modified");
-  if (lastModified && reqHeaders?.get("if-modified-since") === lastModified) {
-    return new Response(null, { status: 304 });
-  }
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("transfer-encoding", "chunked");
   return new Response(
@@ -297,8 +280,7 @@ async function render(
       js += ROUTER_JS;
     }
     if (js.length > 0) {
-      js = "(()=>{" + js + "})();/* --- */";
-      js += "window.$runtimeFlag=" + runtimeFlag + ";";
+      js = "(()=>{" + js + "})();/* --- */window.$runtimeFlag=" + runtimeFlag + ";";
     }
     if (runtimeFlag & RUNTIME_LAZY || runtimeFlag & RUNTIME_ROUTER) {
       js += "window.$scopeSeq=" + rc.flags.scope + ";";
@@ -992,7 +974,7 @@ export function traverseProps(
     }
     return copy;
   }
-  const copy = new NullProtoObj() as Record<string, unknown>;
+  const copy = new NullProtoObj();
   for (const [key, value] of Object.entries(obj)) {
     const newPath = path.concat(JSON.stringify(key));
     if (isObject(value)) {
