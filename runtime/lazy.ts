@@ -1,7 +1,10 @@
 declare global {
-  var $runtimeJSFlag: number;
-  var $scopeFlag: number;
+  var $runtimeFlag: number;
+  var $scopeSeq: number;
 }
+
+const doc = document;
+const attr = (el: Element, name: string): string | null => el.getAttribute(name);
 
 customElements.define(
   "m-component",
@@ -9,17 +12,17 @@ customElements.define(
     static observedAttributes = ["name", "props"];
 
     #name?: string;
-    #props?: string;
+    #props?: string | null;
     #placeholder?: ChildNode[];
     #renderDelay?: number;
     #renderAC?: AbortController;
 
-    async render() {
+    async #render() {
       const headers = {
         "x-component": this.#name!,
         "x-props": this.#props ?? "{}",
-        "x-runtimejs-flag": "" + $runtimeJSFlag,
-        "x-scope-flag": "" + $scopeFlag,
+        "x-runtime-flag": "" + $runtimeFlag,
+        "x-scope-seq": "" + $scopeSeq,
       };
       const ac = new AbortController();
       this.#renderAC?.abort();
@@ -31,7 +34,7 @@ customElements.define(
       const [html, js] = await res.json();
       this.innerHTML = html;
       if (js) {
-        document.body.appendChild(document.createElement("script")).textContent = js;
+        doc.body.appendChild(doc.createElement("script")).textContent = js;
       }
     }
 
@@ -39,25 +42,25 @@ customElements.define(
       // set a timeout to wait for the element to be fully parsed
       setTimeout(() => {
         if (!this.#name) {
-          const nameAttr = this.getAttribute("name");
+          const nameAttr = attr(this, "name");
+          const propsAttr = attr(this, "props");
           if (!nameAttr) {
             throw new Error("Component name is required");
           }
           this.#name = nameAttr;
-          this.#placeholder = [...this.childNodes].filter((child) => {
-            if (child.nodeType === 1 && (child as Element).tagName === "TEMPLATE" && (child as Element).hasAttribute("data-props")) {
-              this.#props = (child as HTMLTemplateElement).content.textContent!;
-              return false;
-            }
-            return true;
-          });
+          this.#props = propsAttr?.startsWith("base64,") ? atob(propsAttr.slice(7)) : null;
+          this.#placeholder = [...this.childNodes];
         }
-        this.render();
+        this.#render();
       });
     }
 
     disconnectedCallback() {
       this.replaceChildren(...this.#placeholder!);
+      this.#renderAC?.abort();
+      this.#renderDelay && clearTimeout(this.#renderDelay);
+      this.#renderAC = undefined;
+      this.#renderDelay = undefined;
     }
 
     attributeChangedCallback(attrName: string, oldValue: string | null, newValue: string | null) {
@@ -72,7 +75,7 @@ customElements.define(
         }
         this.#renderDelay = setTimeout(() => {
           this.#renderDelay = undefined;
-          this.render();
+          this.#render();
         }, 20);
       }
     }

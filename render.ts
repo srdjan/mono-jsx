@@ -1,7 +1,7 @@
 import type { ChildType } from "./types/mono.d.ts";
 import type { FC, VNode } from "./types/jsx.d.ts";
-import type { RenderOptions } from "./types/render.d.ts";
-import { CX_JS, EVENT_JS, LAZY_JS, SIGNALS_JS, STYLE_TO_CSS_JS, SUSPENSE_JS } from "./runtime/index.ts";
+import type { FCModule, RenderOptions } from "./types/render.d.ts";
+import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_TO_CSS_JS, SUSPENSE_JS, VERSION } from "./runtime/index.ts";
 import { cx, escapeHTML, isObject, isString, NullProtoObj, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
 import { $fragment, $html, $signal, $vnode } from "./symbols.ts";
 
@@ -15,6 +15,7 @@ interface RenderContext {
   eager?: boolean;
   context?: Record<string, unknown>;
   request?: Request;
+  routeFC?: FCModule;
   fcCtx?: FCContext;
 }
 
@@ -28,7 +29,7 @@ interface Flags {
   scope: number;
   chunk: number;
   refs: number;
-  runtimeJS: number;
+  runtime: number;
 }
 
 interface SignalsContext {
@@ -59,11 +60,12 @@ interface Compute {
 
 // runtime JS flags
 const RUNTIME_CX = 1;
-const RUNTIME_EVENT = 2;
-const RUNTIME_LAZY = 4;
+const RUNTIME_STYLE_TO_CSS = 2;
+const RUNTIME_EVENT = 4;
 const RUNTIME_SIGNALS = 8;
-const RUNTIME_STYLE_TO_CSS = 16;
-const RUNTIME_SUSPENSE = 32;
+const RUNTIME_SUSPENSE = 16;
+const RUNTIME_LAZY = 32;
+const RUNTIME_ROUTER = 64;
 
 const cdn = "https://raw.esm.sh"; // the cdn for loading htmx and its extensions
 const encoder = new TextEncoder();
@@ -102,11 +104,45 @@ export const JSX = {
 };
 
 /** Renders a VNode to a `Response` object. */
-export function renderHtml(node: VNode, renderOptions: RenderOptions): Response {
-  const { request, components, headers: headersInit } = renderOptions;
+export function renderHtml(node: VNode, options: RenderOptions): Response {
+  const { request, routes, components, headers: headersInit } = options;
   const headers = new Headers();
   const reqHeaders = request?.headers;
-  const component = reqHeaders?.get("x-component");
+  const componentHeader = reqHeaders?.get("x-component");
+
+  let routeFC: FCModule | undefined = request ? Reflect.get(request, "x-route") : undefined;
+  let component = componentHeader ? components?.[componentHeader] : null;
+  let status = options.status;
+
+  if (routes && !routeFC) {
+    if (request) {
+      const patterns = Object.keys(routes);
+      const dynamicPatterns = [];
+      for (const pattern of patterns) {
+        if (pattern.includes(":") || pattern.includes("*")) {
+          dynamicPatterns.push(pattern);
+        } else if (new URL(request.url).pathname === pattern) {
+          routeFC = routes[pattern];
+          break;
+        }
+      }
+      if (!routeFC) {
+        for (const path of dynamicPatterns) {
+          const match = new URLPattern({ pathname: path }).exec(request.url);
+          if (match) {
+            routeFC = routes[path];
+            Object.assign(request, { params: match.pathname.groups });
+            break;
+          }
+        }
+      }
+    } else {
+      console.error("The `request` prop in the `<html>` element is required for routing.");
+    }
+    if (!routeFC) {
+      status = 404;
+    }
+  }
 
   if (headersInit) {
     for (const [key, value] of Object.entries(headersInit)) {
@@ -116,11 +152,14 @@ export function renderHtml(node: VNode, renderOptions: RenderOptions): Response 
     }
   }
 
-  if (component) {
-    let html = "", js = "";
-    if (!components || !components[component]) {
-      return new Response("Component not found: " + component, { status: 404 });
+  if (reqHeaders?.get("x-route") === "true") {
+    if (!routeFC) {
+      return Response.json({ error: { message: "Route not found" }, status }, { headers, status });
     }
+    component = routeFC;
+  }
+
+  if (component) {
     headers.delete("etag");
     headers.delete("last-modified");
     headers.set("content-type", "application/json; charset=utf-8");
@@ -129,11 +168,13 @@ export function renderHtml(node: VNode, renderOptions: RenderOptions): Response 
         async start(controller) {
           const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
           try {
-            const propsJSON = reqHeaders?.get("x-props");
-            const props = propsJSON ? JSON.parse(propsJSON) : {};
+            const propsHeader = reqHeaders?.get("x-props");
+            const props = propsHeader ? JSON.parse(propsHeader) : {};
+            let html = "";
+            let js = "";
             await render(
-              [components[component], props, $vnode],
-              renderOptions,
+              [component instanceof Promise ? (await component).default : component, props, $vnode],
+              options,
               (chunk) => {
                 html += chunk;
               },
@@ -156,6 +197,8 @@ export function renderHtml(node: VNode, renderOptions: RenderOptions): Response 
       }),
       { headers },
     );
+  } else if (componentHeader) {
+    return new Response("Component not found: " + component, { status: 404 });
   }
 
   const etag = headers.get("etag");
@@ -171,16 +214,17 @@ export function renderHtml(node: VNode, renderOptions: RenderOptions): Response 
   return new Response(
     new ReadableStream<Uint8Array>({
       async start(controller) {
-        const { htmx } = renderOptions;
+        const { htmx } = options;
         const write = (chunk: string) => controller.enqueue(encoder.encode(chunk));
+        Reflect.set(options, "routeFC", routeFC);
         try {
           write("<!DOCTYPE html>");
-          await render(node, renderOptions, write, (chunk) => write("<script>" + chunk + "</script>"));
+          await render(node, options, write, (js) => write('<script data-mono-jsx="' + VERSION + '">' + js + "</script>"));
           if (htmx) {
             write(`<script src="${cdn}/htmx.org${htmx === true ? "" : escapeHTML("@" + htmx)}/dist/htmx.min.js"></script>`);
-            for (const [key, value] of Object.entries(renderOptions)) {
-              if (key.startsWith("htmx-ext-") && value) {
-                write(`<script src="${cdn}/${key}${value === true ? "" : escapeHTML("@" + value)}"></script>`);
+            for (const [name, version] of Object.entries(options)) {
+              if (name.startsWith("htmx-ext-") && version) {
+                write(`<script src="${cdn}/${name}${version === true ? "" : escapeHTML("@" + version)}"></script>`);
               }
             }
           }
@@ -189,19 +233,19 @@ export function renderHtml(node: VNode, renderOptions: RenderOptions): Response 
         }
       },
     }),
-    { headers, status: renderOptions.status },
+    { headers, status },
   );
 }
 
 // @internal
 async function render(
   node: VNode,
-  renderOptions: RenderOptions,
+  options: RenderOptions & { routeFC?: FC<any> },
   write: (chunk: string) => void,
   writeJS: (chunk: string) => void,
   componentMode?: boolean,
 ) {
-  const { request, app, context } = renderOptions;
+  const { app, context, request, routeFC } = options;
   const suspenses: Promise<string>[] = [];
   const signals: SignalsContext = {
     app: Object.assign(createSignals(0, null, context, request), app),
@@ -214,8 +258,9 @@ async function render(
     context,
     request,
     signals,
+    routeFC,
     eager: componentMode,
-    flags: { scope: 0, chunk: 0, refs: 0, runtimeJS: 0 },
+    flags: { scope: 0, chunk: 0, refs: 0, runtime: 0 },
     mcs: new IdGenImpl<Signal>(),
     mfs: new IdGenImpl<CallableFunction>(),
   };
@@ -223,34 +268,41 @@ async function render(
   // it may be called recursively when thare are unresolved suspenses
   const finalize = async () => {
     let js = "";
-    if ((rc.flags.runtimeJS & RUNTIME_CX) && !(runtimeJSFlag & RUNTIME_CX)) {
-      runtimeJSFlag |= RUNTIME_CX;
+    if ((rc.flags.runtime & RUNTIME_CX) && !(runtimeFlag & RUNTIME_CX)) {
+      runtimeFlag |= RUNTIME_CX;
       js += CX_JS;
     }
-    if ((rc.flags.runtimeJS & RUNTIME_STYLE_TO_CSS) && !(runtimeJSFlag & RUNTIME_STYLE_TO_CSS)) {
-      runtimeJSFlag |= RUNTIME_STYLE_TO_CSS;
+    if ((rc.flags.runtime & RUNTIME_STYLE_TO_CSS) && !(runtimeFlag & RUNTIME_STYLE_TO_CSS)) {
+      runtimeFlag |= RUNTIME_STYLE_TO_CSS;
       js += STYLE_TO_CSS_JS;
     }
-    if ((rc.flags.runtimeJS & RUNTIME_LAZY) && !(runtimeJSFlag & RUNTIME_LAZY)) {
-      runtimeJSFlag |= RUNTIME_LAZY;
-      js += LAZY_JS;
-    }
-    if (rc.mfs.size > 0 && !(runtimeJSFlag & RUNTIME_EVENT)) {
-      runtimeJSFlag |= RUNTIME_EVENT;
+    if (rc.mfs.size > 0 && !(runtimeFlag & RUNTIME_EVENT)) {
+      runtimeFlag |= RUNTIME_EVENT;
       js += EVENT_JS;
     }
-    if ((signals.store.size + signals.effects.length > 0) && !(runtimeJSFlag & RUNTIME_SIGNALS)) {
-      runtimeJSFlag |= RUNTIME_SIGNALS;
+    if ((signals.store.size > 0 || signals.effects.length > 0) && !(runtimeFlag & RUNTIME_SIGNALS)) {
+      runtimeFlag |= RUNTIME_SIGNALS;
       js += SIGNALS_JS;
     }
-    if (suspenses.length > 0 && !(runtimeJSFlag & RUNTIME_SUSPENSE)) {
-      runtimeJSFlag |= RUNTIME_SUSPENSE;
+    if (suspenses.length > 0 && !(runtimeFlag & RUNTIME_SUSPENSE)) {
+      runtimeFlag |= RUNTIME_SUSPENSE;
       js += SUSPENSE_JS;
     }
-    if (js) {
-      writeJS("/* runtime.js (generated by mono-jsx) */window.$runtimeJSFlag=" + runtimeJSFlag + ";(()=>{" + js + "})();");
+    if ((rc.flags.runtime & RUNTIME_LAZY) && !(runtimeFlag & RUNTIME_LAZY)) {
+      runtimeFlag |= RUNTIME_LAZY;
+      js += LAZY_JS;
     }
-    js = "";
+    if ((rc.flags.runtime & RUNTIME_ROUTER) && !(runtimeFlag & RUNTIME_ROUTER)) {
+      runtimeFlag |= RUNTIME_ROUTER;
+      js += ROUTER_JS;
+    }
+    if (js.length > 0) {
+      js = "(()=>{" + js + "})();/* --- */";
+      js += "window.$runtimeFlag=" + runtimeFlag + ";";
+    }
+    if (runtimeFlag & RUNTIME_LAZY || runtimeFlag & RUNTIME_ROUTER) {
+      js += "window.$scopeSeq=" + rc.flags.scope + ";";
+    }
     if (rc.mfs.size > 0) {
       for (const [fn, i] of rc.mfs.entries()) {
         js += "function $MF_" + i + "(){(" + fn.toString() + ").apply(this,arguments)};";
@@ -275,21 +327,18 @@ async function render(
       }
       rc.mcs.clear();
     }
-    if (runtimeJSFlag & RUNTIME_LAZY) {
-      js += "window.$scopeFlag=" + rc.flags.scope + ";";
-    }
-    if (js) {
-      writeJS("/* app.js (generated by mono-jsx) */" + js);
+    if (js.length > 0) {
+      writeJS(js);
     }
     if (suspenses.length > 0) {
       await Promise.all(suspenses.splice(0, suspenses.length).map((suspense) => suspense.then(write)));
       await finalize();
     }
   };
-  let runtimeJSFlag = 0;
+  let runtimeFlag = 0;
   if (componentMode && request) {
-    rc.flags.scope = Number(request.headers.get("x-scope-flag")) || 0;
-    runtimeJSFlag = Number(request.headers.get("x-runtimejs-flag")) || 0;
+    rc.flags.scope = Number(request.headers.get("x-scope-seq")) || 0;
+    runtimeFlag = Number(request.headers.get("x-runtime-flag")) || 0;
   }
   await renderNode(rc, node as ChildType);
   if (rc.flags.scope > 0 && !componentMode) {
@@ -451,10 +500,9 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
 
           // `<lazy>` element
           case "lazy": {
-            const { placeholder = props.children } = props;
+            const { placeholder } = props;
             let attrs = "";
             let attrModifiers = "";
-            let lazyProps: Record<string, unknown> | undefined;
             for (const p of ["name", "props"]) {
               let propValue = props[p];
               const [attr, , attrSignal] = renderAttr(rc, p, propValue);
@@ -469,26 +517,49 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
                 attrModifiers += "></m-signal>";
                 propValue = value;
               }
-              if (p === "props") {
-                lazyProps = propValue;
-              } else {
-                attrs += attr;
-              }
+              attrs += attr;
             }
             let buf = "<m-component" + attrs + ">";
-            if (isObject(lazyProps)) {
-              buf += "<template data-props>" + escapeCSSText(JSON.stringify(lazyProps)) + "</template>";
-            }
-            write(buf);
             if (placeholder) {
-              await renderChildren(rc, placeholder);
+              const write = (chunk: string) => {
+                buf += chunk;
+              };
+              await renderChildren({ ...rc, write }, placeholder);
             }
-            buf = "</m-component>";
+            buf += "</m-component>";
             if (attrModifiers) {
               buf += "<m-group>" + attrModifiers + "</m-group>";
             }
             write(buf);
-            rc.flags.runtimeJS |= RUNTIME_LAZY;
+            rc.flags.runtime |= RUNTIME_LAZY;
+            break;
+          }
+
+          // `<router>` element
+          case "router": {
+            const { routeFC } = rc;
+            const { children } = props;
+            const status = routeFC ? 200 : 404;
+            write('<m-router status="' + status + '">');
+            if (routeFC) {
+              await renderFC(rc, routeFC instanceof Promise ? (await routeFC).default : routeFC, {});
+            }
+            let buf = "";
+            if (children) {
+              if (routeFC) {
+                buf += "<template m-slot>";
+              }
+              const write = (chunk: string) => {
+                buf += chunk;
+              };
+              await renderChildren({ ...rc, write }, children);
+              if (routeFC) {
+                buf += "</template>";
+              }
+            }
+            buf += "</m-router>";
+            write(buf);
+            rc.flags.runtime |= RUNTIME_ROUTER;
             break;
           }
 
@@ -572,9 +643,9 @@ function renderAttr(
     }
     if (signal) {
       if (attrName === "class") {
-        rc.flags.runtimeJS |= RUNTIME_CX;
+        rc.flags.runtime |= RUNTIME_CX;
       } else if (attrName === "style") {
-        rc.flags.runtimeJS |= RUNTIME_STYLE_TO_CSS;
+        rc.flags.runtime |= RUNTIME_STYLE_TO_CSS;
       }
       signalValue = signal;
       attrValue = signal[$signal].value;
@@ -582,11 +653,11 @@ function renderAttr(
   }
   switch (attrName) {
     case "class":
-      attr += " class=" + toAttrStringLit(cx(attrValue));
+      attr = " class=" + toAttrStringLit(cx(attrValue));
       break;
     case "style":
       if (isString(attrValue)) {
-        attr += ' style="' + escapeCSSText(attrValue) + '"';
+        attr = ' style="' + escapeCSSText(attrValue) + '"';
       } else if (isObject(attrValue) && !Array.isArray(attrValue)) {
         const { inline, css } = styleToCSS(attrValue);
         if (css) {
@@ -595,10 +666,15 @@ function renderAttr(
             + (inline ? "[data-css-" + id + "]{" + escapeCSSText(inline) + "}" : "")
             + escapeCSSText(css.map(v => v === null ? "[data-css-" + id + "]" : v).join(""))
             + "</style>";
-          attr += " data-css-" + id;
+          attr = " data-css-" + id;
         } else if (inline) {
-          attr += " style=" + toAttrStringLit(inline);
+          attr = " style=" + toAttrStringLit(inline);
         }
+      }
+      break;
+    case "props":
+      if (isObject(attrValue) && !Array.isArray(attrValue)) {
+        attr = ' props="base64,' + btoa(JSON.stringify(attrValue)) + '"';
       }
       break;
     case "ref":
@@ -610,32 +686,32 @@ function renderAttr(
           const refId = rc.flags.refs++;
           const effects = signals[Symbol.for("effects")] as string[];
           effects.push("()=>(" + attrValue.toString() + ')(this.refs["' + refId + '"])');
-          attr += " data-ref=" + toAttrStringLit(rc.fcCtx!.scopeId + ":" + refId);
+          attr = " data-ref=" + toAttrStringLit(rc.fcCtx!.scopeId + ":" + refId);
         }
       } else if (attrValue instanceof Ref) {
-        attr += " data-ref=" + toAttrStringLit(attrValue.scope + ":" + attrValue.name);
+        attr = " data-ref=" + toAttrStringLit(attrValue.scope + ":" + attrValue.name);
       }
       break;
     case "action":
       if (typeof attrValue === "function") {
-        attr += ' onsubmit="$onsubmit(event,$MF_' + rc.mfs.gen(attrValue) + toStr(rc.fcCtx?.scopeId, (i) => "," + i) + ')"';
+        attr = ' onsubmit="$onsubmit(event,$MF_' + rc.mfs.gen(attrValue) + toStr(rc.fcCtx?.scopeId, (i) => "," + i) + ')"';
       } else if (isString(attrValue)) {
-        attr += " action=" + toAttrStringLit(attrValue);
+        attr = " action=" + toAttrStringLit(attrValue);
       }
       break;
     case "slot":
       if (!stripSlotProp && isString(attrValue)) {
-        attr += " slot=" + toAttrStringLit(attrValue);
+        attr = " slot=" + toAttrStringLit(attrValue);
       }
       break;
     default:
       if (attrName.startsWith("on") && typeof attrValue === "function") {
-        attr += " " + escapeHTML(attrName.toLowerCase()) + '="$emit(event,$MF_'
+        attr = " " + escapeHTML(attrName.toLowerCase()) + '="$emit(event,$MF_'
           + rc.mfs.gen(attrValue)
           + toStr(rc.fcCtx?.scopeId, (i) => "," + i)
           + ')"';
       } else if (isString(attrValue) || typeof attrValue === "number" || typeof attrValue === "boolean") {
-        attr += " " + escapeHTML(attrName);
+        attr = " " + escapeHTML(attrName);
         if (attrValue !== "" && attrValue !== true) {
           attr += "=" + toAttrStringLit(String(attrValue));
         }
@@ -727,8 +803,8 @@ async function renderFC(rc: RenderContext, fc: FC, props: JSX.IntrinsicAttribute
       if (props.catch) {
         await renderNode(rc, props.catch(err));
       } else {
-        write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
         console.error(err);
+        write('<pre style="color:red;font-size:1rem"><code>' + escapeHTML(err.message) + "</code></pre>");
       }
     }
   }
