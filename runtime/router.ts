@@ -38,15 +38,14 @@ customElements.define(
     }
 
     #updateNavLinks() {
-      doc.querySelectorAll("nav").forEach((nav) => {
-        const activeClass = nav.getAttribute("data-active-class") ?? "active";
-        nav.querySelectorAll("a").forEach(({ href, classList }) => {
-          if (stripHash(href) === stripHash(location.href)) {
-            classList.add(activeClass);
-          } else {
-            classList.remove(activeClass);
-          }
-        });
+      doc.querySelectorAll<HTMLAnchorElement>("nav a").forEach((link) => {
+        const { href, classList } = link;
+        const activeClass = link.closest("nav")!.getAttribute("data-active-class") ?? "active";
+        if (stripHash(href) === stripHash(location.href)) {
+          classList.add(activeClass);
+        } else {
+          classList.remove(activeClass);
+        }
       });
     }
 
