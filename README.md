@@ -7,7 +7,7 @@ mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in 
 - 🚀 No build step needed
 - 🦋 Lightweight (10KB gzipped), zero dependencies
 - 🚦 Signals as reactive primitives
-- ⚡️ Use web comonents, no virtual DOM
+- ⚡️ Use web components, no virtual DOM
 - 💡 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
 - 🗂️ Built-in router
@@ -946,7 +946,7 @@ export default {
 }
 ```
 
-### Setting Fallback(404) Content
+### Fallback(404)
 
 You can add fallback(404) content to the `<router>` element as children, which will be displayed when no route matches the current URL:
 
