@@ -11,6 +11,7 @@ customElements.define(
   class extends HTMLElement {
     #fallback?: ChildNode[];
     #onClick?: (e: MouseEvent) => void;
+    #onPopstate?: (e: PopStateEvent) => void;
     #ac?: AbortController;
 
     async #fetchPage(href: string) {
@@ -28,6 +29,7 @@ customElements.define(
         return;
       }
       if (!res.ok) {
+        this.replaceChildren();
         throw new Error("Failed to fetch route: " + res.status + " " + res.statusText);
       }
       const [html, js] = await res.json();
@@ -47,6 +49,13 @@ customElements.define(
           classList.remove(activeClass);
         }
       });
+    }
+
+    #goto(href: string) {
+      // fetch the new page
+      this.#fetchPage(href);
+      // update the navigation links
+      this.#updateNavLinks();
     }
 
     connectedCallback() {
@@ -93,21 +102,22 @@ customElements.define(
         // update the url in the browser's address bar
         history.pushState({}, "", href);
 
-        // fetch the new page
-        this.#fetchPage(href);
-
-        // update the navigation links
-        this.#updateNavLinks();
+        this.#goto(href);
       };
 
+      this.#onPopstate = () => this.#goto(location.href);
+
       doc.addEventListener("click", this.#onClick);
+      addEventListener("popstate", this.#onPopstate);
       this.#updateNavLinks();
     }
 
     disconnectedCallback() {
       doc.removeEventListener("click", this.#onClick!);
+      removeEventListener("popstate", this.#onPopstate!);
       this.#ac?.abort();
       this.#onClick = undefined;
+      this.#onPopstate = undefined;
       this.#ac = undefined;
     }
   },
