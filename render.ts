@@ -144,6 +144,10 @@ export function renderHtml(node: VNode, options: RenderOptions): Response {
     }
   }
 
+  if (components && !request) {
+    console.warn("The `components` prop in the `<html>` element is ignored when `request` is not provided.");
+  }
+
   if (headersInit) {
     for (const [key, value] of Object.entries(headersInit)) {
       if (value) {
