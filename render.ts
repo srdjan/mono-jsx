@@ -267,7 +267,7 @@ async function render(
       runtimeFlag |= RUNTIME_EVENT;
       js += EVENT_JS;
     }
-    if ((signals.store.size > 0 || signals.effects.length > 0) && !(runtimeFlag & RUNTIME_SIGNALS)) {
+    if ((signals.store.size + rc.mcs.size + signals.effects.length > 0) && !(runtimeFlag & RUNTIME_SIGNALS)) {
       runtimeFlag |= RUNTIME_SIGNALS;
       js += SIGNALS_JS;
     }
