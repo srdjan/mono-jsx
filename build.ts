@@ -83,7 +83,7 @@ if (import.meta.main) {
   ].join("");
   const runtimeJS = {
     "cx.js": await buildRuntimeUtils("cx"),
-    "styleToCSS.js": await buildRuntimeUtils("styleToCSS"),
+    "style.js": await buildRuntimeUtils("applyStyle"),
     "event.js": eventJS,
     "signals.js": await buildRuntime("signals"),
     "suspense.js": await buildRuntime("suspense"),

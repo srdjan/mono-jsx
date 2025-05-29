@@ -1,9 +1,9 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_TO_CSS_JS, SUSPENSE_JS, VERSION } from "../runtime/index.ts";
+import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_JS, SUSPENSE_JS, VERSION } from "../runtime/index.ts";
 import { RenderOptions } from "../types/render.d.ts";
 
 const RUNTIME_CX = 1;
-const RUNTIME_STYLE_TO_CSS = 2;
+const RUNTIME_STYLE = 2;
 const RUNTIME_EVENT = 4;
 const RUNTIME_SIGNALS = 8;
 const RUNTIME_SUSPENSE = 16;
@@ -124,7 +124,7 @@ Deno.test("[ssr] style to css(as style element)", async () => {
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<style id="css-${id}">[data-css-${id}]{background-color:#fff}[data-css-${id}]:hover{background-color:#eee}</style>`,
+        `<style data-mono-jsx-css="${id}">[data-css-${id}]{background-color:#fff}[data-css-${id}]:hover{background-color:#eee}</style>`,
         `<button type="button" role="button" data-css-${id}>Click me</button>`,
         `</body></html>`,
       ].join(""),
@@ -141,7 +141,7 @@ Deno.test("[ssr] style to css(as style element)", async () => {
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<style id="css-${id}">[data-css-${id}]{color:blue}[data-css-${id}]::after{content:"↩"}</style>`,
+        `<style data-mono-jsx-css="${id}">[data-css-${id}]{color:blue}[data-css-${id}]::after{content:"↩"}</style>`,
         `<a class="link" data-css-${id}>Link</a>`,
         `</body></html>`,
       ].join(""),
@@ -160,7 +160,7 @@ Deno.test("[ssr] style to css(as style element)", async () => {
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<style id="css-${id}">[data-css-${id}]{color:black}@media (prefers-color-scheme: dark){[data-css-${id}]{color:white}}</style>`,
+        `<style data-mono-jsx-css="${id}">[data-css-${id}]{color:black}@media (prefers-color-scheme: dark){[data-css-${id}]{color:white}}</style>`,
         `<h1 class="title" data-css-${id}>Hello World!</h1>`,
         `</body></html>`,
       ].join(""),
@@ -179,7 +179,7 @@ Deno.test("[ssr] style to css(as style element)", async () => {
       [
         `<!DOCTYPE html>`,
         `<html lang="en"><body>`,
-        `<style id="css-${id}">[data-css-${id}]{color:black}[data-css-${id}].title{font-size:20px}[data-css-${id}] strong{color:grey}</style>`,
+        `<style data-mono-jsx-css="${id}">[data-css-${id}]{color:black}[data-css-${id}].title{font-size:20px}[data-css-${id}] strong{color:grey}</style>`,
         `<h1 class="title" data-css-${id}><strong>Hello</strong> World!</h1>`,
         `</body></html>`,
       ].join(""),
@@ -833,11 +833,11 @@ Deno.test("[ssr] computed signals", async () => {
       `<script data-mono-jsx="${VERSION}">`,
       `(()=>{`,
       CX_JS,
-      STYLE_TO_CSS_JS,
+      STYLE_JS,
       SIGNALS_JS,
       `})();`,
       `/* --- */`,
-      `window.$runtimeFlag=${RUNTIME_CX | RUNTIME_STYLE_TO_CSS | RUNTIME_SIGNALS};`,
+      `window.$runtimeFlag=${RUNTIME_CX | RUNTIME_STYLE | RUNTIME_SIGNALS};`,
       `$MS("1:foo","foo");`,
       `$MS("1:bar","bar");`,
       `$MS("0:themeColor","black");`,
@@ -910,11 +910,11 @@ Deno.test("[ssr] computed signals", async () => {
       `</body></html>`,
       `<script data-mono-jsx="${VERSION}">`,
       `(()=>{`,
-      STYLE_TO_CSS_JS,
+      STYLE_JS,
       SIGNALS_JS,
       `})();`,
       `/* --- */`,
-      `window.$runtimeFlag=${RUNTIME_STYLE_TO_CSS | RUNTIME_SIGNALS};`,
+      `window.$runtimeFlag=${RUNTIME_STYLE | RUNTIME_SIGNALS};`,
       `$MS("1:color","blue");`,
       `$MS("0:themeColor","black");`,
       `$MC(0,function(){return(()=>$merge({"color":"blue","backgroundColor":"black"},[this["color"],"color"],[$signals(0)["themeColor"],"backgroundColor"])).call(this)},["1:color","0:themeColor"]);`,

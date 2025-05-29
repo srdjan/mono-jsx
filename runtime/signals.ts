@@ -1,6 +1,6 @@
 declare global {
   var $cx: (className: unknown) => string;
-  var $styleToCSS: (style: unknown) => { inline?: string; css?: Array<string | null> };
+  var $applyStyle: (el: Element, style: unknown) => void;
 }
 
 interface Signals {
@@ -10,12 +10,13 @@ interface Signals {
 
 let collectDeps: ((scopeId: number, key: string) => void) | undefined;
 
-const global = globalThis as any;
+const win = window as any;
 const mcs = new Map<number, [Function, string[]]>();
 const scopes = new Map<number, Signals>();
 const Signals = (scopeId: number) => scopes.get(scopeId) ?? scopes.set(scopeId, createSignals(scopeId)).get(scopeId)!;
 
-const attr = (el: Element, name: string) => el.getAttribute(name);
+const getAttr = (el: Element, name: string) => el.getAttribute(name);
+const setAttr = (el: Element, name: string, value: string) => el.setAttribute(name, value);
 const replaceChildren = (el: Element, children: Node[]) => el.replaceChildren(...children);
 const createNullObject = () => Object.create(null);
 
@@ -91,7 +92,7 @@ const createDomEffect = (el: Element, mode: string | null, getter: () => unknown
   }
   if (mode === "switch") {
     let value: string;
-    let toMatch = attr(el, "match");
+    let toMatch = getAttr(el, "match");
     let slotsMap: Map<string, Array<ChildNode>> | undefined;
     let unnamedSlots: Array<ChildNode> | undefined;
     let getNamedSlots = (slotName: string) => slotsMap!.get(slotName) ?? slotsMap!.set(slotName, []).get(slotName)!;
@@ -103,7 +104,7 @@ const createDomEffect = (el: Element, mode: string | null, getter: () => unknown
           if (slot.nodeType === 1 && (slot as HTMLElement).tagName === "TEMPLATE" && (slot as HTMLElement).hasAttribute("m-slot")) {
             for (const node of (slot as HTMLTemplateElement).content.childNodes) {
               if (node.nodeType === 1 && (node as HTMLElement).hasAttribute("slot")) {
-                getNamedSlots(attr(node as HTMLElement, "slot")!).push(node);
+                getNamedSlots(getAttr(node as HTMLElement, "slot")!).push(node);
               } else {
                 unnamedSlots.push(node);
               }
@@ -130,29 +131,18 @@ const createDomEffect = (el: Element, mode: string | null, getter: () => unknown
     }
     return () => {
       const value = getter();
-      if (value === false) {
+      if (value === false || value === null || value === undefined) {
         target.removeAttribute(attrName);
       } else if (typeof value === "object" && value !== null && (attrName === "class" || attrName === "style" || attrName === "props")) {
-        let attrValue: string | undefined;
         if (attrName === "class") {
-          attrValue = $cx(value);
+          setAttr(target, attrName, $cx(value));
         } else if (attrName === "style") {
-          const { inline, css } = $styleToCSS(value);
-          if (css) {
-            // todo: create a style element with the css rules
-          } else if (inline) {
-            attrValue = inline;
-          }
+          $applyStyle(target, value);
         } else {
-          attrValue = JSON.stringify(value);
+          setAttr(target, attrName, JSON.stringify(value));
         }
-        if (attrValue) {
-          target.setAttribute(attrName, attrValue);
-        }
-      } else if (value === false || value === null || value === undefined) {
-        target.removeAttribute(attrName);
       } else {
-        target.setAttribute(attrName, value === true ? "" : value as string);
+        setAttr(target, attrName, value === true ? "" : value as string);
       }
     };
   }
@@ -189,14 +179,14 @@ const defineElement = (tag: string, callback: (el: Element & { disposes: (() => 
   );
 
 defineElement("m-signal", (el) => {
-  const signals = Signals(Number(attr(el, "scope")));
-  const key = attr(el, "key");
+  const signals = Signals(Number(getAttr(el, "scope")));
+  const key = getAttr(el, "key");
   if (key) {
-    el.disposes.push(signals.$watch(key, createDomEffect(el, attr(el, "mode"), () => (signals as any)[key])));
+    el.disposes.push(signals.$watch(key, createDomEffect(el, getAttr(el, "mode"), () => (signals as any)[key])));
   } else {
-    const id = Number(attr(el, "computed"));
+    const id = Number(getAttr(el, "computed"));
     defer(() => mcs.get(id)).then(([compute, deps]) => {
-      const effect = createDomEffect(el, attr(el, "mode"), compute.bind(signals));
+      const effect = createDomEffect(el, getAttr(el, "mode"), compute.bind(signals));
       deps.forEach((dep) => {
         const [scope, key] = resolveSignalID(dep)!;
         el.disposes.push(Signals(scope).$watch(key, effect));
@@ -207,8 +197,8 @@ defineElement("m-signal", (el) => {
 
 defineElement("m-effect", (el) => {
   const { disposes } = el;
-  const scope = Number(attr(el, "scope"));
-  const n = Number(attr(el, "n"));
+  const scope = Number(getAttr(el, "scope"));
+  const n = Number(getAttr(el, "n"));
   const cleanups: ((() => void) | undefined)[] = new Array(n);
   disposes.push(() => {
     cleanups.forEach((cleanup) => typeof cleanup === "function" && cleanup());
@@ -216,7 +206,7 @@ defineElement("m-effect", (el) => {
   });
   for (let i = 0; i < n; i++) {
     const fname = "$ME_" + scope + "_" + i;
-    defer<Function>(() => global[fname]).then((fn) => {
+    defer<Function>(() => win[fname]).then((fn) => {
       const deps: [number, string][] = [];
       const signals = Signals(scope);
       const effect = () => {
@@ -233,21 +223,21 @@ defineElement("m-effect", (el) => {
 });
 
 // get the signals
-global.$signals = (scope?: number) => scope !== undefined ? Signals(scope) : undefined;
+win.$signals = (scope?: number) => scope !== undefined ? Signals(scope) : undefined;
 
 // initialize a signal with the given value
-global.$MS = (id: string, value: unknown) => {
+win.$MS = (id: string, value: unknown) => {
   const [scope, key] = resolveSignalID(id)!;
   Signals(scope).$init(key, value);
 };
 
 // define a computed signal
-global.$MC = (id: number, compute: Function, deps: string[]) => {
+win.$MC = (id: number, compute: Function, deps: string[]) => {
   mcs.set(id, [compute, deps]);
 };
 
 // merge an object with patches
-global.$merge = (obj: Record<string, unknown>, ...patches: unknown[][]) => {
+win.$merge = (obj: Record<string, unknown>, ...patches: unknown[][]) => {
   for (const [value, ...path] of patches) {
     let target = obj;
     const key = path.pop()!;

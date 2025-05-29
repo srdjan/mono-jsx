@@ -71,6 +71,9 @@ Deno.serve({ port: 8687, onListen: () => {} }, (request) => {
   );
 });
 
+// console.log(addTestPage(<App />));
+// await new Promise(() => {});
+
 const browser = await puppeteer.launch({
   executablePath: (await chrome()).executablePath,
   args: ["--no-sandbox", "--disable-gpu", "--disable-extensions", "--disable-sync", "--disable-background-networking"],
@@ -385,6 +388,36 @@ Deno.test("[runtime] computed style", sanitizeFalse, async () => {
   await button.click();
 
   assertEquals(await h1.evaluate((el: HTMLElement) => el.style.color), "green");
+
+  await page.close();
+});
+
+Deno.test("[runtime] computed nesting style", sanitizeFalse, async () => {
+  function App(this: FC<{ color: string }>) {
+    this.color = "blue";
+    return (
+      <div>
+        <hgroup style={{ "& h1": { color: this.color } }}>
+          <h1>Welcome to mono-jsx!</h1>
+        </hgroup>
+        <button type="button" onClick={() => this.color = "green"} />
+      </div>
+    );
+  }
+
+  const testPageUrl = addTestPage(<App />);
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+
+  const h1 = await page.$("div h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.computedStyleMap().get("color")?.toString()), "rgb(0, 0, 255)"); // blue in rgb
+
+  const button = await page.$("div button");
+  assert(button);
+  await button.click();
+
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.computedStyleMap().get("color")?.toString()), "rgb(0, 128, 0)"); // green in rgb
 
   await page.close();
 });

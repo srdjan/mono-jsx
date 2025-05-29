@@ -1,7 +1,7 @@
 import type { ChildType } from "./types/mono.d.ts";
 import type { FC, VNode } from "./types/jsx.d.ts";
 import type { FCModule, RenderOptions } from "./types/render.d.ts";
-import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_TO_CSS_JS, SUSPENSE_JS, VERSION } from "./runtime/index.ts";
+import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_JS, SUSPENSE_JS, VERSION } from "./runtime/index.ts";
 import { cx, escapeHTML, isObject, isString, NullProtoObj, styleToCSS, toHyphenCase } from "./runtime/utils.ts";
 import { $fragment, $html, $signal, $vnode } from "./symbols.ts";
 
@@ -60,7 +60,7 @@ interface Compute {
 
 // runtime JS flags
 const RUNTIME_CX = 1;
-const RUNTIME_STYLE_TO_CSS = 2;
+const RUNTIME_STYLE = 2;
 const RUNTIME_EVENT = 4;
 const RUNTIME_SIGNALS = 8;
 const RUNTIME_SUSPENSE = 16;
@@ -259,9 +259,9 @@ async function render(
       runtimeFlag |= RUNTIME_CX;
       js += CX_JS;
     }
-    if ((rc.flags.runtime & RUNTIME_STYLE_TO_CSS) && !(runtimeFlag & RUNTIME_STYLE_TO_CSS)) {
-      runtimeFlag |= RUNTIME_STYLE_TO_CSS;
-      js += STYLE_TO_CSS_JS;
+    if ((rc.flags.runtime & RUNTIME_STYLE) && !(runtimeFlag & RUNTIME_STYLE)) {
+      runtimeFlag |= RUNTIME_STYLE;
+      js += STYLE_JS;
     }
     if (rc.mfs.size > 0 && !(runtimeFlag & RUNTIME_EVENT)) {
       runtimeFlag |= RUNTIME_EVENT;
@@ -631,7 +631,7 @@ function renderAttr(
       if (attrName === "class") {
         rc.flags.runtime |= RUNTIME_CX;
       } else if (attrName === "style") {
-        rc.flags.runtime |= RUNTIME_STYLE_TO_CSS;
+        rc.flags.runtime |= RUNTIME_STYLE;
       }
       signalValue = signal;
       attrValue = signal[$signal].value;
@@ -648,7 +648,7 @@ function renderAttr(
         const { inline, css } = styleToCSS(attrValue);
         if (css) {
           const id = hashCode((inline ?? "") + css.join("")).toString(36);
-          addonHtml += '<style id="css-' + id + '">'
+          addonHtml += '<style data-mono-jsx-css="' + id + '">'
             + (inline ? "[data-css-" + id + "]{" + escapeCSSText(inline) + "}" : "")
             + escapeCSSText(css.map(v => v === null ? "[data-css-" + id + "]" : v).join(""))
             + "</style>";
