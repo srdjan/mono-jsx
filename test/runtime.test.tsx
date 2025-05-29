@@ -622,7 +622,7 @@ Deno.test("[runtime] <router>", sanitizeFalse, async () => {
   const testPageUrl = addTestPage(
     <div>
       <header>
-        <nav style={{ "& .active": { fontWeight: "bold" } }}>
+        <nav style={{ "& .current": { fontWeight: "bold" } }} data-active-class="current">
           <ul>
             <li>
               <a href="/">Home</a>
@@ -656,6 +656,7 @@ Deno.test("[runtime] <router>", sanitizeFalse, async () => {
   assert(link);
   await link.click();
   await page.waitForNetworkIdle();
+  assert(await link.evaluate((el: HTMLAnchorElement) => el.classList.contains("current")));
 
   p = await page.$("p");
   assert(!p);
@@ -668,6 +669,7 @@ Deno.test("[runtime] <router>", sanitizeFalse, async () => {
   assert(link);
   await link.click();
   await page.waitForNetworkIdle();
+  assert(await link.evaluate((el: HTMLAnchorElement) => el.classList.contains("current")));
 
   h1 = await page.$("h1");
   assert(h1);
@@ -677,6 +679,7 @@ Deno.test("[runtime] <router>", sanitizeFalse, async () => {
   assert(link);
   await link.click();
   await page.waitForNetworkIdle();
+  assert(await link.evaluate((el: HTMLAnchorElement) => el.classList.contains("current")));
 
   h1 = await page.$("h1");
   assert(h1);
@@ -686,6 +689,7 @@ Deno.test("[runtime] <router>", sanitizeFalse, async () => {
   assert(link);
   await link.click();
   await page.waitForNetworkIdle();
+  assert(await link.evaluate((el: HTMLAnchorElement) => el.classList.contains("current")));
 
   h1 = await page.$("h1");
   assert(!h1);

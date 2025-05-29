@@ -119,6 +119,11 @@ export namespace HTML {
     type?: string;
   }
 
+  interface NavAttributes<T extends EventTarget> extends GlobalAttributes<T> {
+    /** @mono-jsx: This attribute is used to specify the class name for the active link. */
+    "data-active-class"?: string;
+  }
+
   interface ImgAttributes<T extends EventTarget> extends GlobalAttributes<T>, LoaderElementAttributes<T> {
     alt?: string;
     crossOrigin?: CrossOrigin;
@@ -984,7 +989,7 @@ export namespace HTML {
     menu: MenuAttributes<HTMLElement>;
     meta: MetaAttributes<HTMLMetaElement>;
     meter: MeterAttributes<HTMLMeterElement>;
-    nav: GlobalAttributes<HTMLElement>;
+    nav: NavAttributes<HTMLElement>;
     noindex: GlobalAttributes<HTMLElement>;
     noscript: GlobalAttributes<HTMLElement>;
     object: ObjectAttributes<HTMLObjectElement>;
