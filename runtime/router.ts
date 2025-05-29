@@ -52,9 +52,7 @@ customElements.define(
     }
 
     #goto(href: string) {
-      // fetch the new page
       this.#fetchPage(href);
-      // update the navigation links
       this.#updateNavLinks();
     }
 
@@ -85,6 +83,8 @@ customElements.define(
         }
 
         const { download, href, rel, target } = e.target as HTMLAnchorElement;
+
+        // skip if the link is for downloading, external, or has a target of _blank
         if (
           download
           || rel === "external"
@@ -102,22 +102,23 @@ customElements.define(
         // update the url in the browser's address bar
         history.pushState({}, "", href);
 
+        // fetch the new page and update the navigation links
         this.#goto(href);
       };
 
       this.#onPopstate = () => this.#goto(location.href);
 
-      doc.addEventListener("click", this.#onClick);
       addEventListener("popstate", this.#onPopstate);
-      this.#updateNavLinks();
+      doc.addEventListener("click", this.#onClick);
+      setTimeout(() => this.#updateNavLinks());
     }
 
     disconnectedCallback() {
-      doc.removeEventListener("click", this.#onClick!);
       removeEventListener("popstate", this.#onPopstate!);
+      doc.removeEventListener("click", this.#onClick!);
       this.#ac?.abort();
-      this.#onClick = undefined;
       this.#onPopstate = undefined;
+      this.#onClick = undefined;
       this.#ac = undefined;
     }
   },
