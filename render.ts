@@ -956,27 +956,11 @@ export function traverseProps(
   callback: (path: string[], signal: Signal) => void,
   path: string[] = [],
 ): typeof obj {
-  if (Array.isArray(obj)) {
-    const copy = new Array<unknown>(obj.length);
-    for (let i = 0; i < obj.length; i++) {
-      const newPath = path.concat(i.toString());
-      const value = obj[i];
-      if (isObject(value)) {
-        if (isSignal(value)) {
-          copy[i] = value[$signal].value; // use the value of the signal
-          callback(newPath, value);
-        } else {
-          copy[i] = traverseProps(value, callback, newPath);
-        }
-      } else {
-        copy[i] = value;
-      }
-    }
-    return copy;
-  }
-  const copy = new NullProtoObj();
-  for (const [key, value] of Object.entries(obj)) {
-    const newPath = path.concat(JSON.stringify(key));
+  const isArray = Array.isArray(obj);
+  const copy: any = isArray ? new Array(obj.length) : new NullProtoObj();
+  for (const [k, value] of Object.entries(obj)) {
+    const newPath = path.concat(isArray ? k : JSON.stringify(k));
+    const key = isArray ? Number(k) : k;
     if (isObject(value)) {
       if (isSignal(value)) {
         copy[key] = value[$signal].value; // use the value of the signal
