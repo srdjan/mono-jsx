@@ -1,6 +1,7 @@
+import type { RenderOptions } from "../types/render.d.ts";
 import { assert, assertEquals } from "jsr:@std/assert";
-import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_JS, SUSPENSE_JS, VERSION } from "../runtime/index.ts";
-import { RenderOptions } from "../types/render.d.ts";
+import { CX_JS, EVENT_JS, LAZY_JS, ROUTER_JS, SIGNALS_JS, STYLE_JS, SUSPENSE_JS } from "../runtime/index.ts";
+import { VERSION } from "../version.ts";
 
 const RUNTIME_CX = 1;
 const RUNTIME_STYLE = 2;
