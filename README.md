@@ -5,10 +5,12 @@
 mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in JavaScript runtimes like Node.js, Deno, Bun, Cloudflare Workers, etc.
 
 - 🚀 No build step needed
-- 🦋 Lightweight (8KB gzipped), zero dependencies
+- 🦋 Lightweight (10KB gzipped), zero dependencies
 - 🚦 Signals as reactive primitives
-- 🗂️ Complete Web API TypeScript definitions
+- ⚡️ Use web comonents, no virtual DOM
+- 💡 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
+- 🗂️ Built-in router
 - 🥷 [htmx](#using-htmx) integration
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
@@ -83,13 +85,13 @@ deno serve app.tsx
 bun run app.tsx
 ```
 
-If you're building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` to start local development:
+If you're building a web app with [Cloudflare Workers](https://developers.cloudflare.com/workers/wrangler/commands/#dev), use `wrangler dev` to start your app in development mode:
 
 ```bash
 npx wrangler dev app.tsx
 ```
 
-**Node.js doesn't support JSX syntax or declarative fetch servers**, so we recommend using mono-jsx with [srvx](https://srvx.h3.dev/):
+**Node.js doesn't support JSX syntax or declarative fetch servers**, we recommend using mono-jsx with [srvx](https://srvx.h3.dev/):
 
 ```tsx
 // app.tsx
@@ -106,14 +108,14 @@ serve({
 });
 ```
 
-You'll need [tsx](https://www.npmjs.com/package/tsx) to start the app without a build step:
+And you'll need [tsx](https://www.npmjs.com/package/tsx) to start the app without a build step:
 
 ```bash
 npx tsx app.tsx
 ```
 
 > [!NOTE]
-> Only root `<html>` element will be rendered as a `Response` object. You cannot return a `<div>` or any other element directly from the `fetch` handler. This is a limitation of the mono-jsx runtime.
+> Only root `<html>` element will be rendered as a `Response` object. You cannot return a `<div>` or any other element directly from the `fetch` handler. This is a limitation of the mono-jsx.
 
 ## Using JSX
 
@@ -131,7 +133,7 @@ mono-jsx adopts standard HTML property names, avoiding React's custom naming con
 
 mono-jsx allows you to compose the `class` property using arrays of strings, objects, or expressions:
 
-```jsx
+```tsx
 <div
   class={[
     "container box",
@@ -145,7 +147,7 @@ mono-jsx allows you to compose the `class` property using arrays of strings, obj
 
 mono-jsx supports [pseudo classes](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes), [pseudo elements](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements), [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries), and [CSS nesting](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_nesting/Using_CSS_nesting) in the `style` property:
 
-```jsx
+```tsx
 <a
   style={{
     color: "black",
@@ -164,7 +166,7 @@ mono-jsx supports [pseudo classes](https://developer.mozilla.org/en-US/docs/Web/
 
 mono-jsx uses [`<slot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) elements to render slotted content (equivalent to React's `children` property). You can also add the `name` attribute to define named slots:
 
-```jsx
+```tsx
 function Container() {
   return (
     <div class="container">
@@ -192,7 +194,7 @@ function App() {
 
 mono-jsx provides an `html` tag function to render raw HTML in JSX instead of React's `dangerouslySetInnerHTML`:
 
-```jsx
+```tsx
 function App() {
   return <div>{html`<h1>Hello world!</h1>`}</div>;
 }
@@ -200,7 +202,7 @@ function App() {
 
 The `html` tag function is globally available without importing. You can also use `css` and `js` tag functions for CSS and JavaScript:
 
-```jsx
+```tsx
 function App() {
   return (
     <head>
@@ -218,7 +220,7 @@ function App() {
 
 mono-jsx lets you write event handlers directly in JSX, similar to React:
 
-```jsx
+```tsx
 function Button() {
   return (
     <button onClick={(evt) => alert("BOOM!")}>
@@ -293,7 +295,7 @@ export default {
 
 You can also use async generators to yield multiple elements over time. This is useful for streaming rendering of LLM tokens:
 
-```jsx
+```tsx
 async function* Chat(props: { prompt: string }) {
   const stream = await openai.chat.completions.create({
     model: "gpt-4",
@@ -626,7 +628,7 @@ The `this` object has the following built-in properties:
 type FC<Signals = {}, AppSignals = {}, Context = {}> = {
   readonly app: AppSignals;
   readonly context: Context;
-  readonly request: Request;
+  readonly request: Request & { params?: Record<string, string> };
   readonly refs: Record<string, HTMLElement | null>;
   readonly computed: <T = unknown>(fn: () => T) => T;
   readonly effect: (fn: () => void | (() => void)) => void;
@@ -716,7 +718,7 @@ export default {
 
 mono-jsx renders your `<html>` as a readable stream, allowing async components to render asynchronously. You can use `placeholder` to display a loading state while waiting for async components to render:
 
-```jsx
+```tsx
 async function Sleep({ ms }) {
   await new Promise((resolve) => setTimeout(resolve, ms));
   return <slot />;
@@ -735,7 +737,7 @@ export default {
 
 You can set the `rendering` attribute to `"eager"` to force synchronous rendering (the `placeholder` will be ignored):
 
-```jsx
+```tsx
 export default {
   fetch: (req) => (
     <html>
@@ -749,7 +751,7 @@ export default {
 
 You can add the `catch` attribute to handle errors in the async component. The `catch` attribute should be a function that returns a JSX element:
 
-```jsx
+```tsx
 async function Hello() {
   throw new Error("Something went wrong!");
   return <p>Hello world!</p>;
@@ -764,11 +766,208 @@ export default {
 }
 ```
 
+
+## Lazy Rendering
+
+Since mono-jsx renders html on server side, and no hydration JS sent to client side. To render a component dynamically on client side, you can use the `<component>` element to ask the server to render a component and send the html back to client:
+
+```tsx
+export default {
+  fetch: (req) => (
+    <html components={{ Foo }}>
+      <component name="Foo" props={{ /* props for the component */ }} placeholder={<p>Loading...</p>} />
+    </html>
+  )
+}
+```
+
+You can use `<toggle>` element to control when to render the component:
+
+```tsx
+async function Lazy(this: FC<{ show: boolean }>, props: { url: string }) {
+  this.show = false;
+  return (
+    <div>
+      <toggle value={this.show}>
+        <component name="Foo" props={{ /* props for the component */ }} placeholder={<p>Loading...</p>} />
+      </toggle>
+     <button onClick={() => this.show = true }>Load `Foo` Component</button>
+    </div>
+  )
+}
+
+export default {
+  fetch: (req) => (
+    <html components={{ Foo }}>
+      <Lazy />
+    </html>
+  )
+}
+```
+
+You also can use signal `name` or `props`, change the signal value will trigger the component to re-render with new name or props:
+
+```tsx
+import { Profile, Projects, Settings } from "./pages.tsx"
+
+async function Dash(this: FC<{ page: "Profile" | "Projects" | "Settings" }>) {
+  this.page = "Projects";
+
+  return (
+    <>
+      <div class="tab">
+        <button onClick={e => this.page = "Profile"}>Profile</botton>
+        <button onClick={e => this.page = "Projects"}>Projects</botton>
+        <button onClick={e => this.page = "Settings"}>Settings</botton>
+      </div>
+      <div class="page">
+        <component name={this.page} placeholder={<p>Loading...</p>} />
+      </div>
+    </>
+  )
+}
+
+export default {
+  fetch: (req) => (
+    <html components={{ Profile, Projects, Settings }}>
+      <Dash />
+    </html>
+  )
+}
+```
+
+## Using Router(SPA)
+
+mono-jsx provides a built-in `<router>` element that allows your app to render components based on the current URL. On client side, it hijacks all `click` events on `<a>` elements and asynchronously fetches the route component without reloading the entire page.
+
+To use the router, you need to define your routes as a mapping of URL patterns to components and pass it to the `<html>` element as `routes` prop. The `request` prop is also required to match the current URL against the defined routes.
+
+```tsx
+const routes = {
+  "/": Home,
+  "/about": About,
+  "/blog": Blog,
+  "/post/:id": Post,
+}
+
+export default {
+  fetch: (req) => (
+    <html request={req} routes={routes}>
+      <header>
+        <nav>
+          <a href="/">Home</a>
+          <a href="/about">About</a>
+          <a href="/blog">Blog</a>
+        </nav>
+      </header>
+      <router />
+    </html>
+  )
+}
+```
+
+mono-jsx router requires [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) to match a route:
+
+- ✅ Deno
+- ✅ Cloudflare Workers
+- ✅ Nodejs (>= 24)
+
+For Bun users, mono-jsx provides a `monoRoutes` function that uses Bun's builtin routing:
+
+```tsx
+// bun app.tsx
+
+import { monoRoutes } from "mono-jsx"
+
+const routes = {
+  "/": Home,
+  "/about": About,
+  "/blog": Blog,
+  "/post/:id": Post,
+}
+
+export default {
+  routes: monoRoutes(routes, (request) => (
+    <html request={request}>
+      <router />
+    </html>
+  ))
+}
+```
+
+### Using Route `params`
+
+When you define a route with a parameter (e.g., `/post/:id`), mono-jsx will automatically extract the parameter from the URL and make it available in the route component. The `params` object is available in the `request` property of the component's `this` context.
+You can access the `params` object in your route components to get the values of the parameters defined in the route pattern:
+
+
+```tsx
+// router pattern: "/post/:id"
+function Post(this: FC) {
+  this.request.url         // "http://localhost:3000/post/123"
+  this.request.params?.id  // "123"
+}
+```
+
+### Using DB/Storage in Route Components
+
+Route components are always rendered on server-side, you can use any database or storage API to fetch data in your route components. For example, if you're using a SQL database, you can use the `sql` tag function to query the database:
+
+```tsx
+async function Post(this: FC) {
+  const post = await sql`SELECT * FROM posts WHERE id = ${ this.request.params!.id }`
+  return (
+    <article>
+      <h2>{post.title}<h2>
+      <div>html`${post.content}`</div>
+    </article>
+  )
+}
+```
+
+### Nav Links
+
+Links under a `<nav>` element will be treated as navigation links by the router. When the `href` of a link matches a route, A active class will be added to the link element. By default, the active class is `active`, but you can customize it by setting the `data-active-class` attribute on the `<nav>` element. You can also add a custom style for the active link using nested CSS selectors in the `style` attribute of the `<nav>` element:
+
+```tsx
+export default {
+  fetch: (req) => (
+    <html request={req} routes={routes}>
+      <header>
+        <nav style={{ "& a.active": { fontWeight: "bold" } }} data-active-class="active">
+          <a href="/">Home</a>
+          <a href="/about">About</a>
+          <a href="/blog">Blog</a>
+        </nav>
+      </header>
+      <router />
+    </html>
+  )
+}
+```
+
+### Setting Fallback(404) Content
+
+You can add fallback(404) content to the `<router>` element as children, which will be displayed when no route matches the current URL:
+
+```tsx
+export default {
+  fetch: (req) => (
+    <html request={req} routes={routes}>
+      <router>
+        <p>Page Not Found</p>
+        <p>Back to <a href="/">Home</a></p>
+      </router>
+    </html>
+  )
+}
+```
+
 ## Customizing html Response
 
 You can add `status` or `headers` attributes to the root `<html>` element to customize the http response:
 
-```jsx
+```tsx
 export default {
   fetch: (req) => (
     <html
@@ -789,7 +988,7 @@ export default {
 
 mono-jsx integrates with [htmx](https://htmx.org/) and [typed-htmx](https://github.com/Desdaemon/typed-htmx). To use htmx, add the `htmx` attribute to the root `<html>` element:
 
-```jsx
+```tsx
 export default {
   fetch: (req) => {
     const url = new URL(req.url);
@@ -817,7 +1016,7 @@ export default {
 
 You can add htmx [extensions](https://htmx.org/docs/#extensions) by adding the `htmx-ext-*` attribute to the root `<html>` element:
 
-```jsx
+```tsx
 export default {
   fetch: (req) => (
     <html htmx htmx-ext-response-targets htmx-ext-ws>
@@ -833,7 +1032,7 @@ export default {
 
 You can specify the htmx version by setting the `htmx` attribute to a specific version:
 
-```jsx
+```tsx
 export default {
   fetch: (req) => (
     <html htmx="2.0.4" htmx-ext-response-targets="2.0.2" htmx-ext-ws="2.0.2">
@@ -849,7 +1048,7 @@ export default {
 
 By default, mono-jsx installs htmx from [esm.sh](https://esm.sh/) CDN when you set the `htmx` attribute. You can also install htmx manually with your own CDN or local copy:
 
-```jsx
+```tsx
 export default {
   fetch: (req) => (
     <html>
