@@ -810,8 +810,8 @@ You also can use signal `name` or `props`, change the signal value will trigger 
 ```tsx
 import { Profile, Projects, Settings } from "./pages.tsx"
 
-async function Dash(this: FC<{ page: "Profile" | "Projects" | "Settings" }>) {
-  this.page = "Projects";
+function Dash(this: FC<{ page: "Profile" | "Projects" | "Settings" }>) {
+  this.page = "Profile";
 
   return (
     <>
