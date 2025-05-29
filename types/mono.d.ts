@@ -91,27 +91,28 @@ export interface AsyncComponentAttributes {
 
 export interface Elements {
   /**
-   * The `toggle` element is a builtin element that represents a toggle switch.
+   * The `toggle` element is a builtin element that toggles the visibility of its children.
    */
   toggle: BaseAttributes & {
     show?: boolean | 0 | 1;
   };
   /**
-   * The `switch` element is a builtin element that represents a switch.
+   * The `switch` element is a builtin element that chooses one of its children based on the `slot` attribute to display.
+   * It is similar to a switch statement in programming languages.
    */
   switch: BaseAttributes & {
     value?: string | number | boolean | null;
   };
   /**
-   * The `lazy` element is a builtin element that represents a lazy-loaded component.
-   * It can be used to load components lazily, which can improve performance by reducing the initial load time of the application.
+   * The `component` element is a builtin element that is used to load components lazily,
+   * which can improve performance by reducing the initial load time of the application.
    */
-  lazy: BaseAttributes & AsyncComponentAttributes & {
+  component: BaseAttributes & AsyncComponentAttributes & {
     name: string;
     props?: Record<string, unknown>;
   };
   /**
-   * The `router` element is a builtin element that represents a router.
+   * The `router` element is a builtin element that implements client-side routing.
    */
   router: BaseAttributes & AsyncComponentAttributes & {};
 }

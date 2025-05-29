@@ -1366,7 +1366,7 @@ Deno.test("[ssr] <switch>", async () => {
   );
 });
 
-Deno.test("[ssr] <lazy>", async () => {
+Deno.test("[ssr] <component>", async () => {
   async function App(this: FC<{ message: string }>) {
     this.message = await Promise.resolve("Welcome to mono-jsx!");
     return <h1>{this.message}</h1>;
@@ -1374,28 +1374,28 @@ Deno.test("[ssr] <lazy>", async () => {
 
   function LazyAppWithSingalName(this: FC<{ name: string }>) {
     this.name = "App";
-    return <lazy name={this.name} props={{ foo: "bar" }} placeholder={<p>loading...</p>} />;
+    return <component name={this.name} props={{ foo: "bar" }} placeholder={<p>loading...</p>} />;
   }
 
   function LazyAppWithSignalProps(this: FC<{ props: { foo: string } }>) {
     this.props = { foo: "bar" };
-    return <lazy name="App" props={this.props} placeholder={<p>loading...</p>} />;
+    return <component name="App" props={this.props} placeholder={<p>loading...</p>} />;
   }
 
   function LazyAppWithComputedProps(this: FC<{ foo: string }>) {
     this.foo = "bar";
     const props = this.computed(() => ({ foo: this.foo }));
-    return <lazy name="App" props={props} placeholder={<p>loading...</p>} />;
+    return <component name="App" props={props} placeholder={<p>loading...</p>} />;
   }
 
   function LazyAppWithImplicitComputedProps(this: FC<{ foo: string }>) {
     this.foo = "bar";
-    return <lazy name="App" props={{ foo: this.foo, color: "blue" }} placeholder={<p>loading...</p>} />;
+    return <component name="App" props={{ foo: this.foo, color: "blue" }} placeholder={<p>loading...</p>} />;
   }
 
   assertEquals(
     await renderToString(
-      <lazy name="App" props={{ foo: "bar" }} placeholder={<p>loading...</p>} />,
+      <component name="App" props={{ foo: "bar" }} placeholder={<p>loading...</p>} />,
     ),
     [
       `<!DOCTYPE html>`,

@@ -503,13 +503,13 @@ Deno.test("[runtime] <switch>", sanitizeFalse, async () => {
   await page.close();
 });
 
-Deno.test("[runtime] <lazy>", sanitizeFalse, async () => {
+Deno.test("[runtime] <component>", sanitizeFalse, async () => {
   function App(this: FC<{ show: boolean }>) {
     this.show = false;
     return (
       <div>
         <toggle show={this.show}>
-          <lazy name="greeting" props={{ message: "Hello, world" }} placeholder={<p>loading...</p>} />
+          <component name="greeting" props={{ message: "Hello, world" }} placeholder={<p>loading...</p>} />
         </toggle>
         <button type="button" onClick={() => this.show = !this.show}>Show</button>
       </div>
@@ -535,13 +535,13 @@ Deno.test("[runtime] <lazy>", sanitizeFalse, async () => {
   await page.close();
 });
 
-Deno.test("[runtime] <lazy> controled by <toggle>", sanitizeFalse, async () => {
+Deno.test("[runtime] <component> controled by <toggle>", sanitizeFalse, async () => {
   function App(this: FC<{ show: boolean }>) {
     this.show = false;
     return (
       <div>
         <toggle show={this.show}>
-          <lazy name="greeting" props={{ message: "Hello, world" }} placeholder={<p>loading...</p>} />
+          <component name="greeting" props={{ message: "Hello, world" }} placeholder={<p>loading...</p>} />
         </toggle>
         <button type="button" onClick={() => this.show = !this.show}>Show</button>
       </div>
@@ -570,12 +570,12 @@ Deno.test("[runtime] <lazy> controled by <toggle>", sanitizeFalse, async () => {
   await page.close();
 });
 
-Deno.test("[runtime] <lazy> with signal name/props", sanitizeFalse, async () => {
+Deno.test("[runtime] <component> with signal name/props", sanitizeFalse, async () => {
   function App(this: FC<{ tab: "a" | "b" | "c" }>) {
     this.tab = "a";
     return (
       <div>
-        <lazy name={this.tab} props={{ name: this.tab }} placeholder={<span>loading...</span>} />
+        <component name={this.tab} props={{ name: this.tab }} placeholder={<span>loading...</span>} />
         <select value={this.tab} onChange={(e) => this.tab = e.target.value as "c" | "b" | "a"}>
           <option value="a">A</option>
           <option value="b">B</option>

@@ -480,8 +480,8 @@ async function renderNode(rc: RenderContext, node: ChildType, stripSlotProp?: bo
             break;
           }
 
-          // `<lazy>` element
-          case "lazy": {
+          // `<component>` element
+          case "component": {
             const { placeholder } = props;
             let attrs = "";
             let attrModifiers = "";
