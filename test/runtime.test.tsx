@@ -71,6 +71,9 @@ Deno.serve({ port: 8687, onListen: () => {} }, (request) => {
   );
 });
 
+// function App(this: FC<{}>) {
+//   return <h1>Welcome to mono-jsx!</h1>;
+// }
 // console.log(addTestPage(<App />));
 // await new Promise(() => {});
 
