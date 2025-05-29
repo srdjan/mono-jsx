@@ -696,9 +696,11 @@ function renderAttr(
           + rc.mfs.gen(attrValue)
           + toStr(rc.fcCtx?.scopeId, (i) => "," + i)
           + ')"';
-      } else if (isString(attrValue) || typeof attrValue === "number" || typeof attrValue === "boolean") {
+      } else if (attrValue === false || attrValue === null || attrValue === undefined) {
+        // skip false, null or undefined attributes
+      } else {
         attr = " " + escapeHTML(attrName);
-        if (attrValue !== "" && attrValue !== true) {
+        if (attrValue !== true) {
           attr += "=" + toAttrStringLit(String(attrValue));
         }
       }

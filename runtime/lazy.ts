@@ -5,6 +5,7 @@ declare global {
 
 const doc = document;
 const attr = (el: Element, name: string): string | null => el.getAttribute(name);
+const replaceChildren = (el: Element, children: Node[] = []) => el.replaceChildren(...children);
 
 customElements.define(
   "m-component",
@@ -27,8 +28,10 @@ customElements.define(
       const ac = new AbortController();
       this.#renderAC?.abort();
       this.#renderAC = ac;
+      replaceChildren(this, this.#placeholder!);
       const res = await fetch(location.href, { headers, signal: ac.signal });
       if (!res.ok) {
+        replaceChildren(this);
         throw new Error("Failed to fetch component '" + name + "'");
       }
       const [html, js] = await res.json();
@@ -56,7 +59,7 @@ customElements.define(
     }
 
     disconnectedCallback() {
-      this.replaceChildren(...this.#placeholder!);
+      replaceChildren(this, this.#placeholder!);
       this.#renderAC?.abort();
       this.#renderDelay && clearTimeout(this.#renderDelay);
       this.#renderAC = undefined;

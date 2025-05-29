@@ -149,8 +149,10 @@ const createDomEffect = (el: Element, mode: string | null, getter: () => unknown
         if (attrValue) {
           target.setAttribute(attrName, attrValue);
         }
-      } else if (value != null) {
-        target.setAttribute(attrName, value === true ? "" : "" + value);
+      } else if (value === false || value === null || value === undefined) {
+        target.removeAttribute(attrName);
+      } else {
+        target.setAttribute(attrName, value === true ? "" : value as string);
       }
     };
   }

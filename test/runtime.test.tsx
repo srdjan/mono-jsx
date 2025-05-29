@@ -141,7 +141,7 @@ Deno.test("[runtime] async generator component", sanitizeFalse, async () => {
   await page.close();
 });
 
-Deno.test("[runtime] component signals(text)", sanitizeFalse, async () => {
+Deno.test("[runtime] signals(text)", sanitizeFalse, async () => {
   function Hello(this: FC<{ text: string }>, props: { text: string }) {
     this.text = props.text;
     return (
@@ -171,7 +171,7 @@ Deno.test("[runtime] component signals(text)", sanitizeFalse, async () => {
   await page.close();
 });
 
-Deno.test("[runtime] component signals(number)", sanitizeFalse, async () => {
+Deno.test("[runtime] signals(number)", sanitizeFalse, async () => {
   function Counter(this: FC<{ count: number }>, props: { initialValue: number }) {
     this.count = props.initialValue;
     return (
@@ -205,6 +205,38 @@ Deno.test("[runtime] component signals(number)", sanitizeFalse, async () => {
     await buttons[0].click();
   }
   assertEquals(await span.evaluate((el: HTMLElement) => el.textContent), "-2");
+
+  await page.close();
+});
+
+Deno.test("[runtime] signals(boolean)", sanitizeFalse, async () => {
+  function App(this: FC<{ disable: boolean }>) {
+    this.disable = false;
+    return (
+      <div>
+        <input disabled={this.disable} />
+        <button type="button" onClick={() => this.disable = !this.disable} />
+      </div>
+    );
+  }
+
+  const testPageUrl = addTestPage(<App />);
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+
+  const input = await page.$("div input");
+  assert(input);
+  assert(!(await input.evaluate((el: HTMLInputElement) => el.hasAttribute("disabled"))));
+
+  const button = await page.$("div button");
+  assert(button);
+  await button.click();
+
+  assert(await input.evaluate((el: HTMLInputElement) => el.hasAttribute("disabled")));
+
+  await button.click();
+
+  assert(!(await input.evaluate((el: HTMLInputElement) => el.hasAttribute("disabled"))));
 
   await page.close();
 });
@@ -301,7 +333,7 @@ Deno.test("[runtime] computed signals", sanitizeFalse, async () => {
 });
 
 Deno.test("[runtime] computed class name", sanitizeFalse, async () => {
-  function FooBar(this: FC<{ foo: string; bar: string }>) {
+  function App(this: FC<{ foo: string; bar: string }>) {
     this.foo = "foo";
     this.bar = "bar";
     return (
@@ -312,7 +344,7 @@ Deno.test("[runtime] computed class name", sanitizeFalse, async () => {
     );
   }
 
-  const testPageUrl = addTestPage(<FooBar />);
+  const testPageUrl = addTestPage(<App />);
   const page = await browser.newPage();
   await page.goto(testPageUrl);
 
@@ -325,6 +357,34 @@ Deno.test("[runtime] computed class name", sanitizeFalse, async () => {
   await button.click();
 
   assertEquals(await h1.evaluate((el: HTMLElement) => el.className), "foo bar2000");
+
+  await page.close();
+});
+
+Deno.test("[runtime] computed style", sanitizeFalse, async () => {
+  function App(this: FC<{ color: string }>) {
+    this.color = "blue";
+    return (
+      <div>
+        <h1 style={{ color: this.color }} />
+        <button type="button" onClick={() => this.color = "green"} />
+      </div>
+    );
+  }
+
+  const testPageUrl = addTestPage(<App />);
+  const page = await browser.newPage();
+  await page.goto(testPageUrl);
+
+  const h1 = await page.$("div h1");
+  assert(h1);
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.style.color), "blue");
+
+  const button = await page.$("div button");
+  assert(button);
+  await button.click();
+
+  assertEquals(await h1.evaluate((el: HTMLElement) => el.style.color), "green");
 
   await page.close();
 });
