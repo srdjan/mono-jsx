@@ -816,9 +816,9 @@ async function Dash(this: FC<{ page: "Profile" | "Projects" | "Settings" }>) {
   return (
     <>
       <div class="tab">
-        <button onClick={e => this.page = "Profile"}>Profile</botton>
-        <button onClick={e => this.page = "Projects"}>Projects</botton>
-        <button onClick={e => this.page = "Settings"}>Settings</botton>
+        <button onClick={e => this.page = "Profile"}>Profile</button>
+        <button onClick={e => this.page = "Projects"}>Projects</button>
+        <button onClick={e => this.page = "Settings"}>Settings</button>
       </div>
       <div class="page">
         <component name={this.page} placeholder={<p>Loading...</p>} />
