@@ -54,10 +54,11 @@ export const styleToCSS = (style: Record<string, unknown>): { inline?: string; c
 export const applyStyle = (el: Element, style: Record<string, unknown>): void => {
   const { inline, css } = styleToCSS(style);
   if (css) {
-    const selector = "[data-css-" + Date.now().toString(36) + "]";
+    const propPrefix = "data-css-";
+    const selector = "[" + propPrefix + (Date.now() + Math.random()).toString(36).replace(".", "") + "]";
     document.head.appendChild(document.createElement("style")).textContent = (inline ? selector + "{" + inline + "}" : "")
       + css.map(v => v === null ? selector : v).join("");
-    el.getAttributeNames().forEach((name) => name.startsWith("data-css-") && el.removeAttribute(name));
+    el.getAttributeNames().forEach((name) => name.startsWith(propPrefix) && el.removeAttribute(name));
     el.setAttribute(selector.slice(1, -1), "");
   } else if (inline) {
     el.setAttribute("style", inline);

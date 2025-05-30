@@ -15,12 +15,12 @@ customElements.define(
     #ac?: AbortController;
 
     async #fetchPage(href: string) {
+      const ac = new AbortController();
       const headers = {
         "x-route": "true",
         "x-runtime-flag": "" + $runtimeFlag,
         "x-scope-seq": "" + $scopeSeq,
       };
-      const ac = new AbortController();
       this.#ac?.abort();
       this.#ac = ac;
       const res = await fetch(href, { headers, signal: ac.signal });
@@ -42,7 +42,7 @@ customElements.define(
     #updateNavLinks() {
       doc.querySelectorAll<HTMLAnchorElement>("nav a").forEach((link) => {
         const { href, classList } = link;
-        const activeClass = link.closest("nav")!.getAttribute("data-active-class") ?? "active";
+        const activeClass = link.closest("nav")?.getAttribute("data-active-class") ?? "active";
         if (stripHash(href) === stripHash(location.href)) {
           classList.add(activeClass);
         } else {

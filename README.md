@@ -10,7 +10,7 @@ mono-jsx is a JSX runtime that renders `<html>` element to `Response` object in 
 - ⚡️ Use web components, no virtual DOM
 - 💡 Complete Web API TypeScript definitions
 - ⏳ Streaming rendering
-- 🗂️ Built-in router
+- 🗂️ Built-in router(SPA mode)
 - 🥷 [htmx](#using-htmx) integration
 - 🌎 Universal, works in Node.js, Deno, Bun, Cloudflare Workers, etc.
 
@@ -838,7 +838,7 @@ export default {
 
 ## Using Router(SPA)
 
-mono-jsx provides a built-in `<router>` element that allows your app to render components based on the current URL. On client side, it hijacks all `click` events on `<a>` elements and asynchronously fetches the route component without reloading the entire page.
+mono-jsx provides a built-in `<router>` element that allows your app to render components based on the current URL. On client side, it listens all `click` events on `<a>` elements and asynchronously fetches the route component without reloading the entire page.
 
 To use the router, you need to define your routes as a mapping of URL patterns to components and pass it to the `<html>` element as `routes` prop. The `request` prop is also required to match the current URL against the defined routes.
 
@@ -872,7 +872,7 @@ mono-jsx router requires [URLPattern](https://developer.mozilla.org/en-US/docs/W
 - ✅ Cloudflare Workers
 - ✅ Nodejs (>= 24)
 
-For Bun users, mono-jsx provides a `monoRoutes` function that uses Bun's builtin routing:
+For Bun users, mono-jsx provides a `monoRoutes` function that uses Bun's built-in routing:
 
 ```tsx
 // bun app.tsx
@@ -911,7 +911,7 @@ function Post(this: FC) {
 
 ### Using DB/Storage in Route Components
 
-Route components are always rendered on server-side, you can use any database or storage API to fetch data in your route components. For example, if you're using a SQL database, you can use the `sql` tag function to query the database:
+Route components are always rendered on server-side, you can use any database or storage API to fetch data in your route components.
 
 ```tsx
 async function Post(this: FC) {
@@ -927,7 +927,7 @@ async function Post(this: FC) {
 
 ### Nav Links
 
-Links under a `<nav>` element will be treated as navigation links by the router. When the `href` of a link matches a route, A active class will be added to the link element. By default, the active class is `active`, but you can customize it by setting the `data-active-class` attribute on the `<nav>` element. You can also add a custom style for the active link using nested CSS selectors in the `style` attribute of the `<nav>` element:
+Links under the `<nav>` element will be treated as navigation links by the router. When the `href` of a nav link matches a route, a active class will be added to the link element. By default, the active class is `active`, but you can customize it by setting the `data-active-class` attribute on the `<nav>` element. You can add style for the active link using nested CSS selectors in the `style` attribute of the `<nav>` element.
 
 ```tsx
 export default {
@@ -948,7 +948,7 @@ export default {
 
 ### Fallback(404)
 
-You can add fallback(404) content to the `<router>` element as children, which will be displayed when no route matches the current URL:
+You can add fallback(404) content to the `<router>` element as children, which will be displayed when no route matches the current URL.
 
 ```tsx
 export default {
@@ -1044,9 +1044,9 @@ export default {
 }
 ```
 
-#### Installing htmx Manually
+#### Setup htmx Manually
 
-By default, mono-jsx installs htmx from [esm.sh](https://esm.sh/) CDN when you set the `htmx` attribute. You can also install htmx manually with your own CDN or local copy:
+By default, mono-jsx imports htmx from [esm.sh](https://esm.sh/) CDN when you set the `htmx` attribute. You can also setup htmx manually with your own CDN or local copy:
 
 ```tsx
 export default {

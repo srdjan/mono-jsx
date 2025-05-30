@@ -268,7 +268,7 @@ async function render(
       runtimeFlag |= RUNTIME_EVENT;
       js += EVENT_JS;
     }
-    if ((signals.store.size + rc.mcs.size + signals.effects.length > 0) && !(runtimeFlag & RUNTIME_SIGNALS)) {
+    if ((signals.store.size > 0 || rc.mcs.size > 0 || signals.effects.length > 0) && !(runtimeFlag & RUNTIME_SIGNALS)) {
       runtimeFlag |= RUNTIME_SIGNALS;
       js += SIGNALS_JS;
     }
@@ -950,7 +950,7 @@ function computedProps({ fcCtx }: RenderContext, props: Record<string, unknown> 
     });
     if (patches.length > 0) {
       const { scopeId } = fcCtx!;
-      const compute = "()=>$merge(" + JSON.stringify(staticProps) + ",[" + patches.join("],[") + "])";
+      const compute = "()=>$patch(" + JSON.stringify(staticProps) + ",[" + patches.join("],[") + "])";
       return Signal(scopeId, { compute, deps }, staticProps);
     }
   }

@@ -7,8 +7,8 @@ async function buildRuntime(name: string): Promise<string> {
     platform: "browser",
     format: "esm",
     target: "es2022",
-    write: false,
     minify: true,
+    write: false,
   });
   if (ret.errors.length > 0) {
     throw new Error(ret.errors[0].text);
@@ -25,9 +25,9 @@ async function buildRuntimeUtils(name: string): Promise<string> {
     platform: "browser",
     format: "esm",
     target: "es2022",
-    write: false,
     bundle: true,
     minify: true,
+    write: false,
   });
   if (ret.errors.length > 0) {
     throw new Error(ret.errors[0].text);
@@ -42,10 +42,10 @@ async function buildPackageModule(name: string, format: "esm" | "cjs" = "esm") {
     entryPoints: [entryPointPath],
     outfile,
     format,
-    target: "esnext",
-    minify: false,
-    bundle: true,
     external: ["node:*"],
+    target: "esnext",
+    bundle: true,
+    minify: false,
   });
   return await Deno.lstat(outfile);
 }
@@ -108,10 +108,7 @@ if (import.meta.main) {
 
   await Deno.writeTextFile(
     "./version.ts",
-    [
-      `export const VERSION = "${pkgJson.version}";`,
-      "",
-    ].join(eol),
+    `export const VERSION = "${pkgJson.version}";` + eol,
   );
 
   for (const moduleName of ["index", "jsx-runtime", "setup"]) {

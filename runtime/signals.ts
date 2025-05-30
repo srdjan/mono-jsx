@@ -236,11 +236,11 @@ win.$MC = (id: number, compute: Function, deps: string[]) => {
   mcs.set(id, [compute, deps]);
 };
 
-// merge an object with patches
-win.$merge = (obj: Record<string, unknown>, ...patches: unknown[][]) => {
+// update an object with patches
+win.$patch = (obj: Record<string, unknown>, ...patches: unknown[][]) => {
   for (const [value, ...path] of patches) {
-    let target = obj;
     const key = path.pop()!;
+    let target = obj;
     for (const p of path) {
       target = (target as any)[p as string];
     }

@@ -883,7 +883,7 @@ Deno.test("[ssr] computed signals", async () => {
       `window.$runtimeFlag=${RUNTIME_CX | RUNTIME_SIGNALS};`,
       `$MS("1:color","blue");`,
       `$MS("0:themeColor","black");`,
-      `$MC(0,function(){return(()=>$merge(["blue","black"],[this["color"],0],[$signals(0)["themeColor"],1])).call(this)},["1:color","0:themeColor"]);`,
+      `$MC(0,function(){return(()=>$patch(["blue","black"],[this["color"],0],[$signals(0)["themeColor"],1])).call(this)},["1:color","0:themeColor"]);`,
       `</script>`,
     ].join(""),
   );
@@ -918,7 +918,7 @@ Deno.test("[ssr] computed signals", async () => {
       `window.$runtimeFlag=${RUNTIME_STYLE | RUNTIME_SIGNALS};`,
       `$MS("1:color","blue");`,
       `$MS("0:themeColor","black");`,
-      `$MC(0,function(){return(()=>$merge({"color":"blue","backgroundColor":"black"},[this["color"],"color"],[$signals(0)["themeColor"],"backgroundColor"])).call(this)},["1:color","0:themeColor"]);`,
+      `$MC(0,function(){return(()=>$patch({"color":"blue","backgroundColor":"black"},[this["color"],"color"],[$signals(0)["themeColor"],"backgroundColor"])).call(this)},["1:color","0:themeColor"]);`,
       `</script>`,
     ].join(""),
   );
@@ -1497,7 +1497,7 @@ Deno.test("[ssr] <component>", async () => {
       `window.$runtimeFlag=${RUNTIME_LAZY | RUNTIME_SIGNALS};`,
       `window.$scopeSeq=1;`,
       `$MS("1:foo","bar");`,
-      `$MC(0,function(){return(()=>$merge({"foo":"bar","color":"blue"},[this["foo"],"foo"])).call(this)},["1:foo"]);`,
+      `$MC(0,function(){return(()=>$patch({"foo":"bar","color":"blue"},[this["foo"],"foo"])).call(this)},["1:foo"]);`,
       `</script>`,
     ].join(""),
   );
